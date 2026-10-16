@@ -4494,6 +4494,58 @@ a {
   margin: 0;
 }
 
+/* Voice: call-state orb */
+.hm-voice__stage {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 0 2px;
+}
+.hm-voice__stage canvas {
+  width: 150px;
+  height: 150px;
+  touch-action: none;
+}
+.hm-voice__stage--idle canvas {
+  opacity: 0.6;
+}
+.hm-voice__stage--listening .hm-voice__status {
+  color: var(--hm-color-text);
+}
+.hm-voice__stage--thinking .hm-voice__status {
+  color: var(--hm-color-warning, #f59e0b);
+}
+.hm-voice__stage--speaking .hm-voice__status {
+  color: var(--hm-color-accent);
+}
+.hm-voice__timer {
+  color: var(--hm-color-text-muted);
+  font-variant-numeric: tabular-nums;
+}
+.hm-voice__working {
+  margin: 0;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: var(--hm-fs-small);
+  color: var(--hm-color-text-muted);
+  background: var(--hm-color-surface-muted);
+  border-radius: 999px;
+  padding: 4px 12px;
+  animation: hm-voice-working-pulse 1.6s ease-in-out infinite;
+}
+@keyframes hm-voice-working-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.55;
+  }
+}
+
 .hm-voice__login {
   padding: 10px 12px;
   border-radius: 12px;
