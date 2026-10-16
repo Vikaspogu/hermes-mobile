@@ -244,6 +244,37 @@ export function Voice() {
     return () => window.clearInterval(iv);
   }, [callStart]);
 
+  // Keep the screen awake for the whole call; re-acquire when the app returns to
+  // foreground (the OS drops the lock when the screen turns off or the tab hides).
+  useEffect(() => {
+    if (!live) return;
+    type WakeLockNav = Navigator & {
+      wakeLock?: { request: (type: 'screen') => Promise<{ release: () => Promise<void> }> };
+    };
+    let sentinel: { release: () => Promise<void> } | null = null;
+    const acquire = () => {
+      (navigator as WakeLockNav).wakeLock
+        ?.request('screen')
+        .then((s) => {
+          sentinel = s;
+        })
+        .catch(() => {
+          /* unsupported or denied: nothing to do */
+        });
+    };
+    acquire();
+    const onVisibility = () => {
+      if (document.visibilityState === 'visible') acquire();
+    };
+    document.addEventListener('visibilitychange', onVisibility);
+    return () => {
+      document.removeEventListener('visibilitychange', onVisibility);
+      sentinel?.release().catch(() => {
+        /* ignore */
+      });
+    };
+  }, [live]);
+
   const stop = useCallback(async () => {
     const r = refs.current;
     refs.current = null;
