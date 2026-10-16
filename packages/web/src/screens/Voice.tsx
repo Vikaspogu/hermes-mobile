@@ -32,6 +32,7 @@ interface LiveRefs {
   threadId: string | null;
   timers: number[];
   audioCtx: AudioContext | null;
+  remoteAnalyser: AnalyserNode | null;
   audioEls: HTMLAudioElement[];
 }
 
@@ -92,6 +93,76 @@ function stripMarkdown(text: string): string {
     .trim();
 }
 
+type CallState = 'idle' | 'connecting' | 'listening' | 'thinking' | 'speaking';
+
+// Dot-sphere orb (muse-style): fibonacci sphere of dots on a canvas, amplitude
+// driven by live audio level, rotation/scatter by call state.
+function VoiceOrb({ state, mic, remote }: { state: CallState; mic: number; remote: number }) {
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const live = useRef({ state, mic, remote });
+  live.current = { state, mic, remote };
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    const ctx = canvas?.getContext('2d');
+    if (!canvas || !ctx) return;
+    const styles = getComputedStyle(canvas);
+    const accent = styles.getPropertyValue('--color-accent').trim() || '#6366f1';
+    const warn = styles.getPropertyValue('--color-warning').trim() || '#f59e0b';
+    const dim = styles.getPropertyValue('--color-text-muted').trim() || '#6b7280';
+    const N = 380;
+    const dots: [number, number, number][] = [];
+    for (let i = 0; i < N; i++) {
+      const phi = Math.acos(1 - (2 * (i + 0.5)) / N);
+      const theta = Math.PI * (1 + Math.sqrt(5)) * i;
+      dots.push([Math.sin(phi) * Math.cos(theta), Math.cos(phi), Math.sin(phi) * Math.sin(theta)]);
+    }
+    let raf = 0;
+    let smooth = 0;
+    const t0 = performance.now();
+    const draw = (now: number) => {
+      const { state: st, mic: m, remote: r } = live.current;
+      const t = (now - t0) / 1000;
+      const w = canvas.width;
+      const h = canvas.height;
+      ctx.clearRect(0, 0, w, h);
+      const target = st === 'speaking' ? r : st === 'listening' ? m : 0;
+      smooth += (Math.min(1, target * 2.2) - smooth) * 0.15;
+      const R = w * 0.3;
+      const color = st === 'thinking' ? warn : st === 'idle' ? dim : accent;
+      const rot = t * (st === 'thinking' ? 1.6 : st === 'connecting' ? 0.3 : 0.5);
+      const scale =
+        st === 'connecting'
+          ? 0.72 + 0.22 * (0.5 + 0.5 * Math.sin(t * 2.4))
+          : (1 + 0.04 * Math.sin(t * 1.5)) * (1 + smooth * 0.2);
+      ctx.fillStyle = color;
+      for (const [x0, y0, z0] of dots) {
+        const x = x0 * Math.cos(rot) + z0 * Math.sin(rot);
+        const z = -x0 * Math.sin(rot) + z0 * Math.cos(rot);
+        const wob = st === 'thinking' ? 1 + 0.09 * Math.sin(t * 8 + y0 * 9) : 1;
+        const px = w / 2 + x * R * scale * wob;
+        const py = h / 2 + y0 * R * scale * wob * (1 + smooth * 0.4 * Math.sin(t * 3 + x0 * 4));
+        const depth = (z + 1) / 2;
+        ctx.globalAlpha = 0.2 + depth * 0.8;
+        ctx.beginPath();
+        ctx.arc(px, py, 1 + depth * 2.2 + smooth * 2.4 * depth, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.globalAlpha = 1;
+      raf = requestAnimationFrame(draw);
+    };
+    raf = requestAnimationFrame(draw);
+    return () => cancelAnimationFrame(raf);
+  }, []);
+
+  return <canvas ref={canvasRef} className="hm-voice__orb" width={220} height={220} aria-hidden="true" />;
+}
+
+function fmtElapsed(s: number): string {
+  const mm = Math.floor(s / 60);
+  const ss = Math.floor(s % 60);
+  return mm + ':' + String(ss).padStart(2, '0');
+}
 export function Voice() {
   const [stage, setStage] = useState('');
   const [err, setErr] = useState('');
@@ -99,6 +170,13 @@ export function Voice() {
   const [live, setLive] = useState(false);
   const [items, setItems] = useState<TranscriptItem[]>([]);
   const [micLevel, setMicLevel] = useState(0);
+  const [remoteLevel, setRemoteLevel] = useState(0);
+  const [speaking, setSpeaking] = useState(false);
+  const [working, setWorking] = useState<string | null>(null);
+  const [userDone, setUserDone] = useState(false); // user finished a turn, bot hasn't answered yet
+  const [callStart, setCallStart] = useState<number | null>(null);
+  const [elapsed, setElapsed] = useState(0);
+  const speakingUntilRef = useRef(0);
   const [login, setLogin] = useState<LoginState | null>(null);
   const [engine, setEngine] = useState<Engine>('codex'); // codex = gpt-live-1, hermes = gpt-realtime-2.1
   const refs = useRef<LiveRefs | null>(null);
@@ -158,6 +236,14 @@ export function Voice() {
     return () => window.clearInterval(iv);
   }, []);
 
+  // Call clock: ticks once per second while a call is connected.
+  useEffect(() => {
+    if (!callStart) return;
+    setElapsed(0);
+    const iv = window.setInterval(() => setElapsed((Date.now() - callStart) / 1000), 1000);
+    return () => window.clearInterval(iv);
+  }, [callStart]);
+
   const stop = useCallback(async () => {
     const r = refs.current;
     refs.current = null;
@@ -165,6 +251,13 @@ export function Voice() {
     setMuted(false);
     setStage('');
     setMicLevel(0);
+    setRemoteLevel(0);
+    setSpeaking(false);
+    setWorking(null);
+    setUserDone(false);
+    setCallStart(null);
+    setElapsed(0);
+    speakingUntilRef.current = 0;
     if (!r) return;
     r.timers.forEach((t) => window.clearInterval(t));
     try {
@@ -219,6 +312,7 @@ export function Voice() {
       } catch {
         /* ignore */
       }
+      setWorking(null);
     },
     [push],
   );
@@ -256,9 +350,16 @@ export function Voice() {
       } else if (t === 'output_transcript.added') {
         const tx = (msg.item as { text?: string } | undefined)?.text;
         if (tx) push('bot', tx);
+        if (tx) {
+          speakingUntilRef.current = Date.now() + 1200;
+          setUserDone(false);
+        }
       } else if (t === 'turn.done') {
         const tu = (msg.turn ?? {}) as { role?: string; transcript?: string };
-        if (tu.role === 'user') finalize('user', tu.transcript || '');
+        if (tu.role === 'user') {
+          finalize('user', tu.transcript || '');
+          setUserDone(true);
+        }
         else if (tu.role === 'assistant') finalize('bot', tu.transcript || '');
       } else if (t === 'session.usage.updated') {
         // ponytail: track live minutes later if a cap matters
@@ -269,8 +370,14 @@ export function Voice() {
       }
       // ── Hermes engine (gpt-realtime-2.1, existing Hermes login) ──
       else if (t === 'conversation.item.input_audio_transcription.delta') push('user', String(msg.delta || ''));
-      else if (t === 'conversation.item.input_audio_transcription.completed') finalize('user', String(msg.transcript || ''));
-      else if (t === 'response.output_audio_transcript.delta') push('bot', String(msg.delta || ''));
+      else if (t === 'conversation.item.input_audio_transcription.completed') {
+        finalize('user', String(msg.transcript || ''));
+        setUserDone(true);
+      } else if (t === 'response.output_audio_transcript.delta') {
+        push('bot', String(msg.delta || ''));
+        speakingUntilRef.current = Date.now() + 1200;
+        setUserDone(false);
+      }
       else if (t === 'response.output_audio_transcript.done') finalize('bot', String(msg.transcript || ''));
       else if (t === 'response.function_call_arguments.done') {
         // ponytail: voice tools not wired in the web client yet
@@ -288,6 +395,7 @@ export function Voice() {
         }
         const lastUser = [...itemsRef.current].reverse().find((i) => i.who === 'user');
         dreq = dreq.trim() || (lastUser ? lastUser.text.slice(0, 500) : '');
+        setWorking(dreq.slice(0, 80) || 'your request');
         void runDelegation(dreq, (out) => {
           refs.current?.dc.send(
             JSON.stringify({
@@ -308,6 +416,7 @@ export function Voice() {
           }
           const lastUser = [...itemsRef.current].reverse().find((i) => i.who === 'user');
           const dreq = String(args.request || args.text || '').trim() || (lastUser ? lastUser.text.slice(0, 500) : '');
+          setWorking(dreq.slice(0, 80) || 'your request');
           void runDelegation(dreq, (out) => {
             refs.current?.dc.send(
               JSON.stringify({
@@ -326,6 +435,18 @@ export function Voice() {
       audio.srcObject = ev.streams[0] ?? null;
       audio.autoplay = true;
       refs.current?.audioEls.push(audio);
+      const actx = refs.current?.audioCtx;
+      const rstream = ev.streams[0];
+      if (actx && rstream && refs.current) {
+        const an2 = actx.createAnalyser();
+        an2.fftSize = 512;
+        const mute2 = actx.createGain();
+        mute2.gain.value = 0;
+        actx.createMediaStreamSource(rstream).connect(an2);
+        an2.connect(mute2);
+        mute2.connect(actx.destination);
+        refs.current.remoteAnalyser = an2;
+      }
       audio.play().catch(() => sys('Tap to play audio (autoplay was blocked).'));
     };
     pc.onconnectionstatechange = () => {
@@ -333,6 +454,7 @@ export function Voice() {
       if (pc.connectionState === 'connected') {
         playChime('connect');
         sys('Live — start talking.');
+        setCallStart(Date.now());
       }
       if (pc.connectionState === 'failed') {
         setErr('Connection lost.');
@@ -360,15 +482,26 @@ export function Voice() {
       an.connect(mute);
       mute.connect(audioCtx.destination);
       const buf = new Uint8Array(an.frequencyBinCount);
+      const buf2 = new Uint8Array(256);
       lvlTimer = window.setInterval(() => {
         an.getByteFrequencyData(buf);
         let sum = 0;
         for (let i = 0; i < buf.length; i++) sum += buf[i] ?? 0;
         setMicLevel(Math.min(1, sum / buf.length / 90));
+        const ra = refs.current?.remoteAnalyser;
+        let rl = 0;
+        if (ra) {
+          ra.getByteFrequencyData(buf2);
+          let s2 = 0;
+          for (let i = 0; i < buf2.length; i++) s2 += buf2[i] ?? 0;
+          rl = Math.min(1, s2 / buf2.length / 90);
+        }
+        setRemoteLevel(rl);
+        setSpeaking(Date.now() < speakingUntilRef.current || rl > 0.05);
       }, 150);
     }
 
-    refs.current = { pc, stream, dc, threadId: null, timers: [lvlTimer], audioCtx, audioEls: [] };
+    refs.current = { pc, stream, dc, threadId: null, timers: [lvlTimer], audioCtx, audioEls: [], remoteAnalyser: null };
 
     try {
       const offer = await pc.createOffer();
@@ -491,9 +624,34 @@ export function Voice() {
     }
   }, [sys]);
 
+  const connected = live && stage === 'connected';
+  const callState: CallState = !live
+    ? 'idle'
+    : !connected
+      ? 'connecting'
+      : working || userDone
+        ? 'thinking'
+        : speaking
+          ? 'speaking'
+          : 'listening';
+  const stateLabel: Record<CallState, string> = {
+    idle: 'Ready to talk',
+    connecting: stage === 'requesting mic…' ? 'Requesting microphone…' : 'Connecting…',
+    listening: 'Listening',
+    thinking: working ? 'Working on it…' : 'Thinking…',
+    speaking: 'Speaking',
+  };
+
   return (
     <div className="hm-voice">
-      <p className="hm-voice__status">{err || stage || (live ? 'Live' : 'Ready to talk')}</p>
+      <div className={`hm-voice__stage hm-voice__stage--${callState}`}>
+        <VoiceOrb state={callState} mic={micLevel} remote={remoteLevel} />
+        <p className="hm-voice__status" aria-live="polite">
+          {err || stateLabel[callState]}
+          {connected && <span className="hm-voice__timer"> · {fmtElapsed(elapsed)}</span>}
+        </p>
+        {working && !err && <p className="hm-voice__working">⚙ {working}</p>}
+      </div>
 
       {login && (
         <div className="hm-voice__login">
