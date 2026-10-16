@@ -4476,3 +4476,129 @@ a {
   gap: 2px;
   flex: 1;
 }
+
+/* Voice: live call screen (talk-desktop realtime backend) */
+.hm-voice {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  padding: 12px 16px calc(12px + env(safe-area-inset-bottom, 0px));
+  gap: 8px;
+}
+
+.hm-voice__status {
+  font-size: var(--hm-fs-small);
+  color: var(--hm-color-text-muted);
+  min-height: 18px;
+  margin: 0;
+}
+
+.hm-voice__login {
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: var(--hm-color-surface-muted);
+  font-size: var(--hm-fs-small);
+  word-break: break-all;
+}
+
+.hm-voice__login p {
+  margin: 4px 0;
+}
+
+.hm-voice__login-title {
+  font-weight: var(--hm-fw-bold);
+}
+
+.hm-voice__transcript {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 6px 0;
+  min-height: 0;
+}
+
+.hm-voice__bubble {
+  max-width: 82%;
+  padding: 8px 12px;
+  border-radius: 14px;
+  font-size: var(--hm-fs-body);
+  line-height: 1.4;
+  white-space: pre-wrap;
+}
+
+.hm-voice__bubble--user {
+  align-self: flex-end;
+  background: var(--hm-color-primary-tint);
+  color: var(--hm-color-primary-text);
+}
+
+.hm-voice__bubble--bot {
+  align-self: flex-start;
+  background: var(--hm-color-surface-raised);
+  color: var(--hm-color-text);
+  border: 1px solid var(--hm-color-border);
+}
+
+.hm-voice__bubble--tool,
+.hm-voice__bubble--sys {
+  align-self: center;
+  background: transparent;
+  color: var(--hm-color-text-faint);
+  font-size: var(--hm-fs-small);
+  text-align: center;
+}
+
+.hm-voice__controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding-top: 8px;
+}
+
+.hm-voice__level {
+  width: 6px;
+  height: 28px;
+  border-radius: 3px;
+  background: var(--hm-color-border);
+  flex: none;
+}
+
+.hm-voice__level--live {
+  background: var(--hm-color-accent);
+}
+
+.hm-voice__chip {
+  padding: 10px 14px;
+  border-radius: 10px;
+  border: 1px solid var(--hm-color-border);
+  background: var(--hm-color-surface);
+  color: var(--hm-color-text);
+  font-size: var(--hm-fs-small);
+  font-family: inherit;
+  cursor: pointer;
+  flex: none;
+}
+
+.hm-voice__call {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 13px;
+  border: none;
+  border-radius: 14px;
+  background: var(--hm-color-primary);
+  color: var(--hm-color-on-accent);
+  font-size: var(--hm-fs-body);
+  font-weight: var(--hm-fw-bold);
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.hm-voice__call--end {
+  background: var(--hm-color-danger);
+}

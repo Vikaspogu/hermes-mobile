@@ -7,6 +7,7 @@ const PROFILED_ACTIVE_SESSION_STORAGE_KEY_PREFIX = 'hermes-pwa.activeSession.v4:
 const VALID_SCREENS = new Set<Screen>([
   'home',
   'chat',
+  'voice',
   'sessions',
   'approvals',
   'kanban',

@@ -22,7 +22,8 @@ export type Screen =
   | 'artifacts'
   | 'skills'
   | 'command'
-  | 'settings';
+  | 'settings'
+  | 'voice';
 
 interface AppShellProps {
   connectionState: ConnectionState;
@@ -44,6 +45,7 @@ const CommandCenter = lazy(() => import('../screens/CommandCenter').then((module
 const Cron = lazy(() => import('../screens/Cron').then((module) => ({ default: module.Cron })));
 const Artifacts = lazy(() => import('../screens/Artifacts').then((module) => ({ default: module.Artifacts })));
 const Settings = lazy(() => import('../screens/Settings').then((module) => ({ default: module.Settings })));
+const Voice = lazy(() => import('../screens/Voice').then((module) => ({ default: module.Voice })));
 
 const DRAWER_FOCUSABLE_SELECTOR = [
   'a[href]',
@@ -136,6 +138,7 @@ const DRAWER_ITEMS: { key: Screen; label: string; icon: IconName }[] = [
   { key: 'home', label: 'Home', icon: 'home' },
   { key: 'profiles', label: 'Profiles', icon: 'profiles' },
   { key: 'chat', label: 'Chat', icon: 'chat' },
+  { key: 'voice', label: 'Voice', icon: 'wave' },
   { key: 'approvals', label: 'Approvals', icon: 'shield' },
   { key: 'sessions', label: 'Sessions', icon: 'sessions' },
   { key: 'kanban', label: 'Kanban', icon: 'kanban' },
@@ -159,6 +162,7 @@ const HIDDEN_ADMIN_SCREENS = new Set<Screen>([
 const SCREEN_TITLES: Record<Screen, string> = {
   home: 'Home',
   chat: 'Chat',
+  voice: 'Voice',
   sessions: 'Sessions',
   approvals: 'Approvals',
   kanban: 'Kanban',
@@ -629,6 +633,7 @@ export function AppShell({ connectionState, rpc, rest, onRetry }: AppShellProps)
         <LazyScreenErrorBoundary key={screen}>
           <Suspense fallback={<p className="hm-muted hm-loading">Loading…</p>}>
             {screen === 'chat'      && <Chat key={activeName ?? 'default'} rpc={rpc} rest={rest} />}
+            {screen === 'voice'     && <Voice key={activeName ?? 'default'} />}
             {screen === 'sessions'  && <Sessions key={activeName ?? 'default'} rpc={rpc} rest={rest} onSessionOpen={() => navigate('chat')} />}
             {screen === 'approvals' && <Activity key={activeName ?? 'default'} rpc={rpc} />}
             {screen === 'kanban'    && <Projects key={activeName ?? 'default'} rest={rest} />}
