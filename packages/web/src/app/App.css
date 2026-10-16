@@ -4519,6 +4519,15 @@ a {
 .hm-voice__stage--speaking .hm-voice__status {
   color: var(--hm-color-accent);
 }
+.hm-voice__stage--working .hm-voice__status,
+.hm-voice__stage--reconnecting .hm-voice__status {
+  color: var(--hm-color-warning, #f59e0b);
+}
+@media (prefers-reduced-motion: reduce) {
+  .hm-voice__working {
+    animation: none;
+  }
+}
 .hm-voice__timer {
   color: var(--hm-color-text-muted);
   font-variant-numeric: tabular-nums;
@@ -4565,6 +4574,7 @@ a {
 .hm-voice__transcript {
   flex: 1;
   overflow-y: auto;
+  overscroll-behavior-y: contain;
   display: flex;
   flex-direction: column;
   gap: 4px;

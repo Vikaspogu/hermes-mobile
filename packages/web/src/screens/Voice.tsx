@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Icon } from '../components/Icon';
 
+import { useReducedMotion } from '../hooks/useReducedMotion';
 // Live voice call with the Hermes agent. Ports the talk-desktop dashboard web
 // client (agent-platform-custom images/hermes-agent/plugins/talk-desktop) into
 // a PWA screen: WebRTC realtime session, two engines (Codex Live gpt-live-1,
@@ -36,28 +37,30 @@ interface LiveRefs {
   audioEls: HTMLAudioElement[];
 }
 
-async function rest<T>(path: string, body: unknown): Promise<T> {
+async function rest<T>(path: string, body: unknown, timeoutMs = 20_000): Promise<T> {
   const r = await fetch(API + path, {
     method: 'POST',
     credentials: 'same-origin',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
+    signal: AbortSignal.timeout(timeoutMs),
   });
   if (!r.ok) throw new Error(r.status + ': ' + (await r.text()).slice(0, 200));
   return (await r.json()) as T;
 }
-
-async function apiGet<T>(path: string): Promise<T> {
-  const r = await fetch(API + path, { method: 'GET', credentials: 'same-origin' });
+async function apiGet<T>(path: string, timeoutMs = 10_000): Promise<T> {
+  const r = await fetch(API + path, { method: 'GET', credentials: 'same-origin', signal: AbortSignal.timeout(timeoutMs) });
   if (!r.ok) throw new Error(r.status + ': ' + (await r.text()).slice(0, 200));
   return (await r.json()) as T;
 }
-
-function playChime(kind: 'connect' | 'end') {
+function playChime(kind: 'connect' | 'end', existing?: AudioContext | null) {
   try {
     const Ctx = window.AudioContext ?? (window as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
-    if (!Ctx) return;
-    const ctx = new Ctx();
+    // Reuse the call's already-running AudioContext; a fresh one starts suspended
+    // on Android when the chime fires outside a user gesture.
+    const ctx = existing && existing.state === 'running' ? existing : Ctx ? new Ctx() : null;
+    if (!ctx) return;
+    const own = ctx !== existing;
     const now = ctx.currentTime;
     const notes = kind === 'connect' ? [523.25, 659.25, 783.99] : [659.25, 523.25, 392.0];
     notes.forEach((f, i) => {
@@ -73,18 +76,19 @@ function playChime(kind: 'connect' | 'end') {
       o.start(now + i * 0.08);
       o.stop(now + i * 0.08 + 0.3);
     });
-    window.setTimeout(() => {
-      try {
-        void ctx.close();
-      } catch {
-        /* ignore */
-      }
-    }, 900);
+    if (own) {
+      window.setTimeout(() => {
+        try {
+          void ctx.close();
+        } catch {
+          /* ignore */
+        }
+      }, 900);
+    }
   } catch {
     /* ignore */
   }
 }
-
 function stripMarkdown(text: string): string {
   return text
     .replace(/```[\s\S]*?```/g, ' ')
@@ -93,23 +97,81 @@ function stripMarkdown(text: string): string {
     .trim();
 }
 
-type CallState = 'idle' | 'connecting' | 'listening' | 'thinking' | 'speaking';
+type CallState = 'idle' | 'connecting' | 'reconnecting' | 'listening' | 'thinking' | 'working' | 'speaking';
 
-// Dot-sphere orb (muse-style): fibonacci sphere of dots on a canvas, amplitude
-// driven by live audio level, rotation/scatter by call state.
-function VoiceOrb({ state, mic, remote }: { state: CallState; mic: number; remote: number }) {
+type Rgb = [number, number, number];
+
+// One parameter set per call state; the engine eases every value toward the
+// active state's set (~400ms settle) so transitions cross-fade instead of snap.
+interface OrbParams {
+  rgb: Rgb;
+  flowSpeed: number; // swirl rate of the dot field
+  noiseAmp: number; // positional wobble amplitude
+  audioGain: number; // how strongly live audio level pumps the sphere
+  scatter: number; // 0 = sphere, 1 = flattened orbiting ring (connecting)
+  breathSpeed: number; // idle breathing rate
+  rotSpeed: number; // sphere rotation rate
+  satellites: number; // orbiting "task" dots (working)
+}
+
+function hexToRgb(hex: string, fallback: Rgb): Rgb {
+  const m = /^#?([0-9a-f]{6})$/i.exec(hex.trim());
+  if (!m) return fallback;
+  const n = parseInt(m[1] ?? '', 16);
+  return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+}
+
+const orbBase = { flowSpeed: 1, noiseAmp: 0.05, audioGain: 0.2, scatter: 0, breathSpeed: 1, rotSpeed: 0.5, satellites: 0 };
+
+function orbParams(accent: Rgb, warn: Rgb, dim: Rgb): Record<CallState, OrbParams> {
+  const teal: Rgb = [45, 212, 191];
+  const violet: Rgb = [167, 139, 250];
+  return {
+    idle: { ...orbBase, rgb: dim, flowSpeed: 0.15, noiseAmp: 0.02, audioGain: 0, breathSpeed: 0.35, rotSpeed: 0.1 },
+    connecting: { ...orbBase, rgb: accent, flowSpeed: 0.8, noiseAmp: 0.07, scatter: 0.85, breathSpeed: 2.4, rotSpeed: 1.7 },
+    reconnecting: { ...orbBase, rgb: warn, flowSpeed: 0.6, noiseAmp: 0.1, scatter: 0.5, breathSpeed: 3.4, rotSpeed: 1.2 },
+    listening: { ...orbBase, rgb: teal, flowSpeed: 1.0, noiseAmp: 0.06, audioGain: 0.55, breathSpeed: 1.1, rotSpeed: 0.5 },
+    thinking: { ...orbBase, rgb: violet, flowSpeed: 2.3, noiseAmp: 0.12, audioGain: 0.1, breathSpeed: 1.6, rotSpeed: 1.9 },
+    working: { ...orbBase, rgb: warn, flowSpeed: 1.4, noiseAmp: 0.08, breathSpeed: 1.4, rotSpeed: 1.0, satellites: 3 },
+    speaking: { ...orbBase, rgb: accent, flowSpeed: 1.2, noiseAmp: 0.05, audioGain: 0.7, breathSpeed: 1.0, rotSpeed: 0.6 },
+  };
+}
+
+// Dot-sphere orb (muse/dots-style): fibonacci sphere of dots; states are blended
+// parameter sets, amplitude is spring-smoothed, phase accumulates (never snaps).
+// Levels arrive by ref so audio-rate updates never re-render React.
+function VoiceOrb({
+  state,
+  micRef,
+  remoteRef,
+}: {
+  state: CallState;
+  micRef: { current: number };
+  remoteRef: { current: number };
+}) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const live = useRef({ state, mic, remote });
-  live.current = { state, mic, remote };
+  const live = useRef(state);
+  live.current = state;
+  const reduced = useReducedMotion();
 
   useEffect(() => {
     const canvas = canvasRef.current;
-    const ctx = canvas?.getContext('2d');
-    if (!canvas || !ctx) return;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    // ponytail: colors are captured at mount; a theme switch mid-call keeps the old palette until remount.
     const styles = getComputedStyle(canvas);
-    const accent = styles.getPropertyValue('--color-accent').trim() || '#6366f1';
-    const warn = styles.getPropertyValue('--color-warning').trim() || '#f59e0b';
-    const dim = styles.getPropertyValue('--color-text-muted').trim() || '#6b7280';
+    const accent = hexToRgb(styles.getPropertyValue('--color-accent'), [99, 102, 241]);
+    const warn = hexToRgb(styles.getPropertyValue('--color-warning'), [245, 158, 11]);
+    const dim = hexToRgb(styles.getPropertyValue('--color-text-muted'), [107, 114, 128]);
+    const params = orbParams(accent, warn, dim);
+
+    const dpr = Math.min(2, window.devicePixelRatio || 1);
+    const SIZE = 220;
+    canvas.width = SIZE * dpr;
+    canvas.height = SIZE * dpr;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
     const N = 380;
     const dots: [number, number, number][] = [];
     for (let i = 0; i < N; i++) {
@@ -117,35 +179,95 @@ function VoiceOrb({ state, mic, remote }: { state: CallState; mic: number; remot
       const theta = Math.PI * (1 + Math.sqrt(5)) * i;
       dots.push([Math.sin(phi) * Math.cos(theta), Math.cos(phi), Math.sin(phi) * Math.sin(theta)]);
     }
-    let raf = 0;
-    let smooth = 0;
-    const t0 = performance.now();
-    const draw = (now: number) => {
-      const { state: st, mic: m, remote: r } = live.current;
-      const t = (now - t0) / 1000;
-      const w = canvas.width;
-      const h = canvas.height;
-      ctx.clearRect(0, 0, w, h);
-      const target = st === 'speaking' ? r : st === 'listening' ? m : 0;
-      smooth += (Math.min(1, target * 2.2) - smooth) * 0.15;
-      const R = w * 0.3;
-      const color = st === 'thinking' ? warn : st === 'idle' ? dim : accent;
-      const rot = t * (st === 'thinking' ? 1.6 : st === 'connecting' ? 0.3 : 0.5);
-      const scale =
-        st === 'connecting'
-          ? 0.72 + 0.22 * (0.5 + 0.5 * Math.sin(t * 2.4))
-          : (1 + 0.04 * Math.sin(t * 1.5)) * (1 + smooth * 0.2);
-      ctx.fillStyle = color;
-      for (const [x0, y0, z0] of dots) {
-        const x = x0 * Math.cos(rot) + z0 * Math.sin(rot);
-        const z = -x0 * Math.sin(rot) + z0 * Math.cos(rot);
-        const wob = st === 'thinking' ? 1 + 0.09 * Math.sin(t * 8 + y0 * 9) : 1;
-        const px = w / 2 + x * R * scale * wob;
-        const py = h / 2 + y0 * R * scale * wob * (1 + smooth * 0.4 * Math.sin(t * 3 + x0 * 4));
+
+    // Reduced motion: one static frame per state change, no animation loop.
+    if (reduced) {
+      const p = params[live.current];
+      ctx.clearRect(0, 0, SIZE, SIZE);
+      ctx.fillStyle = `rgb(${p.rgb[0]},${p.rgb[1]},${p.rgb[2]})`;
+      const R = SIZE * 0.3;
+      for (const [x, y, z] of dots) {
         const depth = (z + 1) / 2;
         ctx.globalAlpha = 0.2 + depth * 0.8;
         ctx.beginPath();
-        ctx.arc(px, py, 1 + depth * 2.2 + smooth * 2.4 * depth, 0, Math.PI * 2);
+        ctx.arc(SIZE / 2 + x * R, SIZE / 2 + y * R, 1 + depth * 2.2, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.globalAlpha = 1;
+      return;
+    }
+
+    const cur: OrbParams = { ...params[live.current] };
+    let level = 0;
+    let phase = 0;
+    let rot = 0;
+    let breath = 0;
+    let raf = 0;
+    let last = performance.now();
+
+    const draw = (now: number) => {
+      const dt = Math.min(0.05, (now - last) / 1000);
+      last = now;
+      const target = params[live.current] ?? params.idle;
+      // Blend every parameter toward the active state (~400ms settle).
+      const k = 1 - Math.exp(-dt * 3.5);
+      cur.flowSpeed += (target.flowSpeed - cur.flowSpeed) * k;
+      cur.noiseAmp += (target.noiseAmp - cur.noiseAmp) * k;
+      cur.audioGain += (target.audioGain - cur.audioGain) * k;
+      cur.scatter += (target.scatter - cur.scatter) * k;
+      cur.breathSpeed += (target.breathSpeed - cur.breathSpeed) * k;
+      cur.rotSpeed += (target.rotSpeed - cur.rotSpeed) * k;
+      cur.satellites += (target.satellites - cur.satellites) * k;
+      for (let c = 0; c < 3; c++) cur.rgb[c] = (cur.rgb[c] ?? 0) + ((target.rgb[c] ?? 0) - (cur.rgb[c] ?? 0)) * k;
+
+      // Spring amplitude: fast attack, slower release.
+      const st = live.current;
+      const lvlTarget = Math.min(1, (st === 'speaking' ? remoteRef.current : st === 'listening' ? micRef.current : 0) * 2.2);
+      level += (lvlTarget - level) * (1 - Math.exp(-dt * (lvlTarget > level ? 14 : 5)));
+
+      phase += dt * cur.flowSpeed;
+      rot += dt * cur.rotSpeed;
+      breath += dt * cur.breathSpeed;
+
+      const R = SIZE * 0.3;
+      const scale = (1 + 0.045 * Math.sin(breath * Math.PI * 2)) * (1 + level * cur.audioGain * 0.35);
+      ctx.clearRect(0, 0, SIZE, SIZE);
+      ctx.fillStyle = `rgb(${Math.round(cur.rgb[0] ?? 0)},${Math.round(cur.rgb[1] ?? 0)},${Math.round(cur.rgb[2] ?? 0)})`;
+      const cr = Math.cos(rot);
+      const sr = Math.sin(rot);
+      for (const [x0, y0, z0] of dots) {
+        // rotate around Y, then blend sphere → ring as scatter rises
+        let x = x0 * cr + z0 * sr;
+        let z = -x0 * sr + z0 * cr;
+        let y = y0;
+        const sc = cur.scatter;
+        if (sc > 0.01) {
+          const len = Math.hypot(x, z) || 1;
+          const ringX = (x / len) * 1.25;
+          const ringZ = (z / len) * 1.25;
+          x += (ringX - x) * sc;
+          z += (ringZ - z) * sc;
+          y += (y0 * 0.12 - y) * sc;
+        }
+        const wob = 1 + cur.noiseAmp * Math.sin(phase * 3 + y0 * 9 + x0 * 5);
+        const lift = 1 + level * 0.3 * Math.sin(phase * 2 + x0 * 4);
+        const px = SIZE / 2 + x * R * scale * wob;
+        const py = SIZE / 2 + y * R * scale * wob * lift;
+        const depth = (z + 1.3) / 2.3;
+        ctx.globalAlpha = 0.15 + depth * 0.85;
+        ctx.beginPath();
+        ctx.arc(px, py, 1 + depth * 2.2 + level * 2.4 * depth, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      // Orbiting task dots while working.
+      const sats = Math.round(cur.satellites);
+      for (let i = 0; i < sats; i++) {
+        const a = phase * 1.6 + (i * Math.PI * 2) / Math.max(1, sats);
+        const px = SIZE / 2 + Math.cos(a) * R * 1.4;
+        const py = SIZE / 2 + Math.sin(a) * R * 1.4 * 0.35;
+        ctx.globalAlpha = 0.5 + 0.5 * Math.sin(phase * 4 + i * 2);
+        ctx.beginPath();
+        ctx.arc(px, py, 3, 0, Math.PI * 2);
         ctx.fill();
       }
       ctx.globalAlpha = 1;
@@ -153,11 +275,10 @@ function VoiceOrb({ state, mic, remote }: { state: CallState; mic: number; remot
     };
     raf = requestAnimationFrame(draw);
     return () => cancelAnimationFrame(raf);
-  }, []);
+  }, [reduced, micRef, remoteRef]);
 
-  return <canvas ref={canvasRef} className="hm-voice__orb" width={220} height={220} aria-hidden="true" />;
+  return <canvas ref={canvasRef} className="hm-voice__orb" aria-hidden="true" />;
 }
-
 function fmtElapsed(s: number): string {
   const mm = Math.floor(s / 60);
   const ss = Math.floor(s % 60);
@@ -169,10 +290,12 @@ export function Voice() {
   const [muted, setMuted] = useState(false);
   const [live, setLive] = useState(false);
   const [items, setItems] = useState<TranscriptItem[]>([]);
-  const [micLevel, setMicLevel] = useState(0);
-  const [remoteLevel, setRemoteLevel] = useState(0);
+  // Levels live in refs: they update at audio rate and must not re-render React.
+  const micLevelRef = useRef(0);
+  const remoteLevelRef = useRef(0);
   const [speaking, setSpeaking] = useState(false);
   const [working, setWorking] = useState<string | null>(null);
+  const [workingSince, setWorkingSince] = useState<number | null>(null);
   const [userDone, setUserDone] = useState(false); // user finished a turn, bot hasn't answered yet
   const [callStart, setCallStart] = useState<number | null>(null);
   const [elapsed, setElapsed] = useState(0);
@@ -182,13 +305,17 @@ export function Voice() {
   const refs = useRef<LiveRefs | null>(null);
   const itemsRef = useRef<TranscriptItem[]>([]);
   const transcriptRef = useRef<HTMLDivElement | null>(null);
-
+  const levelBarRef = useRef<HTMLDivElement | null>(null);
+  // Tracks an in-progress start() so double-taps can't spawn two peer connections
+  // and "Cancel" can unwind a half-built call.
+  const startingRef = useRef<{ pc: RTCPeerConnection | null; stream: MediaStream | null; cancelled: boolean } | null>(null);
+  const loginPollRef = useRef(0);
+  const pinnedRef = useRef(true); // auto-scroll transcript only while pinned to bottom
   useEffect(() => {
     itemsRef.current = items;
     const el = transcriptRef.current;
-    if (el) el.scrollTop = el.scrollHeight;
+    if (el && pinnedRef.current) el.scrollTop = el.scrollHeight;
   }, [items]);
-
   const push = useCallback((who: Speaker, text: string) => {
     setItems((prev) => {
       const next = prev.slice();
@@ -276,15 +403,32 @@ export function Voice() {
   }, [live]);
 
   const stop = useCallback(async () => {
+    // Unwind a half-built call (user tapped Cancel while connecting).
+    const s = startingRef.current;
+    if (s) {
+      s.cancelled = true;
+      startingRef.current = null;
+      try {
+        s.pc?.close();
+      } catch {
+        /* ignore */
+      }
+      try {
+        s.stream?.getTracks().forEach((t) => t.stop());
+      } catch {
+        /* ignore */
+      }
+    }
     const r = refs.current;
     refs.current = null;
     setLive(false);
     setMuted(false);
     setStage('');
-    setMicLevel(0);
-    setRemoteLevel(0);
+    micLevelRef.current = 0;
+    remoteLevelRef.current = 0;
     setSpeaking(false);
     setWorking(null);
+    setWorkingSince(null);
     setUserDone(false);
     setCallStart(null);
     setElapsed(0);
@@ -301,11 +445,6 @@ export function Voice() {
     } catch {
       /* ignore */
     }
-    try {
-      if (r.audioCtx) await r.audioCtx.close();
-    } catch {
-      /* ignore */
-    }
     r.audioEls.forEach((a) => {
       try {
         a.pause();
@@ -314,6 +453,12 @@ export function Voice() {
         /* ignore */
       }
     });
+    playChime('end', r.audioCtx);
+    try {
+      if (r.audioCtx) await r.audioCtx.close();
+    } catch {
+      /* ignore */
+    }
     if (r.threadId) {
       try {
         await rest('/codexlive/stop', { threadId: r.threadId });
@@ -321,7 +466,6 @@ export function Voice() {
         /* ignore */
       }
     }
-    playChime('end');
   }, []);
 
   // Delegation: the voice model asks for a task, we run it server-side via the
@@ -331,7 +475,7 @@ export function Voice() {
       push('tool', 'delegation: ' + dreq.slice(0, 180));
       let out = '';
       try {
-        const r = await rest<{ output?: string }>('/codexlive/delegate', { prompt: dreq, language: 'en' });
+        const r = await rest<{ output?: string }>('/codexlive/delegate', { prompt: dreq, language: 'en' }, 95_000);
         out = r?.output ?? '';
       } catch (e) {
         out = 'delegation failed: ' + String(e instanceof Error ? e.message : e).slice(0, 140);
@@ -344,23 +488,38 @@ export function Voice() {
         /* ignore */
       }
       setWorking(null);
+      setWorkingSince(null);
     },
     [push],
   );
 
   const start = useCallback(async () => {
+    if (startingRef.current || refs.current) return; // double-tap guard
     setErr('');
     setItems([]);
+    pinnedRef.current = true;
     setStage('requesting mic…');
+    startingRef.current = { pc: null, stream: null, cancelled: false };
     let stream: MediaStream;
     try {
       stream = await navigator.mediaDevices.getUserMedia({
         audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
       });
     } catch (e) {
+      startingRef.current = null;
+      setStage('');
       setErr('Microphone blocked: ' + ((e as DOMException)?.name || '') + ' — allow mic access and try again.');
       return;
     }
+    // User hit Cancel while the OS mic prompt was open.
+    if (!startingRef.current || startingRef.current.cancelled) {
+      stream.getTracks().forEach((t) => t.stop());
+      setStage('');
+      return;
+    }
+    startingRef.current.stream = stream;
+
+    try {
 
     const pc = new RTCPeerConnection();
     stream.getTracks().forEach((t) => pc.addTrack(t, stream));
@@ -399,6 +558,11 @@ export function Voice() {
         const text = m?.message || m?.code;
         if (text) sys('error: ' + String(text).slice(0, 160));
       }
+      // Barge-in: user started talking — cut the speaking linger immediately so
+      // the orb flips to listening instead of lingering in speaking.
+      else if (t === 'input_audio_buffer.speech_started' || t === 'speech_started' || t === 'response.cancelled') {
+        speakingUntilRef.current = 0;
+      }
       // ── Hermes engine (gpt-realtime-2.1, existing Hermes login) ──
       else if (t === 'conversation.item.input_audio_transcription.delta') push('user', String(msg.delta || ''));
       else if (t === 'conversation.item.input_audio_transcription.completed') {
@@ -427,6 +591,7 @@ export function Voice() {
         const lastUser = [...itemsRef.current].reverse().find((i) => i.who === 'user');
         dreq = dreq.trim() || (lastUser ? lastUser.text.slice(0, 500) : '');
         setWorking(dreq.slice(0, 80) || 'your request');
+        setWorkingSince(Date.now());
         void runDelegation(dreq, (out) => {
           refs.current?.dc.send(
             JSON.stringify({
@@ -448,6 +613,7 @@ export function Voice() {
           const lastUser = [...itemsRef.current].reverse().find((i) => i.who === 'user');
           const dreq = String(args.request || args.text || '').trim() || (lastUser ? lastUser.text.slice(0, 500) : '');
           setWorking(dreq.slice(0, 80) || 'your request');
+          setWorkingSince(Date.now());
           void runDelegation(dreq, (out) => {
             refs.current?.dc.send(
               JSON.stringify({
@@ -459,6 +625,9 @@ export function Voice() {
           });
         }
       }
+    };
+    dc.onclose = () => {
+      if (refs.current) sys('Voice channel closed.');
     };
 
     pc.ontrack = (ev) => {
@@ -481,14 +650,20 @@ export function Voice() {
       audio.play().catch(() => sys('Tap to play audio (autoplay was blocked).'));
     };
     pc.onconnectionstatechange = () => {
+      if (pc.connectionState === 'disconnected') {
+        // Often a transient Wi-Fi blip; keep the call and say so.
+        setStage('reconnecting');
+        return;
+      }
       setStage(pc.connectionState);
       if (pc.connectionState === 'connected') {
-        playChime('connect');
+        playChime('connect', refs.current?.audioCtx);
         sys('Live — start talking.');
         setCallStart(Date.now());
       }
       if (pc.connectionState === 'failed') {
-        setErr('Connection lost.');
+        // Transcript stays on screen; the user can read it and retry.
+        setErr('Connection lost — transcript kept, tap Start voice to retry.');
         void stop();
       }
     };
@@ -518,7 +693,10 @@ export function Voice() {
         an.getByteFrequencyData(buf);
         let sum = 0;
         for (let i = 0; i < buf.length; i++) sum += buf[i] ?? 0;
-        setMicLevel(Math.min(1, sum / buf.length / 90));
+        const lvl = Math.min(1, sum / buf.length / 90);
+        micLevelRef.current = lvl;
+        const bar = levelBarRef.current;
+        if (bar) bar.style.opacity = String(0.3 + 0.7 * lvl);
         const ra = refs.current?.remoteAnalyser;
         let rl = 0;
         if (ra) {
@@ -527,23 +705,45 @@ export function Voice() {
           for (let i = 0; i < buf2.length; i++) s2 += buf2[i] ?? 0;
           rl = Math.min(1, s2 / buf2.length / 90);
         }
-        setRemoteLevel(rl);
-        setSpeaking(Date.now() < speakingUntilRef.current || rl > 0.05);
+        remoteLevelRef.current = rl;
+        // Bail-out setState: React skips the re-render when the value is unchanged,
+        // so transitions render but steady-state costs nothing.
+        setSpeaking((prev) => {
+          const next = Date.now() < speakingUntilRef.current || rl > 0.05;
+          return prev === next ? prev : next;
+        });
       }, 150);
     }
 
     refs.current = { pc, stream, dc, threadId: null, timers: [lvlTimer], audioCtx, audioEls: [], remoteAnalyser: null };
+    startingRef.current = null; // refs owns cleanup from here on
 
     try {
       const offer = await pc.createOffer();
       await pc.setLocalDescription(offer);
+      if (!refs.current) return; // cancelled mid-negotiation
       setStage('negotiating…');
+      // Android Wi-Fi can trickle ICE slowly; give gathering up to 2s so the
+      // offer we POST carries candidates (candidate-less offers fail silently).
+      if (pc.iceGatheringState !== 'complete') {
+        await new Promise<void>((resolve) => {
+          const to = window.setTimeout(resolve, 2000);
+          pc.addEventListener('icegatheringstatechange', () => {
+            if (pc.iceGatheringState === 'complete') {
+              window.clearTimeout(to);
+              resolve();
+            }
+          });
+        });
+      }
+      if (!refs.current) return;
+      const sdp = pc.localDescription?.sdp ?? offer.sdp;
       if (engine === 'codex') {
         const r2 = await rest<{ answer?: string; threadId?: string }>('/codexlive/session', {
           language: 'en',
           profile: null,
           voice: 'cove',
-          offer: offer.sdp,
+          offer: sdp,
         });
         if (!r2?.answer) throw new Error('no answer SDP');
         if (refs.current) refs.current.threadId = r2.threadId || null;
@@ -559,17 +759,28 @@ export function Voice() {
           allowChat: true,
         });
         if (!sess?.offerUrl || !sess.clientSecret) throw new Error('session response missing offerUrl/clientSecret');
+        if (!refs.current) return;
         const res = await fetch(sess.offerUrl + '?model=' + encodeURIComponent(sess.model || ''), {
           method: 'POST',
           headers: { Authorization: 'Bearer ' + sess.clientSecret, 'Content-Type': 'application/sdp' },
-          body: offer.sdp ?? '',
+          body: sdp ?? '',
+          signal: AbortSignal.timeout(20_000),
         });
         if (!res.ok) throw new Error('offer ' + res.status + ': ' + (await res.text()).slice(0, 140));
         await pc.setRemoteDescription({ type: 'answer', sdp: await res.text() });
       }
       setLive(true);
     } catch (e) {
-      setErr(String(e instanceof Error ? e.message : e).slice(0, 300));
+      // refs/starting already null here means the user cancelled deliberately —
+      // stop() ran from the button; don't flash a bogus error over it.
+      if (refs.current || startingRef.current) {
+        setErr(String(e instanceof Error ? e.message : e).slice(0, 300));
+      }
+      void stop();
+    }
+    } catch (e) {
+      // Setup section failed (audio graph, peer connection): don't leak the mic.
+      setErr('Could not start audio: ' + String(e instanceof Error ? e.message : e).slice(0, 200));
       void stop();
     }
   }, [engine, finalize, push, runDelegation, stop, sys]);
@@ -577,6 +788,7 @@ export function Voice() {
   // Hang up if the screen unmounts mid-call (drawer navigation, tab close).
   useEffect(() => {
     return () => {
+      window.clearInterval(loginPollRef.current);
       const r = refs.current;
       refs.current = null;
       if (!r) return;
@@ -634,12 +846,14 @@ export function Voice() {
         return;
       }
       setLogin({ url: lg.url, code: lg.code || '' });
+      window.clearInterval(loginPollRef.current);
       const iv = window.setInterval(() => {
         void (async () => {
           try {
             const st = await apiGet<{ configured?: boolean; login?: { message?: string } }>('/codex/status');
             if (st?.configured) {
               window.clearInterval(iv);
+              loginPollRef.current = 0;
               setLogin(null);
               sys('Codex login complete — tap Start voice.');
             } else if (st?.login?.message) {
@@ -650,38 +864,53 @@ export function Voice() {
           }
         })();
       }, 3000);
+      loginPollRef.current = iv;
     } catch (e) {
       setLogin({ message: String(e instanceof Error ? e.message : e).slice(0, 200) });
     }
   }, [sys]);
 
   const connected = live && stage === 'connected';
+  // Speaking wins over working/thinking so interim bot speech reads as speech;
+  // barge-in (speech_started) zeroes the linger and drops straight to listening.
   const callState: CallState = !live
     ? 'idle'
     : !connected
-      ? 'connecting'
-      : working || userDone
-        ? 'thinking'
-        : speaking
-          ? 'speaking'
-          : 'listening';
+      ? stage === 'reconnecting'
+        ? 'reconnecting'
+        : 'connecting'
+      : speaking
+        ? 'speaking'
+        : working
+          ? 'working'
+          : userDone
+            ? 'thinking'
+            : 'listening';
   const stateLabel: Record<CallState, string> = {
     idle: 'Ready to talk',
-    connecting: stage === 'requesting mic…' ? 'Requesting microphone…' : 'Connecting…',
+    connecting: stage === 'requesting mic…' ? 'Requesting microphone…' : stage === 'negotiating…' ? 'Negotiating…' : 'Connecting…',
+    reconnecting: 'Reconnecting…',
     listening: 'Listening',
-    thinking: working ? 'Working on it…' : 'Thinking…',
+    thinking: 'Thinking…',
+    working: 'Working on it…',
     speaking: 'Speaking',
   };
+  const connecting = !live && stage !== '';
 
   return (
     <div className="hm-voice">
       <div className={`hm-voice__stage hm-voice__stage--${callState}`}>
-        <VoiceOrb state={callState} mic={micLevel} remote={remoteLevel} />
+        <VoiceOrb state={callState} micRef={micLevelRef} remoteRef={remoteLevelRef} />
         <p className="hm-voice__status" aria-live="polite">
           {err || stateLabel[callState]}
           {connected && <span className="hm-voice__timer"> · {fmtElapsed(elapsed)}</span>}
         </p>
-        {working && !err && <p className="hm-voice__working">⚙ {working}</p>}
+        {working && !err && (
+          <p className="hm-voice__working">
+            ⚙ {working}
+            {workingSince ? ` · ${fmtElapsed((Date.now() - workingSince) / 1000)}` : ''}
+          </p>
+        )}
       </div>
 
       {login && (
@@ -708,7 +937,14 @@ export function Voice() {
         </div>
       )}
 
-      <div className="hm-voice__transcript" ref={transcriptRef}>
+      <div
+        className="hm-voice__transcript"
+        ref={transcriptRef}
+        onScroll={(e) => {
+          const el = e.currentTarget;
+          pinnedRef.current = el.scrollHeight - el.scrollTop - el.clientHeight < 80;
+        }}
+      >
         {items.length === 0 && !live && (
           <div className="hm-empty-state">
             <div className="hm-empty-state__icon">
@@ -728,7 +964,8 @@ export function Voice() {
       <div className="hm-voice__controls">
         <div
           className={`hm-voice__level${live ? ' hm-voice__level--live' : ''}`}
-          style={{ opacity: live ? 0.3 + 0.7 * micLevel : 1 }}
+          ref={levelBarRef}
+          style={{ opacity: live ? 0.3 : 1 }}
         />
         {!live && (
           <button
@@ -745,17 +982,23 @@ export function Voice() {
           </button>
         )}
         {live && (
-          <button type="button" className="hm-voice__chip" onClick={toggleMute}>
+          <button
+            type="button"
+            className="hm-voice__chip"
+            onClick={toggleMute}
+            aria-label={muted ? 'Unmute microphone' : 'Mute microphone'}
+          >
             {muted ? 'Unmute' : 'Mute'}
           </button>
         )}
         <button
           type="button"
           className={`hm-voice__call${live ? ' hm-voice__call--end' : ''}`}
-          onClick={() => (live ? void stop() : void start())}
+          onClick={() => (live || connecting ? void stop() : void start())}
+          aria-label={live ? 'End call' : connecting ? 'Cancel connecting' : 'Start voice call'}
         >
-          <Icon name={live ? 'close' : 'mic'} size={18} />
-          {live ? 'End call' : 'Start voice'}
+          <Icon name={live || connecting ? 'close' : 'mic'} size={18} />
+          {live ? 'End call' : connecting ? 'Cancel' : 'Start voice'}
         </button>
       </div>
     </div>
