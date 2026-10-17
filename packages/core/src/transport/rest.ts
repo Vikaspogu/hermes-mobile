@@ -1,5 +1,5 @@
 import type { Http } from './http';
-import { PWA_NON_LOCAL_SESSION_SOURCES, mergeSessionsByLineage, sessionsFromResult, type Session } from '../domain/session';
+import { PWA_LOCAL_SESSION_SOURCE_IDS, PWA_NON_LOCAL_SESSION_SOURCES, mergeSessionsByLineage, sessionSourceId, sessionsFromResult, type Session } from '../domain/session';
 import type { GatewayStatus } from '../domain/status';
 import type { AuthProvider, HermesUser, LoginBody, LoginResult, WsTicket } from '../domain/auth';
 import type { Artifact } from '../domain/artifact';
@@ -76,9 +76,9 @@ function asArray<T>(value: unknown): T[] {
   return Array.isArray(value) ? (value as T[]) : [];
 }
 
-function profileSessionsPath(profile: string, excludeSources: readonly string[]): string {
+function profileSessionsPath(profile: string, excludeSources: readonly string[], limit = 100): string {
   const params = new URLSearchParams({
-    limit: '100',
+    limit: String(limit),
     offset: '0',
     min_messages: '1',
     archived: 'exclude',
@@ -635,8 +635,16 @@ export function makeRestClient(http: Http): RestClient {
       // Current release-scope PWA shows local TUI/CLI/Desktop-style sessions only.
       // Messaging sources stay out of ordinary PWA session UX until a later product decision.
       const profile = activeProfile || 'default';
-      const localRaw = await http<Record<string, unknown>>(profileSessionsPath(profile, PWA_NON_LOCAL_SESSION_SOURCES));
-      return mergeSessionsByLineage([], sessionsFromResult(localRaw));
+      // Cron runs every few minutes, so fetch them separately with a small cap;
+      // otherwise they fill the 100-row page and push real chats out (P1-S2 regression).
+      const [localRaw, cronRaw] = await Promise.all([
+        http<Record<string, unknown>>(profileSessionsPath(profile, [...PWA_NON_LOCAL_SESSION_SOURCES, 'cron'])),
+        http<Record<string, unknown>>(
+          profileSessionsPath(profile, [...PWA_NON_LOCAL_SESSION_SOURCES, ...PWA_LOCAL_SESSION_SOURCE_IDS.filter((id) => id !== 'cron')], 20),
+        ),
+      ]);
+      const cron = sessionsFromResult(cronRaw).filter((s) => sessionSourceId(s) === 'cron');
+      return mergeSessionsByLineage(sessionsFromResult(localRaw), cron);
     },
 
     async sessionMessages(sessionId, profile): Promise<unknown> {

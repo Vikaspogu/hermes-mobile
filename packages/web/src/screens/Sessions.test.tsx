@@ -111,6 +111,19 @@ describe('Sessions screen', () => {
     expect(screen.queryByText('Mixed local')).not.toBeInTheDocument();
   });
 
+  it('hides cron runs from All and shows them under the Cron chip', async () => {
+    vi.mocked(restMock.profileSessions).mockResolvedValue([
+      session({ id: 'tui-1', title: 'Real chat', source: 'tui', originSource: 'tui', currentSource: 'tui' }),
+      session({ id: 'cron-1', title: 'morning-brief run', source: 'cron', originSource: 'cron', currentSource: 'cron' }),
+    ]);
+    render(<Sessions rpc={rpcMock} rest={restMock} onSessionOpen={vi.fn()} />);
+    await waitFor(() => expect(screen.getByText('Real chat')).toBeInTheDocument());
+    expect(screen.queryByText('morning-brief run')).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('tab', { name: /Cron/i }));
+    expect(screen.getByText('morning-brief run')).toBeInTheDocument();
+    expect(screen.queryByText('Real chat')).not.toBeInTheDocument();
+  });
+
   it('searches by title', async () => {
     vi.mocked(restMock.profileSessions).mockResolvedValue([
       session({ id: 's-1', title: 'Bug investigation' }),

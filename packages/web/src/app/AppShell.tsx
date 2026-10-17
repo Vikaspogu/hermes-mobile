@@ -84,7 +84,8 @@ function buildSourceFilterOptions(sessions: Session[]): SourceFilterOption[] {
   const sourceOptions = Array.from(counts.entries())
     .map(([key, count]) => ({ key, label: sessionSourceLabel(key) ?? 'Unknown', count }))
     .sort((a, b) => a.label.localeCompare(b.label));
-  return [{ key: 'all', label: 'All', count: sessions.length }, ...sourceOptions];
+  const allCount = sessions.filter((s) => sessionSourceKey(s) !== 'cron').length;
+  return [{ key: 'all', label: 'All', count: allCount }, ...sourceOptions];
 }
 
 function eventPayload(event: RpcEvent): Record<string, unknown> {
@@ -639,7 +640,7 @@ export function AppShell({ connectionState, rpc, rest, onRetry }: AppShellProps)
   const filteredDrawerSessions = useMemo(
     () =>
       drawerSourceFilter === 'all'
-        ? visibleSessions
+        ? visibleSessions.filter((s) => sessionSourceKey(s) !== 'cron')
         : visibleSessions.filter((s) => sessionSourceKey(s) === drawerSourceFilter),
     [drawerSourceFilter, visibleSessions],
   );

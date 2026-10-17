@@ -1,6 +1,7 @@
 import {
   useActivityStore,
   useSessionsStore,
+  sessionSourceId,
   useChatStore,
   useProfilesStore,
   type RpcClient,
@@ -47,7 +48,8 @@ export function Home({ rpc, rest, onNavigate }: HomeProps) {
 
   const pendingApprovals = activityItems.filter((i) => i.status === 'needs_you').length;
   const liveSessions = sessions.filter((s) => s.isActive || s.active).length;
-  const recentSessions = sessions.slice(0, 3);
+  const chatSessions = sessions.filter((s) => sessionSourceId(s) !== 'cron');
+  const recentSessions = chatSessions.slice(0, 3);
 
   async function handleRecentOpen(sessionId: string, profile?: string) {
     await resumeSessionIntoChat(rest, rpc, sessionId, profile ?? activeName);
@@ -132,7 +134,7 @@ export function Home({ rpc, rest, onNavigate }: HomeProps) {
           <div className="hm-home__section-head">
             <span className="hm-home__section-title">Recent sessions</span>
             <button className="hm-home__all-link" onClick={() => onNavigate('sessions')}>
-              All {sessions.length} ›
+              All {chatSessions.length} ›
             </button>
           </div>
           <div className="hm-home__recent-list">

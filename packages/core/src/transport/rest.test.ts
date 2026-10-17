@@ -113,29 +113,29 @@ describe('makeRestClient', () => {
     expect(ticket.ttlSeconds).toBe(30);
   });
 
-  it('profileSessions fetches only the release-scope local session slice', async () => {
-    httpMock.mockResolvedValueOnce({
-      sessions: [
-        {
-          id: 'local-chat',
-          title: 'Local work',
-          source: 'tui',
-          last_active: 200,
-          message_count: 12,
-        },
-      ],
-    });
+  it('profileSessions fetches local sessions and a capped cron slice separately', async () => {
+    httpMock
+      .mockResolvedValueOnce({
+        sessions: [{ id: 'local-chat', title: 'Local work', source: 'tui', last_active: 200, message_count: 12 }],
+      })
+      .mockResolvedValueOnce({
+        sessions: [{ id: 'cron-run', title: 'morning-brief', source: 'cron', last_active: 300, message_count: 5 }],
+      });
 
     const sessions = await client.profileSessions();
 
-    expect(httpMock).toHaveBeenCalledTimes(1);
+    expect(httpMock).toHaveBeenCalledTimes(2);
     expect(queryForCall(0).get('profile')).toBe('default');
     expect(queryForCall(0).get('exclude_sources')).toContain('telegram');
-    expect(queryForCall(0).get('exclude_sources')).toContain('discord');
-    // Cron runs are shown so a cron push can open its result (P1-S2).
-    expect(queryForCall(0).get('exclude_sources')).not.toContain('cron');
     expect(queryForCall(0).get('exclude_sources')).toContain('curator');
-    expect(sessions.map((s) => s.id)).toEqual(['local-chat']);
+    // Cron would fill the 100-row page, so the main query excludes it...
+    expect(queryForCall(0).get('exclude_sources')).toContain('cron');
+    expect(queryForCall(0).get('limit')).toBe('100');
+    // ...and a second, capped query fetches only cron runs (P1-S2 deep links still resolve).
+    expect(queryForCall(1).get('exclude_sources')).not.toContain('cron');
+    expect(queryForCall(1).get('exclude_sources')).toContain('tui');
+    expect(queryForCall(1).get('limit')).toBe('20');
+    expect(sessions.map((s) => s.id)).toEqual(['cron-run', 'local-chat']);
   });
 
   it('profileSessions scopes the local slice to the active profile', async () => {
@@ -145,8 +145,9 @@ describe('makeRestClient', () => {
     const sessions = await client.profileSessions();
 
     expect(httpMock.setProfile).toHaveBeenCalledWith('dev');
-    expect(httpMock).toHaveBeenCalledTimes(1);
+    expect(httpMock).toHaveBeenCalledTimes(2);
     expect(queryForCall(0).get('profile')).toBe('dev');
+    expect(queryForCall(1).get('profile')).toBe('dev');
     expect(sessions.map((s) => s.id)).toEqual(['dev-local']);
   });
 

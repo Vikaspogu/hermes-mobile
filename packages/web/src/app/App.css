@@ -4775,3 +4775,48 @@ a {
 .hm-thinking__chevron {
   margin-left: 2px;
 }
+
+/* Long user prompts (cron jobs paste whole skills) are clamped behind "Show more". */
+.hm-message__clamp {
+  display: -webkit-box;
+  -webkit-line-clamp: 6;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.hm-message__more {
+  margin-top: var(--hm-space-2);
+  min-height: var(--hm-tap-min);
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-weight: 600;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.hm-message__silent {
+  margin: 0;
+  color: var(--hm-color-text-muted);
+  font-size: 13px;
+  font-style: italic;
+}
+
+/* Back-to-back tool-only turns read as one card instead of a stack of cards. */
+.hm-message--actions-only:has(+ .hm-message--assistant) .hm-message__actions {
+  margin-bottom: 0;
+  border-bottom: 0;
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+.hm-message--actions-only + .hm-message--assistant {
+  margin-top: calc(-1 * var(--hm-space-3));
+}
+
+.hm-message--actions-only + .hm-message--assistant .hm-message__actions {
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
+}

@@ -1,5 +1,5 @@
 import ReactMarkdown from 'react-markdown';
-import { memo } from 'react';
+import { memo, useState } from 'react';
 import type { Approval, Message, ToolCall } from '@hermes-pwa/core';
 import { ToolGroup } from './ToolGroup';
 import { TodoPanel } from './TodoPanel';
@@ -9,6 +9,25 @@ import {
   areMessageBubblePropsEqual,
   type MessageBubbleProps,
 } from './MessageBubble.helpers';
+
+// ponytail: rough heuristic; cron prompts paste whole skills and fill several screens.
+const USER_CLAMP_CHARS = 400;
+const USER_CLAMP_LINES = 6;
+
+function UserMessage({ text }: { text: string }) {
+  const [expanded, setExpanded] = useState(false);
+  const long = text.length > USER_CLAMP_CHARS || text.split('\n').length > USER_CLAMP_LINES;
+  return (
+    <div className="hm-message hm-message--user">
+      <p className={long && !expanded ? 'hm-message__clamp' : undefined}>{text}</p>
+      {long && (
+        <button type="button" className="hm-message__more" aria-expanded={expanded} onClick={() => setExpanded((v) => !v)}>
+          {expanded ? 'Show less' : 'Show more'}
+        </button>
+      )}
+    </div>
+  );
+}
 
 const APPROVAL_TOOL_NAMES = new Set(['terminal', 'execute_code']);
 const APPROVAL_INLINE_TIME_WINDOW_MS = 5 * 60_000;
@@ -93,11 +112,7 @@ function MessageBubbleView({
   const isUser = message.role === 'user';
 
   if (isUser) {
-    return (
-      <div className="hm-message hm-message--user">
-        <p>{message.text}</p>
-      </div>
-    );
+    return <UserMessage text={message.text} />;
   }
 
   const active = Boolean(streaming && isLast !== false);
@@ -115,8 +130,11 @@ function MessageBubbleView({
   const showHeaderStatus = active && Boolean(liveStatus?.trim());
   const statusFace = liveFace?.trim();
 
+  const silent = message.text?.trim() === '[SILENT]';
+  const actionsOnly = hasActions && !message.text && !active;
+
   return (
-    <div className="hm-message hm-message--assistant">
+    <div className={`hm-message hm-message--assistant${actionsOnly ? ' hm-message--actions-only' : ''}`}>
       {active && (
         <div className="hm-message__header">
           <span className="hm-message__avatar">
@@ -175,7 +193,9 @@ function MessageBubbleView({
         </div>
       )}
 
-      {message.text ? (
+      {silent ? (
+        <p className="hm-message__silent">Silent run — nothing to report</p>
+      ) : message.text ? (
         <div className="hm-message__text">
           <ReactMarkdown components={MARKDOWN_COMPONENTS}>{message.text}</ReactMarkdown>
           {showCaret && <span className="hm-message__caret" />}

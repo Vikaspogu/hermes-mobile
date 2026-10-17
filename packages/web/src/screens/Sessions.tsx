@@ -61,7 +61,9 @@ function buildSourceFilterOptions(sessions: Session[]): SourceFilterOption[] {
   const sourceOptions = Array.from(counts.entries())
     .map(([key, count]) => ({ key, label: sessionSourceLabel(key) ?? 'Unknown', count }))
     .sort((a, b) => a.label.localeCompare(b.label));
-  return [{ key: 'all', label: 'All sources', count: sessions.length }, ...sourceOptions];
+  // Cron runs are frequent; keep them behind their own chip so "All" stays readable.
+  const allCount = sessions.filter((s) => sessionSourceKey(s) !== 'cron').length;
+  return [{ key: 'all', label: 'All sources', count: allCount }, ...sourceOptions];
 }
 
 function sessionSearchText(session: Session): string {
@@ -213,7 +215,7 @@ export function Sessions({ rpc, rest, onSessionOpen }: SessionsProps) {
       if (filter === 'archived') return s.archived;
       return true;
     })
-    .filter((s) => sourceFilter === 'all' || sessionSourceKey(s) === sourceFilter);
+    .filter((s) => (sourceFilter === 'all' ? sessionSourceKey(s) !== 'cron' : sessionSourceKey(s) === sourceFilter));
 
   const searched = search.trim()
     ? filtered.filter((s) => sessionSearchText(s).includes(search.toLowerCase()))
