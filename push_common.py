@@ -332,6 +332,25 @@ def turn_complete_push_payload(**kwargs: Any) -> dict[str, Any]:
     }
 
 
+def cron_complete_push_payload(**kwargs: Any) -> dict[str, Any]:
+    """Content-free notification for a finished cron run. One per execution:
+    the cron session id is unique per run, so it is the dedupe key."""
+    session_id = sanitize_notification_text(kwargs.get("session_id") or "cron", limit=80)
+    job_name = sanitize_notification_text(kwargs.get("job_name") or "", limit=60)
+    turn_id = sanitize_notification_text(kwargs.get("turn_id") or "", limit=80)
+    return {
+        "type": "cron.complete",
+        "title": job_name or "Scheduled job",
+        "body": "Result ready.",
+        "tag": f"hermes-cron:{job_name or session_id}",
+        "dedupe_key": ":".join(part for part in ("cron", session_id) if part),
+        "url": "./index.html#/chat",
+        "profile": sanitize_notification_text(kwargs.get("profile") or "default", limit=80),
+        "session_id": session_id,
+        "turn_id": turn_id,
+    }
+
+
 def push_delivery_state_path() -> Path:
     return plugin_state_dir() / "push_delivery_state.json"
 

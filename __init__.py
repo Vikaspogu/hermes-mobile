@@ -2,12 +2,14 @@ from __future__ import annotations
 
 import logging
 import os
+import re
 from typing import Any
 
 from .push_common import (
     approval_push_payload,
     claim_push_dedupe,
     clear_pending_approval,
+    cron_complete_push_payload,
     record_pending_approval,
     send_web_push_to_enabled,
     turn_complete_push_payload,
@@ -19,6 +21,9 @@ _PWA_TURN_COMPLETE_PLATFORMS = {"tui", "pwa", "desktop", "web"}
 _APPROVAL_PUSH_TTL_SECONDS = 10 * 60
 _TURN_COMPLETE_TTL_SECONDS = 6 * 60 * 60
 _TURN_COMPLETE_SESSION_COOLDOWN_SECONDS = 90
+_CRON_COMPLETE_TTL_SECONDS = 6 * 60 * 60
+# Upstream cron session ids: cron_<job_id>_<YYYYmmdd_HHMMSS> (cron/scheduler.py run_job).
+_CRON_SESSION_RE = re.compile(r"^cron_([0-9A-Za-z]+)_\d{8}_\d{6}$")
 
 
 def _approval_surface(kwargs: dict[str, Any]) -> str:
@@ -116,10 +121,56 @@ def _on_post_approval_response(**kwargs: Any) -> None:
         logger.debug("Hermes PWA approval clear hook ignored error: %s", exc)
 
 
+def _is_silent_cron_response(text: str) -> bool:
+    try:
+        from gateway.response_filters import is_autonomous_silence_response
+    except Exception:  # pragma: no cover - outside Hermes (tests); upstream owns the real rule
+        return text.strip().upper().startswith("[SILENT]")
+    return bool(is_autonomous_silence_response(text))
+
+
+def _cron_job_name(job_id: str) -> str:
+    try:
+        from cron.jobs import get_job  # upstream: honors the active profile's cron store
+
+        return str((get_job(job_id) or {}).get("name") or "")
+    except Exception:
+        return ""
+
+
+def _send_cron_complete_push(kwargs: dict[str, Any]) -> None:
+    """One content-free push per cron execution (cron turns have platform="cron")."""
+    response = str(kwargs.get("assistant_response") or "")
+    if not response.strip() or _is_silent_cron_response(response):
+        return
+    session_id = str(kwargs.get("session_id") or "")
+    match = _CRON_SESSION_RE.match(session_id)
+    job_name = _cron_job_name(match.group(1)) if match else ""
+    profile = _notification_profile(kwargs)
+    payload = cron_complete_push_payload(
+        session_id=session_id,
+        turn_id=kwargs.get("turn_id"),
+        job_name=job_name,
+        profile=profile,
+    )
+    if not claim_push_dedupe(payload["dedupe_key"], ttl_seconds=_CRON_COMPLETE_TTL_SECONDS):
+        return
+    sent = send_web_push_to_enabled(payload, profile=profile)
+    logger.info(
+        "Hermes PWA cron push sent: session=%s job=%s devices=%s",
+        session_id,
+        job_name or "?",
+        sent,
+    )
+
+
 def _on_post_llm_call(**kwargs: Any) -> None:
     """Send one low-noise answer-ready push after PWA/TUI turns complete."""
     try:
         platform = str(kwargs.get("platform") or "").lower()
+        if platform == "cron":
+            _send_cron_complete_push(kwargs)
+            return
         if platform not in _PWA_TURN_COMPLETE_PLATFORMS:
             return
         if not str(kwargs.get("assistant_response") or "").strip():
