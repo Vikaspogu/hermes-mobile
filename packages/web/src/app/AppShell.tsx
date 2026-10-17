@@ -683,7 +683,7 @@ export function AppShell({ connectionState, rpc, rest, onRetry }: AppShellProps)
       <main className="hm-screen">
         <LazyScreenErrorBoundary key={screen}>
           <Suspense fallback={<p className="hm-muted hm-loading">Loading…</p>}>
-            {screen === 'chat'      && <Chat key={activeName ?? 'default'} rpc={rpc} rest={rest} />}
+            {screen === 'chat'      && <Chat key={activeName ?? 'default'} rpc={rpc} rest={rest} onOpenVoice={() => navigate('voice')} />}
             {screen === 'voice'     && <Voice key={activeName ?? 'default'} />}
             {screen === 'sessions'  && <Sessions key={activeName ?? 'default'} rpc={rpc} rest={rest} onSessionOpen={() => navigate('chat')} />}
             {screen === 'approvals' && <Activity key={activeName ?? 'default'} rpc={rpc} />}
