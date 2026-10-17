@@ -27,6 +27,7 @@ import { pendingApprovalsForMessage, selectPendingApprovals } from '../lib/pendi
 interface ChatProps {
   rpc: RpcClient;
   rest: RestClient;
+  onOpenVoice?: () => void;
 }
 
 type BusyInputMode = 'queue' | 'steer' | 'interrupt';
@@ -38,8 +39,6 @@ const CONTROL_CHAR_PATTERN = /[\u0000-\u001F\u007F]+/gu;
 const NON_CHAT_STATUS_KINDS = new Set(['lifecycle', 'compress', 'compressing', 'compression']);
 const NON_CHAT_STATUS_TEXT = /\b(compacting context|summarizing earlier conversation|compression summary|preflight compression)\b/i;
 const CHAT_HISTORY_REFRESH_INTERVAL_MS = 5_000;
-const SILENT_WAV_DATA_URL =
-  'data:audio/wav;base64,UklGRigAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQQAAAAAAA==';
 
 function normalizeBusyInputMode(value: unknown): BusyInputMode {
   return value === 'queue' || value === 'interrupt' || value === 'steer' ? value : 'queue';
@@ -85,7 +84,7 @@ function isNonChatStatus(kind: string, payload: Record<string, unknown> | undefi
   return NON_CHAT_STATUS_TEXT.test(rawText);
 }
 
-export function Chat({ rpc, rest }: ChatProps) {
+export function Chat({ rpc, rest, onOpenVoice }: ChatProps) {
   const {
     messages,
     streaming,
@@ -115,8 +114,6 @@ export function Chat({ rpc, rest }: ChatProps) {
   const initialRestoreDoneRef = useRef(false);
   const refreshInFlightRef = useRef(false);
   const queuedPromptsRef = useRef<string[]>([]);
-  const voiceAudioRef = useRef<HTMLAudioElement | null>(null);
-  const voiceAudioSequenceRef = useRef(0);
   const [liveStatus, setLiveStatus] = useState<LiveStatus>({ text: '' });
   const [composerLayoutVersion, setComposerLayoutVersion] = useState(0);
   const profileForSubmit = activeName === currentName ? activeName : currentName;
@@ -482,6 +479,9 @@ export function Chat({ rpc, rest }: ChatProps) {
     : currentSession?.cwd ?? 'branch';
 
   const activeProfile = useProfilesStore((s) => s.profiles.find((p) => p.name === s.activeName));
+  const storedSessionEnded = Boolean(storedSessionId)
+    && sessions.length > 0
+    && !sessions.some((sess) => sess.id === storedSessionId || sess.lineageRootId === storedSessionId);
   const profileLabel = activeProfile?.displayName ?? activeName ?? 'default';
   const modelLabel = activeProfile?.model ?? 'GPT-5.5';
   const busySubmitLabel =
@@ -531,86 +531,6 @@ export function Chat({ rpc, rest }: ChatProps) {
     (text: string) => submitPrompt(text),
     [submitPrompt],
   );
-
-  const handleTranscribeAudio = useCallback(
-    async (audio: Blob) => {
-      const dataUrl = await new Promise<string>((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onloadend = () => resolve(String(reader.result));
-        reader.onerror = reject;
-        reader.readAsDataURL(audio);
-      });
-      return rest.audioTranscribe(dataUrl, audio.type);
-    },
-    [rest],
-  );
-
-  const stopVoiceAudio = useCallback(() => {
-    voiceAudioSequenceRef.current += 1;
-    const audio = voiceAudioRef.current;
-    if (!audio) return;
-    audio.pause();
-    audio.removeAttribute('src');
-    audio.load();
-  }, []);
-
-  const primeVoiceAudio = useCallback(() => {
-    if (typeof Audio === 'undefined') return;
-    const audio = voiceAudioRef.current ?? new Audio();
-    audio.setAttribute('playsinline', '');
-    voiceAudioRef.current = audio;
-    if (!audio.src) audio.src = SILENT_WAV_DATA_URL;
-    void audio
-      .play()
-      .then(() => {
-        audio.pause();
-        audio.currentTime = 0;
-      })
-      .catch(() => {
-        // Best-effort iOS unlock. Real playback still reports an error later if blocked.
-      });
-  }, []);
-
-  const speakVoiceText = useCallback(
-    async (text: string) => {
-      const speakable = text.trim();
-      if (!speakable) return;
-      const ownSequence = voiceAudioSequenceRef.current;
-      const response = await rest.audioSpeak(speakable);
-      if (ownSequence !== voiceAudioSequenceRef.current) return;
-      const audio = voiceAudioRef.current ?? new Audio();
-      audio.setAttribute('playsinline', '');
-      voiceAudioRef.current = audio;
-      audio.src = response.dataUrl;
-      await new Promise<void>((resolve, reject) => {
-        const cleanup = () => {
-          audio.removeEventListener('ended', onEnded);
-          audio.removeEventListener('error', onError);
-        };
-        const onEnded = () => {
-          cleanup();
-          resolve();
-        };
-        const onError = () => {
-          cleanup();
-          reject(new Error('Voice playback failed.'));
-        };
-        audio.addEventListener('ended', onEnded, { once: true });
-        audio.addEventListener('error', onError, { once: true });
-        void audio.play().catch((error: unknown) => {
-          cleanup();
-          reject(error instanceof Error ? error : new Error('Voice playback was blocked.'));
-        });
-      });
-      if (ownSequence === voiceAudioSequenceRef.current) {
-        audio.removeAttribute('src');
-        audio.load();
-      }
-    },
-    [rest],
-  );
-
-  useEffect(() => () => stopVoiceAudio(), [stopVoiceAudio]);
 
   const handleUploadFile = useCallback(
     async (file: File) => {
@@ -678,6 +598,19 @@ export function Chat({ rpc, rest }: ChatProps) {
           </span>
         </div>
 
+        {storedSessionEnded && (
+          <div className="hm-warning-banner hm-warning-banner--warn" role="status">
+            <span>Your previous session has ended on the server.</span>
+            <button
+              type="button"
+              className="hm-ghost"
+              onClick={() => useChatStore.getState().startNewSession(activeName ?? undefined)}
+            >
+              Start new chat
+            </button>
+          </div>
+        )}
+
         {messages.length === 0 ? (
           <div className="hm-empty-state hm-empty-state--chat">
             <div className="hm-mark">H</div>
@@ -711,10 +644,7 @@ export function Chat({ rpc, rest }: ChatProps) {
         busySubmitLabel={busySubmitLabel}
         placeholder={streaming ? busyPlaceholder : 'Reply or steer the agent…'}
         messages={messages}
-        onTranscribeAudio={handleTranscribeAudio}
-        onSpeakVoiceText={speakVoiceText}
-        onStopVoiceAudio={stopVoiceAudio}
-        onPrimeVoiceAudio={primeVoiceAudio}
+        onOpenVoice={onOpenVoice}
         onUploadFile={handleUploadFile}
         onLayoutChange={handleComposerLayoutChange}
       />

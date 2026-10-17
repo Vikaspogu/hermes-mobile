@@ -3,8 +3,6 @@ import type { Message, RpcClient } from '@hermes-pwa/core';
 import { Icon } from './Icon';
 import { AttachMenu } from './AttachMenu';
 import { registerBackLayer } from '../lib/backLayers';
-import { useVoiceRecorder } from '../hooks/useVoiceRecorder';
-import { useVoiceConversation } from '../hooks/useVoiceConversation';
 import {
   MAX_ATTACHMENT_BYTES,
   MAX_ATTACHMENTS_PER_SELECTION,
@@ -138,18 +136,9 @@ interface ComposerProps {
   busy: boolean;
   placeholder?: string;
   messages?: Message[];
-  onTranscribeAudio?: (audio: Blob) => Promise<string>;
-  onSpeakVoiceText?: (text: string) => Promise<void>;
-  onStopVoiceAudio?: () => void;
-  onPrimeVoiceAudio?: () => void;
+  onOpenVoice?: (() => void) | undefined;
   onUploadFile?: (file: File) => Promise<{ path: string } | string | undefined>;
   onLayoutChange?: () => void;
-}
-
-function formatDuration(seconds: number): string {
-  const m = Math.floor(seconds / 60);
-  const s = Math.floor(seconds % 60);
-  return `${m}:${s.toString().padStart(2, '0')}`;
 }
 
 function makeId(): string {
@@ -165,19 +154,15 @@ export function Composer({
   busy,
   placeholder = 'Message Hermes…',
   messages = [],
-  onTranscribeAudio,
-  onSpeakVoiceText,
-  onStopVoiceAudio,
-  onPrimeVoiceAudio,
+  onOpenVoice,
   onUploadFile,
   onLayoutChange,
 }: ComposerProps) {
   const [text, setText] = useState('');
   const [attachments, setAttachments] = useState<AttachmentDraft[]>([]);
-  const [voiceModeEnabled, setVoiceModeEnabled] = useState(false);
   const [attachMenuOpen, setAttachMenuOpen] = useState(false);
-  const [slashItems, setSlashItems] = useState<SlashCommandItem[]>([]);
   const [slashLoading, setSlashLoading] = useState(false);
+  const [slashItems, setSlashItems] = useState<SlashCommandItem[]>([]);
   const [slashError, setSlashError] = useState<string | undefined>();
   const [slashActiveIndex, setSlashActiveIndex] = useState(0);
   const [slashSuppressedText, setSlashSuppressedText] = useState<string | undefined>();
@@ -188,33 +173,7 @@ export function Composer({
   const hasPayload = hasText || attachments.some((a) => !a.uploading && !a.error && a.path);
   const slashPaletteOpen = shouldShowSlashPalette(text) && Boolean(slashCommandsRpc) && slashSuppressedText !== text;
 
-  const handleTranscript = useCallback((transcript: string) => {
-    setText((prev) => {
-      const sep = prev && !prev.endsWith(' ') && !prev.endsWith('\n') ? ' ' : '';
-      return `${prev}${sep}${transcript}`;
-    });
-  }, []);
 
-  const focusInput = useCallback(() => {
-    textareaRef.current?.focus();
-  }, []);
-
-  const voiceRecorder = useVoiceRecorder({
-    onTranscribeAudio,
-    onTranscript: handleTranscript,
-    onFocusInput: focusInput,
-  });
-
-  const voiceConversation = useVoiceConversation({
-    enabled: voiceModeEnabled,
-    busy,
-    messages,
-    onSubmit: onSend,
-    onTranscribeAudio,
-    onSpeakText: onSpeakVoiceText,
-    onStopSpeech: onStopVoiceAudio,
-    onPrimeAudio: onPrimeVoiceAudio,
-  });
 
   const resize = useCallback(() => {
     const el = textareaRef.current;
@@ -330,21 +289,10 @@ export function Composer({
     keyboardLayerDispose.current = null;
   }, []);
 
-  const toggleVoiceMode = useCallback(() => {
-    setVoiceModeEnabled((value) => {
-      const next = !value;
-      if (next) {
-        onPrimeVoiceAudio?.();
-      } else {
-        onStopVoiceAudio?.();
-      }
-      return next;
-    });
-  }, [onPrimeVoiceAudio, onStopVoiceAudio]);
 
   function handleSubmit(e?: React.FormEvent) {
     e?.preventDefault();
-    if (voiceRecorder.status !== 'idle' || voiceConversation.status === 'transcribing') return;
+
     const trimmed = text.trim();
     const refs = attachments
       .filter((a) => !a.uploading && !a.error && a.path)
@@ -441,14 +389,7 @@ export function Composer({
     setAttachments((prev) => prev.filter((a) => a.id !== id));
   }
 
-  const isRecording = voiceRecorder.status === 'recording';
-  const isDictating = voiceRecorder.status === 'recording' || voiceRecorder.status === 'transcribing';
-  const isVoiceBusy =
-    voiceRecorder.status === 'transcribing' ||
-    voiceConversation.status === 'listening' ||
-    voiceConversation.status === 'transcribing' ||
-    voiceConversation.status === 'thinking' ||
-    voiceConversation.status === 'speaking';
+
 
   return (
     <form className="hm-composer" onSubmit={handleSubmit}>
@@ -520,14 +461,7 @@ export function Composer({
           onKeyDown={handleKeyDown}
           onFocus={handleTextareaFocus}
           onBlur={handleTextareaBlur}
-          placeholder={
-            voiceConversation.active
-              ? voiceConversation.status === 'listening'
-                ? 'Listening… tap the wave to stop'
-                : 'Voice mode is on'
-              : placeholder
-          }
-          disabled={isRecording || isVoiceBusy}
+          placeholder={placeholder}
           aria-label="Message input"
           rows={2}
         />
@@ -537,37 +471,24 @@ export function Composer({
             type="button"
             className="hm-composer__action"
             onClick={() => setAttachMenuOpen((v) => !v)}
-            disabled={isRecording || isVoiceBusy || !onUploadFile}
+            disabled={!onUploadFile}
             aria-label="Add attachment"
           >
             <Icon name="plus" size={19} />
           </button>
           <AttachMenu open={attachMenuOpen} onClose={() => setAttachMenuOpen(false)} onFiles={handleFilesSelected} />
 
-          <button
-            type="button"
-            className={`hm-composer__action hm-composer__action--labeled ${isRecording ? 'hm-composer__action--recording' : ''}`}
-            onClick={voiceRecorder.dictate}
-            disabled={isVoiceBusy}
-            aria-label={isRecording ? 'Stop recording' : 'Record voice'}
-          >
-            <Icon name="mic" size={19} />
-            <span aria-hidden="true">Dictate</span>
-            {isRecording && (
-              <span className="hm-composer__timer">{formatDuration(voiceRecorder.elapsedSeconds)}</span>
-            )}
-          </button>
-
-          <button
-            type="button"
-            className={`hm-composer__action hm-composer__action--labeled ${voiceConversation.active ? 'hm-composer__action--active' : ''}`}
-            onClick={toggleVoiceMode}
-            disabled={isRecording}
-            aria-label={voiceConversation.active ? 'Turn off voice mode' : 'Turn on voice mode'}
-          >
-            <Icon name="wave" size={19} />
-            <span aria-hidden="true">Voice</span>
-          </button>
+          {onOpenVoice && (
+            <button
+              type="button"
+              className="hm-composer__action hm-composer__action--labeled"
+              onClick={onOpenVoice}
+              aria-label="Open voice call"
+            >
+              <Icon name="wave" size={19} />
+              <span aria-hidden="true">Voice</span>
+            </button>
+          )}
 
           {busy && !hasPayload ? (
             <button
@@ -582,7 +503,7 @@ export function Composer({
             <button
               type="submit"
               className="hm-composer__send"
-              disabled={!hasPayload || isRecording || isVoiceBusy || (busy && !onSteer)}
+              disabled={!hasPayload || (busy && !onSteer)}
               aria-label={busy ? busySubmitLabel : 'Send message'}
             >
               <Icon name="arrowUp" size={20} />
@@ -591,63 +512,6 @@ export function Composer({
         </div>
       </div>
 
-      {isDictating && (
-        <div className="hm-composer__voice-bar" role="status" aria-live="polite">
-          <span className="hm-composer__voice-status">
-            {voiceRecorder.status === 'recording'
-              ? `Recording ${formatDuration(voiceRecorder.elapsedSeconds)} · tap mic to finish`
-              : 'Transcribing voice…'}
-          </span>
-          <div className="hm-composer__voice-levels">
-            {Array.from({ length: 5 }).map((_, i) => (
-              <span
-                key={i}
-                className="hm-composer__voice-level"
-                style={{
-                  opacity:
-                    voiceRecorder.status === 'recording'
-                      ? Math.min(1, voiceRecorder.level * 1.5 + i * 0.15)
-                      : 0.25,
-                }}
-              />
-            ))}
-          </div>
-        </div>
-      )}
-
-      {voiceModeEnabled && (
-        <div className="hm-composer__voice-bar">
-          <span className="hm-composer__voice-status">
-            {voiceConversation.status === 'idle' && 'Voice mode on'}
-            {voiceConversation.status === 'listening' && 'Listening'}
-            {voiceConversation.status === 'transcribing' && 'Transcribing'}
-            {voiceConversation.status === 'thinking' && 'Thinking'}
-            {voiceConversation.status === 'speaking' && 'Speaking'}
-          </span>
-          <div className="hm-composer__voice-levels">
-            {Array.from({ length: 5 }).map((_, i) => (
-              <span
-                key={i}
-                className="hm-composer__voice-level"
-                style={{
-                  opacity:
-                    voiceConversation.status === 'listening'
-                      ? Math.min(1, voiceConversation.level * 1.5 + i * 0.15)
-                      : 0.25,
-                }}
-              />
-            ))}
-          </div>
-          <button
-            type="button"
-            className="hm-composer__voice-mute"
-            onClick={voiceConversation.toggleMute}
-            aria-label={voiceConversation.muted ? 'Unmute' : 'Mute'}
-          >
-            <Icon name={voiceConversation.muted ? 'play' : 'pause'} size={14} />
-          </button>
-        </div>
-      )}
     </form>
   );
 }

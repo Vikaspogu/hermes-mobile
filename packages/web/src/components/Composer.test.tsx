@@ -118,29 +118,6 @@ describe('Composer', () => {
     expect(input).toHaveValue('/memory ');
   });
 
-  it('primes backend voice audio directly from the wave enable tap', () => {
-    const onPrimeVoiceAudio = vi.fn();
-    const onStopVoiceAudio = vi.fn();
-    render(
-      <Composer
-        onSend={vi.fn()}
-        onStop={vi.fn()}
-        busy={false}
-        onTranscribeAudio={vi.fn(async () => '')}
-        onPrimeVoiceAudio={onPrimeVoiceAudio}
-        onStopVoiceAudio={onStopVoiceAudio}
-      />,
-    );
-    onPrimeVoiceAudio.mockClear();
-    onStopVoiceAudio.mockClear();
-
-    fireEvent.click(screen.getByRole('button', { name: /Turn on voice mode/i }));
-    expect(onPrimeVoiceAudio).toHaveBeenCalledTimes(1);
-    expect(onStopVoiceAudio).not.toHaveBeenCalled();
-
-    fireEvent.click(screen.getByRole('button', { name: /Turn off voice mode/i }));
-    expect(onStopVoiceAudio).toHaveBeenCalled();
-  });
 
   it('shows only the native file picker action in the attachment menu', () => {
     const { container } = render(
