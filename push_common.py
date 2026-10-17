@@ -385,9 +385,8 @@ def claim_push_dedupe(key: str, *, ttl_seconds: int = 21600, path: Path | None =
 def push_sender_availability() -> tuple[bool, str | None]:
     try:
         import pywebpush  # type: ignore[import-not-found]  # noqa: F401
-    except Exception as exc:  # TEMP debug: surface the real import failure
-        import sys as _sys
-        return False, f"import failed: {exc!r} exe={_sys.executable} prefix={_sys.prefix} path={_sys.path}"
+    except Exception:
+        return False, "pywebpush is not installed on this server"
     if not os.environ.get("HERMES_PWA_VAPID_PRIVATE_KEY"):
         return False, "HERMES_PWA_VAPID_PRIVATE_KEY is missing from .env"
     if not os.environ.get("HERMES_PWA_VAPID_PUBLIC_KEY"):
