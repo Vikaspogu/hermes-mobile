@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { Message, RpcClient } from '@hermes-pwa/core';
 import { Icon } from './Icon';
 import { AttachMenu } from './AttachMenu';
+import { registerBackLayer } from '../lib/backLayers';
 import { useVoiceRecorder } from '../hooks/useVoiceRecorder';
 import { useVoiceConversation } from '../hooks/useVoiceConversation';
 import {
@@ -219,7 +220,7 @@ export function Composer({
     const el = textareaRef.current;
     if (!el) return;
     el.style.height = 'auto';
-    const maxHeight = window.matchMedia('(max-width: 380px)').matches ? 88 : 96;
+    const maxHeight = 124;
     const nextHeight = `${Math.min(el.scrollHeight, maxHeight)}px`;
     el.style.height = nextHeight;
     if (textareaHeightRef.current !== nextHeight) {
@@ -305,6 +306,29 @@ export function Composer({
     },
     [closeSlashPalette, resize],
   );
+
+  // Back layers (Android/browser Back): sheets and the slash palette close
+  // before navigation; a focused composer dismisses the keyboard first.
+  useEffect(() => {
+    if (!attachMenuOpen) return undefined;
+    return registerBackLayer({ priority: 20, dismiss: () => setAttachMenuOpen(false) });
+  }, [attachMenuOpen]);
+
+  useEffect(() => {
+    if (!slashPaletteOpen) return undefined;
+    return registerBackLayer({ priority: 20, dismiss: closeSlashPalette });
+  }, [slashPaletteOpen, closeSlashPalette]);
+
+  const keyboardLayerDispose = useRef<(() => void) | null>(null);
+  useEffect(() => () => keyboardLayerDispose.current?.(), []);
+  const handleTextareaFocus = useCallback(() => {
+    keyboardLayerDispose.current?.();
+    keyboardLayerDispose.current = registerBackLayer({ priority: 10, dismiss: () => textareaRef.current?.blur() });
+  }, []);
+  const handleTextareaBlur = useCallback(() => {
+    keyboardLayerDispose.current?.();
+    keyboardLayerDispose.current = null;
+  }, []);
 
   const toggleVoiceMode = useCallback(() => {
     setVoiceModeEnabled((value) => {
@@ -483,17 +507,6 @@ export function Composer({
       )}
 
       <div className="hm-composer__pill">
-        <button
-          type="button"
-          className="hm-composer__action"
-          onClick={() => setAttachMenuOpen((v) => !v)}
-          disabled={isRecording || isVoiceBusy || !onUploadFile}
-          aria-label="Add attachment"
-        >
-          <Icon name="plus" size={19} />
-        </button>
-        <AttachMenu open={attachMenuOpen} onClose={() => setAttachMenuOpen(false)} onFiles={handleFilesSelected} />
-
         <textarea
           ref={textareaRef}
           value={text}
@@ -505,6 +518,8 @@ export function Composer({
             }
           }}
           onKeyDown={handleKeyDown}
+          onFocus={handleTextareaFocus}
+          onBlur={handleTextareaBlur}
           placeholder={
             voiceConversation.active
               ? voiceConversation.status === 'listening'
@@ -514,51 +529,66 @@ export function Composer({
           }
           disabled={isRecording || isVoiceBusy}
           aria-label="Message input"
-          rows={1}
+          rows={2}
         />
 
-        <button
-          type="button"
-          className={`hm-composer__action ${isRecording ? 'hm-composer__action--recording' : ''}`}
-          onClick={voiceRecorder.dictate}
-          disabled={isVoiceBusy}
-          aria-label={isRecording ? 'Stop recording' : 'Record voice'}
-        >
-          <Icon name="mic" size={19} />
-          {isRecording && (
-            <span className="hm-composer__timer">{formatDuration(voiceRecorder.elapsedSeconds)}</span>
-          )}
-        </button>
-
-        <button
-          type="button"
-          className={`hm-composer__action ${voiceConversation.active ? 'hm-composer__action--active' : ''}`}
-          onClick={toggleVoiceMode}
-          disabled={isRecording}
-          aria-label={voiceConversation.active ? 'Turn off voice mode' : 'Turn on voice mode'}
-        >
-          <Icon name="wave" size={19} />
-        </button>
-
-        {busy && !hasPayload ? (
+        <div className="hm-composer__toolbar">
           <button
             type="button"
-            className="hm-composer__stop"
-            onClick={onStop}
-            aria-label="Stop generating"
+            className="hm-composer__action"
+            onClick={() => setAttachMenuOpen((v) => !v)}
+            disabled={isRecording || isVoiceBusy || !onUploadFile}
+            aria-label="Add attachment"
           >
-            <Icon name="close" size={16} />
+            <Icon name="plus" size={19} />
           </button>
-        ) : (
+          <AttachMenu open={attachMenuOpen} onClose={() => setAttachMenuOpen(false)} onFiles={handleFilesSelected} />
+
           <button
-            type="submit"
-            className="hm-composer__send"
-            disabled={!hasPayload || isRecording || isVoiceBusy || (busy && !onSteer)}
-            aria-label={busy ? busySubmitLabel : 'Send message'}
+            type="button"
+            className={`hm-composer__action hm-composer__action--labeled ${isRecording ? 'hm-composer__action--recording' : ''}`}
+            onClick={voiceRecorder.dictate}
+            disabled={isVoiceBusy}
+            aria-label={isRecording ? 'Stop recording' : 'Record voice'}
           >
-            <Icon name="arrowUp" size={20} />
+            <Icon name="mic" size={19} />
+            <span aria-hidden="true">Dictate</span>
+            {isRecording && (
+              <span className="hm-composer__timer">{formatDuration(voiceRecorder.elapsedSeconds)}</span>
+            )}
           </button>
-        )}
+
+          <button
+            type="button"
+            className={`hm-composer__action hm-composer__action--labeled ${voiceConversation.active ? 'hm-composer__action--active' : ''}`}
+            onClick={toggleVoiceMode}
+            disabled={isRecording}
+            aria-label={voiceConversation.active ? 'Turn off voice mode' : 'Turn on voice mode'}
+          >
+            <Icon name="wave" size={19} />
+            <span aria-hidden="true">Voice</span>
+          </button>
+
+          {busy && !hasPayload ? (
+            <button
+              type="button"
+              className="hm-composer__stop"
+              onClick={onStop}
+              aria-label="Stop generating"
+            >
+              <Icon name="close" size={16} />
+            </button>
+          ) : (
+            <button
+              type="submit"
+              className="hm-composer__send"
+              disabled={!hasPayload || isRecording || isVoiceBusy || (busy && !onSteer)}
+              aria-label={busy ? busySubmitLabel : 'Send message'}
+            >
+              <Icon name="arrowUp" size={20} />
+            </button>
+          )}
+        </div>
       </div>
 
       {isDictating && (

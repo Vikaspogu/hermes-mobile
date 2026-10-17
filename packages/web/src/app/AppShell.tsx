@@ -8,6 +8,7 @@ import { UpdateNotification } from '../components/UpdateNotification';
 import { LazyScreenErrorBoundary } from './LazyScreenErrorBoundary';
 import { usePresence } from '../hooks/usePresence';
 import { getInitialScreen, persistScreen } from '../lib/screenStorage';
+import { dismissTopBackLayer, registerBackLayer } from '../lib/backLayers';
 import { syncPushSubscription } from '../pwa/push';
 
 export type Screen =
@@ -240,7 +241,12 @@ function DrawerSessionRow({
 }
 
 export function AppShell({ connectionState, rpc, rest, onRetry }: AppShellProps) {
-  const [screen, setScreen] = useState<Screen>(() => getInitialScreen());
+  const [navStack, setNavStack] = useState<Screen[]>(() => {
+    const initial = getInitialScreen();
+    return initial === 'home' ? ['home'] : ['home', initial];
+  });
+  const navStackRef = useRef(navStack);
+  const screen: Screen = navStack[navStack.length - 1] ?? 'home';
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [drawerSourceFilter, setDrawerSourceFilter] = useState<SourceFilter>('all');
   const [gatewayHealth, setGatewayHealth] = useState<GatewayHealth>('checking');
@@ -295,6 +301,36 @@ export function AppShell({ connectionState, rpc, rest, onRetry }: AppShellProps)
       document.removeEventListener('visibilitychange', persistWhenHidden);
     };
   }, [screen]);
+
+  // History-backed navigation: each screen change pushes a history entry so
+  // Android/browser Back moves within the app instead of exiting it.
+  useEffect(() => {
+    window.history.replaceState({ hmNav: navStackRef.current.length - 1 }, '');
+    const onPopState = () => {
+      if (dismissTopBackLayer()) {
+        // An open layer (menu, sheet, keyboard) consumed the back press;
+        // restore the history entry it cost us so depth stays aligned.
+        window.history.pushState({ hmNav: navStackRef.current.length - 1 }, '');
+        return;
+      }
+      const stack = navStackRef.current;
+      // ponytail: at root we cannot cancel the pop — the OS/browser leaves the app, as expected.
+      // A forward press is treated as back; gesture-first PWAs rarely see it.
+      if (stack.length <= 1) return;
+      const next = stack.slice(0, -1);
+      navStackRef.current = next;
+      setNavStack(next);
+      persistScreen(next[next.length - 1] ?? 'home');
+    };
+    window.addEventListener('popstate', onPopState);
+    return () => window.removeEventListener('popstate', onPopState);
+  }, []);
+
+  // The drawer is the topmost back layer: Back closes it before navigating.
+  useEffect(() => {
+    if (!drawerOpen) return undefined;
+    return registerBackLayer({ priority: 100, dismiss: () => setDrawerOpen(false) });
+  }, [drawerOpen]);
 
   useEffect(() => {
     if (!drawerOpen) return;
@@ -544,7 +580,12 @@ export function AppShell({ connectionState, rpc, rest, onRetry }: AppShellProps)
     if (HIDDEN_ADMIN_SCREENS.has(s)) {
       s = 'home';
     }
-    setScreen(s);
+    if (s !== navStackRef.current[navStackRef.current.length - 1]) {
+      const next = [...navStackRef.current, s];
+      navStackRef.current = next;
+      setNavStack(next);
+      window.history.pushState({ hmNav: next.length - 1 }, '');
+    }
     persistScreen(s);
     setDrawerOpen(false);
   }
@@ -610,6 +651,16 @@ export function AppShell({ connectionState, rpc, rest, onRetry }: AppShellProps)
         >
           <Icon name="menu" size={22} />
         </button>
+        {navStack.length > 1 && (
+          <button
+            type="button"
+            className="hm-header__back"
+            onClick={() => window.history.back()}
+            aria-label={`Back to ${SCREEN_TITLES[navStack[navStack.length - 2] ?? 'home']}`}
+          >
+            <Icon name="back" size={20} />
+          </button>
+        )}
         <h1 className="hm-header__title">{screenTitle}</h1>
         <button
           type="button"

@@ -22,6 +22,7 @@ export type IconName =
   | 'mic'
   | 'wave'
   | 'arrowUp'
+  | 'back'
   | 'bolt'
   | 'chevR'
   | 'chevD'
@@ -108,6 +109,7 @@ const ICONS: Record<IconName, IconPart[]> = {
   mic: [['rect', { x: 9, y: 3, width: 6, height: 11, rx: 3 }], 'M5 11a7 7 0 0 0 14 0', 'M12 18v3'],
   wave: ['M4 10v4', 'M8 7v10', 'M12 4v16', 'M16 8v8', 'M20 11v2'],
   arrowUp: ['M12 19V6', 'M6 12l6-6 6 6'],
+  back: ['M19 12H5', 'M12 19l-7-7 7-7'],
   bolt: ['M13 2 4 14h6l-1 8 9-12h-6z'],
   chevR: ['M9 5l7 7-7 7'],
   chevD: ['M5 9l7 7 7-7'],
