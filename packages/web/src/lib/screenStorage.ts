@@ -30,6 +30,13 @@ export function screenFromLocationHash(hash = typeof window === 'undefined' ? ''
   return VALID_SCREENS.has(normalized as Screen) ? (normalized as Screen) : undefined;
 }
 
+/** Durable session id from a notification deep link such as `#/chat?session=<id>`. */
+export function sessionFromLocationHash(hash = typeof window === 'undefined' ? '' : window.location.hash): string | undefined {
+  const fragment = hash.includes('#') ? hash.slice(hash.indexOf('#')) : hash;
+  const query = fragment.split('?')[1];
+  return new URLSearchParams(query ?? '').get('session')?.trim() || undefined;
+}
+
 function activeCacheHasSession(raw: string | null): boolean {
   if (!raw) return false;
   try {

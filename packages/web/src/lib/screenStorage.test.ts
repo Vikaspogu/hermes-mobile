@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import { getInitialScreen, persistScreen, screenFromLocationHash } from './screenStorage';
+import { getInitialScreen, persistScreen, screenFromLocationHash, sessionFromLocationHash } from './screenStorage';
 
 describe('screenStorage', () => {
   beforeEach(() => {
@@ -26,6 +26,13 @@ describe('screenStorage', () => {
     expect(screenFromLocationHash('#approvals')).toBe('approvals');
     expect(screenFromLocationHash('./index.html#/approvals')).toBe('approvals');
     expect(screenFromLocationHash('#/unknown')).toBeUndefined();
+  });
+
+  it('parses the session deep link from notification hash routes', () => {
+    expect(sessionFromLocationHash('./index.html#/chat?session=cron_f130ab853536_20261017_124156')).toBe('cron_f130ab853536_20261017_124156');
+    expect(sessionFromLocationHash('#/chat?session=a%2Fb')).toBe('a/b');
+    expect(sessionFromLocationHash('#/chat')).toBeUndefined();
+    expect(sessionFromLocationHash('#/chat?session=')).toBeUndefined();
   });
 
   it('falls back to Home when the last screen was Chat but no active session cache exists', () => {

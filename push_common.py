@@ -7,6 +7,7 @@ import re
 import time
 from pathlib import Path
 from typing import Any
+from urllib.parse import quote
 
 _CONTROL_CHARS = re.compile(r"[\x00-\x1f\x7f]+")
 _SECRET_LIKE = re.compile(
@@ -344,7 +345,7 @@ def cron_complete_push_payload(**kwargs: Any) -> dict[str, Any]:
         "body": "Result ready.",
         "tag": f"hermes-cron:{job_name or session_id}",
         "dedupe_key": ":".join(part for part in ("cron", session_id) if part),
-        "url": "./index.html#/chat",
+        "url": f"./index.html#/chat?session={quote(session_id, safe='')}",
         "profile": sanitize_notification_text(kwargs.get("profile") or "default", limit=80),
         "session_id": session_id,
         "turn_id": turn_id,

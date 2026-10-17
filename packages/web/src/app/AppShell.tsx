@@ -7,7 +7,7 @@ import { Icon, type IconName } from '../components/Icon';
 import { UpdateNotification } from '../components/UpdateNotification';
 import { LazyScreenErrorBoundary } from './LazyScreenErrorBoundary';
 import { usePresence } from '../hooks/usePresence';
-import { getInitialScreen, persistScreen } from '../lib/screenStorage';
+import { getInitialScreen, persistScreen, sessionFromLocationHash } from '../lib/screenStorage';
 import { dismissTopBackLayer, registerBackLayer } from '../lib/backLayers';
 import { syncPushSubscription } from '../pwa/push';
 
@@ -340,6 +340,24 @@ export function AppShell({ connectionState, rpc, rest, onRetry }: AppShellProps)
   useEffect(() => {
     void loadProfiles(rest);
   }, [rest, loadProfiles]);
+
+  // Notification deep link (`#/chat?session=<id>`, e.g. a cron result): open that
+  // durable session once connected, then drop the query so a reload does not reopen it.
+  // A tap while the app is already open is a hash-only navigation, so also listen for hashchange.
+  useEffect(() => {
+    if (connectionState !== 'connected') return undefined;
+    const openDeepLink = () => {
+      const deepLinkSession = sessionFromLocationHash();
+      if (!deepLinkSession) return;
+      window.history.replaceState(window.history.state, '', window.location.pathname + window.location.search + '#/chat');
+      navigate('chat');
+      void useChatStore.getState().resumeSessionIntoChat(rest, rpc, deepLinkSession, activeName).catch(() => undefined);
+    };
+    openDeepLink();
+    window.addEventListener('hashchange', openDeepLink);
+    return () => window.removeEventListener('hashchange', openDeepLink);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- navigate is a stable in-component helper
+  }, [connectionState, rest, rpc, activeName]);
 
   useEffect(() => {
     if (connectionState !== 'connected') return undefined;

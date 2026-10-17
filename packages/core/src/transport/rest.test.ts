@@ -132,7 +132,8 @@ describe('makeRestClient', () => {
     expect(queryForCall(0).get('profile')).toBe('default');
     expect(queryForCall(0).get('exclude_sources')).toContain('telegram');
     expect(queryForCall(0).get('exclude_sources')).toContain('discord');
-    expect(queryForCall(0).get('exclude_sources')).toContain('cron');
+    // Cron runs are shown so a cron push can open its result (P1-S2).
+    expect(queryForCall(0).get('exclude_sources')).not.toContain('cron');
     expect(queryForCall(0).get('exclude_sources')).toContain('curator');
     expect(sessions.map((s) => s.id)).toEqual(['local-chat']);
   });
