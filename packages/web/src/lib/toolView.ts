@@ -39,6 +39,7 @@ const TOOL_META: Record<string, ToolMeta> = {
   read_file: { done: 'Read file', pending: 'Reading file', icon: 'file', tone: 'file' },
   search_files: { done: 'Searched files', pending: 'Searching files', icon: 'search', tone: 'file' },
   session_search_recall: { done: 'Searched session history', pending: 'Searching session history', icon: 'search', tone: 'agent' },
+  skill_view: { done: 'Viewed skill', pending: 'Viewing skill', icon: 'settings', tone: 'agent' },
   terminal: { done: 'Ran command', pending: 'Running command', icon: 'terminal', tone: 'terminal' },
   todo: { done: 'Updated todos', pending: 'Updating todos', icon: 'settings', tone: 'agent' },
   vision_analyze: { done: 'Analyzed image', pending: 'Analyzing image', icon: 'search', tone: 'image' },
@@ -227,6 +228,14 @@ function toolSubtitle(tool: ToolCall, argsRecord: Record<string, unknown>, resul
     return url ? hostnameOf(url) : 'Fetched webpage';
   }
 
+  if (toolName === 'skill_view') {
+    const skill = firstStringField(resultRecord, ['name']) || firstStringField(argsRecord, ['name', 'skill']);
+    return skill || 'Viewed skill';
+  }
+
+  // Prefer a readable field over raw JSON.
+  const named = firstStringField(resultRecord, ['name', 'title', 'path', 'url', 'message']);
+  if (named) return compactPreview(named, 120);
   const resultPreview = compactPreview(resultRecord, 120);
   if (resultPreview && resultPreview !== '{}' && resultPreview !== '[]') return resultPreview;
   const argsPreview = compactPreview(argsRecord, 120);

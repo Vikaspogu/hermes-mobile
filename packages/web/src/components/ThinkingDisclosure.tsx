@@ -19,7 +19,12 @@ export function ThinkingDisclosure({ text, streaming }: ThinkingDisclosureProps)
         <span className="hm-thinking__icon">
           <Icon name="bolt" size={14} />
         </span>
-        <span className="hm-thinking__title">Thinking</span>
+        <span className="hm-thinking__title">{streaming ? 'Thinking' : 'Thought'}</span>
+        {!streaming && (
+          <span className="hm-thinking__chevron" aria-hidden="true">
+            {open ? '▾' : '›'}
+          </span>
+        )}
         {streaming && <span className="hm-thinking__spinner" aria-label="thinking" />}
       </button>
       {open && (

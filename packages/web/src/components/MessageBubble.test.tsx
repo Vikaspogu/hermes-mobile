@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import { MessageBubble } from './MessageBubble';
 import { areMessageBubblePropsEqual } from './MessageBubble.helpers';
 import { useActivityStore, useChatStore, type Approval, type RpcClient } from '@hermes-pwa/core';
@@ -85,6 +85,7 @@ describe('MessageBubble', () => {
         }}
       />,
     );
+    fireEvent.click(screen.getByRole('button', { name: /Tool actions/i }));
     expect(screen.getByText('Search')).toBeInTheDocument();
   });
 

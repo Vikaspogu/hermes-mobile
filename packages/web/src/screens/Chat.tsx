@@ -475,8 +475,8 @@ export function Chat({ rpc, rest, onOpenVoice }: ChatProps) {
     return s.id === storedSessionId || s.lineageRootId === storedSessionId;
   });
   const branchLabel = currentSession?.source
-    ? (sessionSourceLabel(currentSession.source) ?? 'branch')
-    : currentSession?.cwd ?? 'branch';
+    ? sessionSourceLabel(currentSession.source)
+    : currentSession?.cwd;
 
   const activeProfile = useProfilesStore((s) => s.profiles.find((p) => p.name === s.activeName));
   const storedSessionEnded = Boolean(storedSessionId)
@@ -587,15 +587,19 @@ export function Chat({ rpc, rest, onOpenVoice }: ChatProps) {
         aria-label="Conversation"
       >
         <div className="hm-chat__context">
-          <span className="hm-chat__context-chip hm-chat__context-chip--primary">
-            <Icon name="robot" size={12} />
-            {profileLabel}
-          </span>
-          <span className="hm-chat__context-chip hm-chat__context-chip--secondary">{modelLabel}</span>
-          <span className="hm-chat__context-chip hm-chat__context-chip--secondary">
-            <Icon name="branch" size={12} />
-            {branchLabel}
-          </span>
+          {profileLabel && (
+            <span className="hm-chat__context-chip hm-chat__context-chip--primary">
+              <Icon name="robot" size={12} />
+              {profileLabel}
+            </span>
+          )}
+          {modelLabel && <span className="hm-chat__context-chip hm-chat__context-chip--secondary">{modelLabel}</span>}
+          {branchLabel && (
+            <span className="hm-chat__context-chip hm-chat__context-chip--secondary">
+              <Icon name="branch" size={12} />
+              {branchLabel}
+            </span>
+          )}
         </div>
 
         {storedSessionEnded && (

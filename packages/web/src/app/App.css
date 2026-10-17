@@ -313,9 +313,10 @@ a {
   z-index: 20;
 }
 
-.hm-header__menu {
-  width: 38px;
-  height: 38px;
+.hm-header__menu,
+.hm-header__back {
+  width: var(--hm-tap-min);
+  height: var(--hm-tap-min);
   flex-shrink: 0;
   border: 1px solid var(--hm-color-border);
   border-radius: var(--hm-radius-md);
@@ -870,10 +871,7 @@ a {
 .hm-empty-state--chat {
   margin: auto;
   max-width: 320px;
-  border: 1px solid var(--hm-color-border);
-  border-radius: 28px;
-  background: color-mix(in srgb, var(--hm-color-surface) 84%, transparent);
-  box-shadow: var(--hm-elev-1);
+  flex: 0 0 auto;
 }
 
 @media (min-width: 390px) {
@@ -1114,7 +1112,14 @@ a {
   display: flex;
   align-items: center;
   gap: 8px;
+  width: 100%;
+  min-height: 32px;
   padding: 0 2px;
+  border: 0;
+  background: transparent;
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
   font-size: var(--hm-fs-small);
   color: var(--hm-color-text-muted);
 }
@@ -1138,6 +1143,16 @@ a {
   margin-left: auto;
   font-size: 11px;
   text-transform: lowercase;
+}
+
+.hm-tool-group__chevron {
+  font-size: 16px;
+  line-height: 1;
+  transition: transform 0.15s ease;
+}
+
+.hm-tool-group__header[aria-expanded='true'] .hm-tool-group__chevron {
+  transform: rotate(90deg);
 }
 
 .hm-tool-group__header-running {
@@ -1193,7 +1208,10 @@ a {
 
 .hm-tool-group__row-title {
   font-weight: var(--hm-fw-semibold);
-  flex-shrink: 0;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .hm-tool-group__row-dot {
@@ -1814,6 +1832,7 @@ a {
 
 .hm-muted {
   color: var(--hm-color-text-muted);
+  font-size: var(--hm-fs-small);
   margin: 0;
 }
 
@@ -2997,8 +3016,8 @@ a {
 }
 
 .hm-row-action--danger {
-  border-color: rgba(229, 57, 53, 0.26);
-  color: #b42318;
+  border-color: color-mix(in srgb, var(--hm-color-danger) 45%, transparent);
+  color: var(--hm-color-danger);
 }
 
 .hm-row-action:disabled {
@@ -3557,6 +3576,7 @@ a {
 }
 
 .hm-cron-card {
+  flex-shrink: 0;
   display: flex;
   flex-direction: column;
   background: var(--hm-color-surface);
@@ -4355,6 +4375,7 @@ a {
 
 .hm-agent-card__footer {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
   gap: var(--hm-space-2);
@@ -4370,7 +4391,7 @@ a {
   padding: 10px;
   border: 1px solid var(--hm-color-border);
   border-radius: 12px;
-  background: rgba(255, 255, 255, 0.62);
+  background: var(--hm-color-surface-2);
 }
 
 .hm-profile-model-summary__line {
@@ -4415,7 +4436,7 @@ a {
 }
 
 .hm-agent-card__model--button {
-  max-width: min(100%, 260px);
+  max-width: 100%;
   min-height: 32px;
   padding: 5px 8px;
   border-radius: 999px;
@@ -4630,6 +4651,10 @@ a {
   padding-top: 8px;
 }
 
+.hm-voice__level:not(.hm-voice__level--live) {
+  visibility: hidden;
+}
+
 .hm-voice__level {
   width: 6px;
   height: 28px;
@@ -4673,4 +4698,80 @@ a {
 
 .hm-voice__call--end {
   background: var(--hm-color-danger);
+}
+
+/* UI review fixes */
+.hm-badge--profile {
+  background: var(--hm-color-surface-2);
+  color: var(--hm-color-text-muted);
+  border: 1px solid var(--hm-color-border);
+}
+
+.hm-message__text a {
+  color: var(--hm-color-primary);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.hm-composer__toolbar {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.hm-composer__send:disabled {
+  background: var(--hm-color-primary);
+  color: var(--hm-color-on-accent);
+  border-color: transparent;
+  opacity: 0.5;
+}
+
+.hm-profile-actions {
+  margin-left: auto;
+  flex-wrap: nowrap;
+}
+
+.hm-row-action {
+  min-width: var(--hm-tap-min);
+  min-height: var(--hm-tap-min);
+  justify-content: center;
+}
+
+.hm-thinking {
+  display: inline-block;
+  max-width: 100%;
+  border: 0;
+  background: transparent;
+}
+
+.hm-thinking:has(.hm-thinking__body) {
+  display: block;
+  border: 1px solid var(--hm-color-border);
+  background: var(--hm-color-surface-2);
+}
+
+.hm-thinking__header {
+  padding: 4px 2px;
+}
+
+@media (max-width: 480px) {
+  .hm-composer__action--labeled {
+    width: var(--hm-tap-min);
+    padding: 0;
+  }
+
+  .hm-composer__action--labeled span {
+    display: none;
+  }
+}
+
+/* Option B: finished turns show a small "Thought ›" link; tap to read. */
+.hm-thinking__header {
+  color: var(--hm-color-text-muted);
+  font-size: 12px;
+}
+
+.hm-thinking__chevron {
+  margin-left: 2px;
 }

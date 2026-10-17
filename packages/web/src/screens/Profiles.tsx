@@ -253,9 +253,7 @@ export function Profiles({ rest }: ProfilesProps) {
                   <Icon name="chevR" size={12} />
                 </button>
                 <div className="hm-profile-actions">
-                  {p.isActive ? (
-                    <span className="hm-agent-card__active-label">Active</span>
-                  ) : (
+                  {p.isActive ? null : (
                     <button
                       className="hm-agent-card__activate"
                       onClick={async () => {

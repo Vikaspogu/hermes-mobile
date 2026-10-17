@@ -14,12 +14,13 @@ interface HomeProps {
   onNavigate: (screen: string) => void;
 }
 
-function fmtAge(ms: number): string {
-  const s = Math.round((Date.now() - ms) / 1000);
-  if (s < 60) return `${s}s`;
-  const m = Math.floor(s / 60);
-  if (m < 60) return `${m}m`;
-  return `${Math.floor(m / 60)}h`;
+function fmtAge(updatedAt: number): string {
+  // updated_at arrives as Unix seconds; accept ms too.
+  const delta = Math.max(0, Date.now() - (updatedAt > 10_000_000_000 ? updatedAt : updatedAt * 1000));
+  if (delta < 60_000) return 'now';
+  if (delta < 3_600_000) return `${Math.floor(delta / 60_000)}m`;
+  if (delta < 86_400_000) return `${Math.floor(delta / 3_600_000)}h`;
+  return `${Math.floor(delta / 86_400_000)}d`;
 }
 
 const TILES: {

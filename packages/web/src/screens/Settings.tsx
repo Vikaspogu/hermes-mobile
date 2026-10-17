@@ -334,32 +334,36 @@ export function Settings({ rest, onNavigate, onLogout }: SettingsProps) {
         {pushCapability.iosStandaloneRequired && (
           <p className="hm-muted">iPhone/iPad: install Hermes Mobile to Home Screen before enabling notifications.</p>
         )}
-        {!pushStatus?.available && pushStatus?.reason && <p className="hm-muted">{pushStatus.reason}</p>}
         <div className="hm-settings__segmented" aria-label="Push notification actions">
-          <button
-            type="button"
-            className="hm-filter-chip"
-            disabled={pushBusy || pushLoading || !pushCapability.supported || !pushStatus?.available || !pushStatus.vapidPublicKey}
-            onClick={() => void handleEnablePush()}
-          >
-            Enable on this device
-          </button>
-          <button
-            type="button"
-            className="hm-filter-chip"
-            disabled={pushBusy || pushLoading || !pushStatus?.available || !activePushSubscription?.id}
-            onClick={() => void handleTestPush()}
-          >
-            Send test
-          </button>
-          <button
-            type="button"
-            className="hm-filter-chip"
-            disabled={pushBusy || pushLoading || !activePushSubscription?.id}
-            onClick={() => void handleDisablePush()}
-          >
-            Disable device
-          </button>
+          {activePushSubscription?.id ? (
+            <>
+              <button
+                type="button"
+                className="hm-filter-chip"
+                disabled={pushBusy || pushLoading || !pushStatus?.available}
+                onClick={() => void handleTestPush()}
+              >
+                Send test
+              </button>
+              <button
+                type="button"
+                className="hm-filter-chip"
+                disabled={pushBusy || pushLoading}
+                onClick={() => void handleDisablePush()}
+              >
+                Disable device
+              </button>
+            </>
+          ) : (
+            <button
+              type="button"
+              className="hm-filter-chip"
+              disabled={pushBusy || pushLoading || !pushCapability.supported || !pushStatus?.available || !pushStatus.vapidPublicKey}
+              onClick={() => void handleEnablePush()}
+            >
+              Enable on this device
+            </button>
+          )}
         </div>
       </Section>
 

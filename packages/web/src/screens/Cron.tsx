@@ -271,7 +271,7 @@ export function Cron({ rest }: CronProps) {
                   <span className={`hm-badge ${paused ? 'hm-badge--pending' : 'hm-badge--pass'}`}>
                     {paused ? 'paused' : job.state ?? 'scheduled'}
                   </span>
-                  <span className="hm-badge">{job.profile}</span>
+                  <span className="hm-badge hm-badge--profile">{job.profile}</span>
                 </div>
                 <div className="hm-cron-card__meta">
                   <span className="hm-mono hm-muted">{scheduleText}</span>
@@ -496,7 +496,7 @@ export function Cron({ rest }: CronProps) {
               <span className={`hm-badge ${isPaused(sheet.job) ? 'hm-badge--pending' : 'hm-badge--pass'}`}>
                 {isPaused(sheet.job) ? 'paused' : sheet.job.state ?? 'scheduled'}
               </span>
-              <span className="hm-badge">{sheet.job.profile}</span>
+              <span className="hm-badge hm-badge--profile">{sheet.job.profile}</span>
               {sheet.job.deliver && sheet.job.deliver !== 'local' && (
                 <span className="hm-badge hm-badge--info">{sheet.job.deliver}</span>
               )}

@@ -61,7 +61,7 @@ function buildSourceFilterOptions(sessions: Session[]): SourceFilterOption[] {
   const sourceOptions = Array.from(counts.entries())
     .map(([key, count]) => ({ key, label: sessionSourceLabel(key) ?? 'Unknown', count }))
     .sort((a, b) => a.label.localeCompare(b.label));
-  return [{ key: 'all', label: 'All', count: sessions.length }, ...sourceOptions];
+  return [{ key: 'all', label: 'All sources', count: sessions.length }, ...sourceOptions];
 }
 
 function sessionSearchText(session: Session): string {
@@ -145,8 +145,7 @@ function SessionRow({
           aria-label={`${archiveLabel}: ${sessionTitle(session)}`}
           title={archiveLabel}
         >
-          <Icon name="archive" size={15} />
-          <span>{session.archived ? 'Restore' : 'Archive'}</span>
+          <Icon name="archive" size={16} />
         </button>
         <button
           type="button"
@@ -156,8 +155,7 @@ function SessionRow({
           aria-label={`Delete session: ${sessionTitle(session)}`}
           title="Delete session"
         >
-          <Icon name="trash" size={15} />
-          <span>Delete</span>
+          <Icon name="trash" size={16} />
         </button>
       </div>
     </div>

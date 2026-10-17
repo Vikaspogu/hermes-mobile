@@ -39,7 +39,7 @@ export function toProfile(raw: Record<string, unknown>, activeName: string): Pro
     name,
     isActive: name === activeName,
   };
-  if (typeof raw.display_name === 'string') profile.displayName = raw.display_name;
+  if (typeof raw.display_name === 'string' && raw.display_name.trim()) profile.displayName = raw.display_name.trim();
   if (typeof raw.model === 'string') profile.model = raw.model;
   if (typeof raw.provider === 'string') profile.provider = raw.provider;
   if (isReasoningEffort(raw.reasoning_effort)) profile.reasoningEffort = raw.reasoning_effort;

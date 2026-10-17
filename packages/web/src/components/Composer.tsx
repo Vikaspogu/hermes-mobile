@@ -463,7 +463,7 @@ export function Composer({
           onBlur={handleTextareaBlur}
           placeholder={placeholder}
           aria-label="Message input"
-          rows={2}
+          rows={1}
         />
 
         <div className="hm-composer__toolbar">

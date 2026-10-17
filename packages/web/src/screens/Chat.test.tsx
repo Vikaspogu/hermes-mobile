@@ -964,6 +964,7 @@ describe('Chat', () => {
 
     expect(screen.getByText('Tool actions')).toBeInTheDocument();
     expect(screen.getByText(/1 step · done/i)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: /Tool actions/i }));
     expect(screen.getByText(/Ran command/i)).toBeInTheDocument();
     expect(screen.getByText(/whoami=stasstep/i)).toBeInTheDocument();
   });

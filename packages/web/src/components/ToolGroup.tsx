@@ -58,10 +58,18 @@ function ToolRow({ tool, rpc, streaming }: ToolRowProps) {
 export function ToolGroup({ tools, rpc, streaming }: ToolGroupProps) {
   const runningCount = tools.filter((t) => t.output === undefined).length;
   const stateLabel = runningCount > 0 ? 'running' : 'done';
+  const [open, setOpen] = useState(false);
+  // Collapsed by default; running tools stay visible so live progress and approvals are never hidden.
+  const showRows = open || runningCount > 0;
 
   return (
     <div className="hm-tool-group">
-      <div className="hm-tool-group__header">
+      <button
+        type="button"
+        className="hm-tool-group__header"
+        onClick={() => setOpen((v) => !v)}
+        aria-expanded={showRows}
+      >
         <span className="hm-tool-group__header-icon">
           <Icon name="settings" size={12} />
         </span>
@@ -70,10 +78,10 @@ export function ToolGroup({ tools, rpc, streaming }: ToolGroupProps) {
           {tools.length} {tools.length === 1 ? 'step' : 'steps'} · {stateLabel}
         </span>
         {runningCount > 0 && <span className="hm-tool-group__header-running" aria-label="running" />}
-      </div>
-      {tools.map((tool) => (
-        <ToolRow key={tool.id} tool={tool} rpc={rpc} streaming={streaming} />
-      ))}
+        <span className="hm-tool-group__chevron" aria-hidden="true">›</span>
+      </button>
+      {showRows &&
+        tools.map((tool) => <ToolRow key={tool.id} tool={tool} rpc={rpc} streaming={streaming} />)}
     </div>
   );
 }
