@@ -109,7 +109,7 @@ function stripMarkdown(text: string): string {
 }
 
 // Codex Live delegation.context.append rejects payloads > 500 tokens.
-function capForVoiceContext(text: string, maxChars = 600, maxWords = 150): string {
+function capForVoiceContext(text: string, maxChars = 400, maxWords = 100): string {
   const words = text.split(/\s+/);
   const byWords = words.length > maxWords ? words.slice(0, maxWords).join(' ') + '…' : text;
   return byWords.length > maxChars ? byWords.slice(0, maxChars - 1).trimEnd() + '…' : byWords;
