@@ -2,13 +2,16 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { Icon } from '../components/Icon';
 
 import { useReducedMotion } from '../hooks/useReducedMotion';
+import { useProfilesStore } from '@hermes-pwa/core';
 // Live voice call with the Hermes agent. Ports the talk-desktop dashboard web
 // client (agent-platform-custom images/hermes-agent/plugins/talk-desktop) into
 // a PWA screen: WebRTC realtime session, two engines (Codex Live gpt-live-1,
 // Hermes gpt-realtime-2.1), server-side task delegation, call-style controls.
 
-const API = '/api/plugins/talk-desktop';
-const IDLE_MS = 2600;
+const API = '/api/plugins/hermes-pwa/voice';
+const IDLE_MS = 3500;
+const VOICE_DELEGATE_NOTE =
+  "[voice] Reply briefly and naturally in the user's language so it can be READ ALOUD (2-4 sentences, no markdown or lists). The text is dictated and may contain errors, use the latest intent. Do not claim something is done before it actually is.\n\n";
 
 type Engine = 'codex' | 'hermes';
 type Speaker = 'user' | 'bot' | 'tool' | 'sys';
@@ -31,6 +34,9 @@ interface LiveRefs {
   stream: MediaStream;
   dc: RTCDataChannel;
   threadId: string | null;
+  callId: string; // voice call id → persists as a Hermes session on hang-up
+  callProfile: string | null;
+  callStartedAt: number | null; // ms epoch, client clock
   timers: number[];
   audioCtx: AudioContext | null;
   remoteAnalyser: AnalyserNode | null;
@@ -91,10 +97,22 @@ function playChime(kind: 'connect' | 'end', existing?: AudioContext | null) {
 }
 function stripMarkdown(text: string): string {
   return text
-    .replace(/```[\s\S]*?```/g, ' ')
+    .replace(/```[\s\S]*?```/g, ' (code block omitted) ')
     .replace(/`([^`]*)`/g, '$1')
+    .replace(/\*\*([^*]+)\*\*/g, '$1')
+    .replace(/__([^_]+)__/g, '$1')
     .replace(/\*([^*]+)\*/g, '$1')
+    .replace(/^#{1,6}\s+/gm, '')
+    .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
+    .replace(/\n{3,}/g, '\n\n')
     .trim();
+}
+
+// Codex Live delegation.context.append rejects payloads > 500 tokens.
+function capForVoiceContext(text: string, maxChars = 600, maxWords = 150): string {
+  const words = text.split(/\s+/);
+  const byWords = words.length > maxWords ? words.slice(0, maxWords).join(' ') + '…' : text;
+  return byWords.length > maxChars ? byWords.slice(0, maxChars - 1).trimEnd() + '…' : byWords;
 }
 
 type CallState = 'idle' | 'connecting' | 'reconnecting' | 'listening' | 'thinking' | 'working' | 'speaking';
@@ -161,9 +179,9 @@ function VoiceOrb({
     if (!ctx) return;
     // ponytail: colors are captured at mount; a theme switch mid-call keeps the old palette until remount.
     const styles = getComputedStyle(canvas);
-    const accent = hexToRgb(styles.getPropertyValue('--color-accent'), [99, 102, 241]);
-    const warn = hexToRgb(styles.getPropertyValue('--color-warning'), [245, 158, 11]);
-    const dim = hexToRgb(styles.getPropertyValue('--color-text-muted'), [107, 114, 128]);
+    const accent = hexToRgb(styles.getPropertyValue('--hm-color-accent'), [99, 102, 241]);
+    const warn = hexToRgb(styles.getPropertyValue('--hm-color-warning'), [245, 158, 11]);
+    const dim = hexToRgb(styles.getPropertyValue('--hm-color-text-muted'), [107, 114, 128]);
     const params = orbParams(accent, warn, dim);
 
     const dpr = Math.min(2, window.devicePixelRatio || 1);
@@ -302,6 +320,26 @@ export function Voice() {
   const speakingUntilRef = useRef(0);
   const [login, setLogin] = useState<LoginState | null>(null);
   const [engine, setEngine] = useState<Engine>('codex'); // codex = gpt-live-1, hermes = gpt-realtime-2.1
+  const activeProfile = useProfilesStore((s) => s.activeName);
+  const [resume, setResume] = useState<{ threadId: string; sessionId: string; endedAt: number } | null>(null);
+  useEffect(() => {
+    // Last finished call per profile → "Continue last call" (thread resume).
+    let alive = true;
+    void apiGet<{ profiles?: Record<string, { threadId?: string; sessionId?: string; endedAt?: number | null } | undefined> }>('/threads')
+      .then((r) => {
+        if (!alive) return;
+        const p = r.profiles?.[activeProfile || ''] ?? r.profiles?.[''];
+        if (p?.threadId && (p.endedAt ?? 0) > 0) {
+          setResume({ threadId: p.threadId, sessionId: p.sessionId || '', endedAt: p.endedAt || 0 });
+        } else {
+          setResume(null);
+        }
+      })
+      .catch(() => undefined);
+    return () => {
+      alive = false;
+    };
+  }, [activeProfile]);
   const refs = useRef<LiveRefs | null>(null);
   const itemsRef = useRef<TranscriptItem[]>([]);
   const transcriptRef = useRef<HTMLDivElement | null>(null);
@@ -317,11 +355,16 @@ export function Voice() {
     if (el && pinnedRef.current) el.scrollTop = el.scrollHeight;
   }, [items]);
   const push = useCallback((who: Speaker, text: string) => {
+    const oneShot = who === 'tool' || who === 'sys';
     setItems((prev) => {
+      const now = Date.now();
       const next = prev.slice();
       const last = next[next.length - 1];
-      if (last && last.who === who && !last.done) last.text += text;
-      else next.push({ who, text, at: Date.now(), done: false });
+      if (!oneShot && last && last.who === who && (!last.done || now - last.at < IDLE_MS)) {
+        next[next.length - 1] = { ...last, text: last.text + text, at: now, done: false };
+      } else {
+        next.push({ who, text, at: now, done: oneShot });
+      }
       return next;
     });
   }, []);
@@ -336,7 +379,7 @@ export function Voice() {
       for (let i = next.length - 1; i >= 0; i--) {
         const it = next[i];
         if (it && it.who === who && !it.done) {
-          next[i] = { ...it, text, done: true };
+          next[i] = { ...it, text: text.length > it.text.length ? text : it.text, at: Date.now(), done: true };
           break;
         }
       }
@@ -402,7 +445,29 @@ export function Voice() {
     };
   }, [live]);
 
+  // Persist the finished call as a real Hermes session (source 'voice') so it shows
+  // in Sessions, is searchable, and can be resumed in chat. Fire-and-forget.
+  // ponytail: sendBeacon would be more unload-proof; rest() is enough for the
+  // common hang-up path — add beacon if unmount drops calls in practice.
+  const persistCall = useCallback((r: LiveRefs) => {
+    if (!r.threadId || !r.callStartedAt) return;
+    const msgs = itemsRef.current
+      .filter((it) => it.who === 'user' || it.who === 'bot')
+      .map((it) => ({ who: it.who, text: it.text, at: Math.round(it.at / 1000) }));
+    if (!msgs.length) return;
+    void rest('/call/save', {
+      callId: r.callId,
+      profile: r.callProfile,
+      threadId: r.threadId,
+      startedAt: Math.round(r.callStartedAt / 1000),
+      endedAt: Math.round(Date.now() / 1000),
+      messages: msgs,
+    }, 10_000).catch(() => undefined);
+  }, []);
+
   const stop = useCallback(async () => {
+    const r = refs.current;
+    if (r) persistCall(r);
     // Unwind a half-built call (user tapped Cancel while connecting).
     const s = startingRef.current;
     if (s) {
@@ -419,7 +484,6 @@ export function Voice() {
         /* ignore */
       }
     }
-    const r = refs.current;
     refs.current = null;
     setLive(false);
     setMuted(false);
@@ -466,7 +530,7 @@ export function Voice() {
         /* ignore */
       }
     }
-  }, []);
+  }, [persistCall]);
 
   // Delegation: the voice model asks for a task, we run it server-side via the
   // talk-desktop delegate route and feed the result back into the live session.
@@ -475,15 +539,19 @@ export function Voice() {
       push('tool', 'delegation: ' + dreq.slice(0, 180));
       let out = '';
       try {
-        const r = await rest<{ output?: string }>('/codexlive/delegate', { prompt: dreq, language: 'en' }, 95_000);
+        const r = await rest<{ output?: string }>(
+          '/codexlive/delegate',
+          { prompt: VOICE_DELEGATE_NOTE + dreq, language: 'en' },
+          95_000,
+        );
         out = r?.output ?? '';
       } catch (e) {
         out = 'delegation failed: ' + String(e instanceof Error ? e.message : e).slice(0, 140);
       }
       out = stripMarkdown(out || 'The task could not be completed.');
-      push('tool', 'result: ' + out.slice(0, 160));
+      push('tool', 'result: ' + (out.length > 220 ? out.slice(0, 220).trimEnd() + '…' : out));
       try {
-        feedBack(out.slice(0, 3500));
+        feedBack(capForVoiceContext(out));
       } catch {
         /* ignore */
       }
@@ -493,7 +561,7 @@ export function Voice() {
     [push],
   );
 
-  const start = useCallback(async () => {
+  const start = useCallback(async (resumeThreadId?: string) => {
     if (startingRef.current || refs.current) return; // double-tap guard
     setErr('');
     setItems([]);
@@ -715,7 +783,19 @@ export function Voice() {
       }, 150);
     }
 
-    refs.current = { pc, stream, dc, threadId: null, timers: [lvlTimer], audioCtx, audioEls: [], remoteAnalyser: null };
+    refs.current = {
+      pc,
+      stream,
+      dc,
+      threadId: null,
+      callId: crypto.randomUUID(),
+      callProfile: activeProfile && activeProfile !== 'default' ? activeProfile : null,
+      callStartedAt: Date.now(),
+      timers: [lvlTimer],
+      audioCtx,
+      audioEls: [],
+      remoteAnalyser: null,
+    };
     startingRef.current = null; // refs owns cleanup from here on
 
     try {
@@ -741,9 +821,11 @@ export function Voice() {
       if (engine === 'codex') {
         const r2 = await rest<{ answer?: string; threadId?: string }>('/codexlive/session', {
           language: 'en',
-          profile: null,
+          profile: activeProfile && activeProfile !== 'default' ? activeProfile : null,
           voice: 'cove',
           offer: sdp,
+          threadId: resumeThreadId,
+          callId: refs.current?.callId,
         });
         if (!r2?.answer) throw new Error('no answer SDP');
         if (refs.current) refs.current.threadId = r2.threadId || null;
@@ -783,7 +865,7 @@ export function Voice() {
       setErr('Could not start audio: ' + String(e instanceof Error ? e.message : e).slice(0, 200));
       void stop();
     }
-  }, [engine, finalize, push, runDelegation, stop, sys]);
+  }, [engine, finalize, push, runDelegation, stop, sys, activeProfile]);
 
   // Hang up if the screen unmounts mid-call (drawer navigation, tab close).
   useEffect(() => {
@@ -792,6 +874,7 @@ export function Voice() {
       const r = refs.current;
       refs.current = null;
       if (!r) return;
+      persistCall(r);
       r.timers.forEach((t) => window.clearInterval(t));
       try {
         r.stream.getTracks().forEach((t) => t.stop());
@@ -819,7 +902,7 @@ export function Voice() {
         void rest('/codexlive/stop', { threadId: r.threadId }).catch(() => undefined);
       }
     };
-  }, []);
+  }, [persistCall]);
 
   const toggleMute = useCallback(() => {
     const r = refs.current;
@@ -974,6 +1057,19 @@ export function Voice() {
             onClick={() => setEngine(engine === 'codex' ? 'hermes' : 'codex')}
           >
             Engine: {engine === 'codex' ? 'Codex' : 'Hermes'}
+          </button>
+        )}
+        {!live && resume && (
+          <button
+            type="button"
+            className="hm-voice__chip"
+            onClick={() => {
+              const tid = resume.threadId;
+              setResume(null);
+              void start(tid);
+            }}
+          >
+            Continue last call
           </button>
         )}
         {!live && err && !login && (

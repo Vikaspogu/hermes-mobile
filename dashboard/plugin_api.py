@@ -969,3 +969,15 @@ def hermes_pwa_app_asset(path: str) -> FileResponse:
     if index.exists():
         return _file_response(index)
     raise HTTPException(status_code=404, detail="Not found")
+
+
+# ── Live Voice (vendored from talk-desktop / hermes-live-voice) ──────────────
+# Rutas montadas bajo /api/plugins/hermes-pwa/voice/* para que el PWA no
+# dependa del plugin talk-desktop. see dashboard/voice_live.py + voice_history.py
+import voice_live  # noqa: E402
+import voice_history  # noqa: E402
+
+if voice_live.router is not None:
+    router.include_router(voice_live.router, prefix="/voice")
+if voice_history.router is not None:
+    router.include_router(voice_history.router, prefix="/voice")

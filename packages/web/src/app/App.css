@@ -4664,12 +4664,12 @@ a {
 .hm-voice__bubble--user {
   align-self: flex-end;
   background: var(--hm-color-primary-tint);
-  color: var(--hm-color-primary-text);
+  color: var(--hm-color-text);
 }
 
 .hm-voice__bubble--bot {
   align-self: flex-start;
-  background: var(--hm-color-surface-raised);
+  background: var(--hm-color-surface);
   color: var(--hm-color-text);
   border: 1px solid var(--hm-color-border);
 }

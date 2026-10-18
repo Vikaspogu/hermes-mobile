@@ -56,6 +56,7 @@ const SOURCE_LABELS: Record<string, string> = {
   gateway: 'Gateway',
   local: 'Local',
   tui: 'TUI',
+  voice: 'Voice',
 };
 
 const SOURCE_ALIASES: Record<string, string[]> = {
@@ -65,7 +66,7 @@ const SOURCE_ALIASES: Record<string, string[]> = {
   tui: ['terminal'],
 };
 
-export const PWA_LOCAL_SESSION_SOURCE_IDS = ['cli', 'codex', 'cron', 'desktop', 'gateway', 'local', 'tui'] as const;
+export const PWA_LOCAL_SESSION_SOURCE_IDS = ['cli', 'codex', 'cron', 'desktop', 'gateway', 'local', 'tui', 'voice'] as const;
 
 // Backend currently supports exclude_sources but not include_sources. Keep this
 // list isolated at the transport boundary; do not model these sources in PWA UI.
