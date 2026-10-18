@@ -4,7 +4,7 @@ import type { RestClient, SystemStats, ModelProvider, ReasoningEffort, PushStatu
 import { Icon } from '../components/Icon';
 import { BottomSheet } from '../components/BottomSheet';
 import { HERMES_PWA_VERSION_LABEL } from '../app/version';
-import { disablePushNotifications, enablePushNotifications, getPushCapability } from '../pwa/push';
+import { currentPushSubscriptionId, disablePushNotifications, enablePushNotifications, getPushCapability } from '../pwa/push';
 import { canPromptInstall, INSTALL_PROMPT_CHANGED_EVENT, isIosSafari, promptInstall } from '../pwa/install';
 
 interface SettingsProps {
@@ -89,6 +89,7 @@ export function Settings({ rest, onNavigate, onLogout }: SettingsProps) {
   const [pushLoading, setPushLoading] = useState(true);
   const [pushError, setPushError] = useState<string | undefined>();
   const [pushBusy, setPushBusy] = useState(false);
+  const [localPushId, setLocalPushId] = useState<string | null>(null);
   const [installPromptAvailable, setInstallPromptAvailable] = useState(false);
   const [installing, setInstalling] = useState(false);
   const [installOutcome, setInstallOutcome] = useState<string | undefined>();
@@ -104,7 +105,10 @@ export function Settings({ rest, onNavigate, onLogout }: SettingsProps) {
   const pushProfile = activeName || 'default';
   const pushCapability = useMemo(() => getPushCapability(), []);
   const iosSafari = useMemo(() => isIosSafari(), []);
-  const activePushSubscription = pushStatus?.subscriptions.find((sub) => sub.enabled) ?? pushStatus?.subscriptions[0];
+  // Only this browser's own subscription counts: another device's must not hide "Enable on this device".
+  const activePushSubscription = localPushId
+    ? pushStatus?.subscriptions.find((sub) => sub.id === localPushId && sub.enabled)
+    : undefined;
   const pushStatusLabel = pushLoading
     ? 'Loading…'
     : pushStatus?.available
@@ -131,10 +135,10 @@ export function Settings({ rest, onNavigate, onLogout }: SettingsProps) {
 
   function reloadPushStatus() {
     setPushLoading(true);
-    rest
-      .pushStatus(pushProfile)
-      .then((next) => {
+    Promise.all([rest.pushStatus(pushProfile), currentPushSubscriptionId().catch(() => null)])
+      .then(([next, localId]) => {
         setPushStatus(next);
+        setLocalPushId(localId);
         setPushError(undefined);
       })
       .catch((err) => setPushError(err instanceof Error ? err.message : 'Failed to load push status'))

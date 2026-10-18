@@ -3,6 +3,12 @@ import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import { Settings } from './Settings';
 import { HERMES_PWA_RELEASE_VERSION } from '../app/version';
 import { useConnectionStore, useProfilesStore, useModelStore, useConfigStore } from '@hermes-pwa/core';
+import { currentPushSubscriptionId } from '../pwa/push';
+
+vi.mock('../pwa/push', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('../pwa/push')>()),
+  currentPushSubscriptionId: vi.fn().mockResolvedValue(null),
+}));
 
 const makeRest = (overrides = {}) =>
   ({
@@ -163,6 +169,7 @@ describe('Settings', () => {
   });
 
   it('loads and renders notification status in Settings only', async () => {
+    vi.mocked(currentPushSubscriptionId).mockResolvedValueOnce('sha256:sub');
     const rest = makeRest({
       pushStatus: vi.fn().mockResolvedValue({
         available: true,
@@ -183,7 +190,23 @@ describe('Settings', () => {
     await waitFor(() => expect(rest.pushTest).toHaveBeenCalledWith('sha256:sub', 'default'));
   });
 
+  it('offers Enable on this device when only another device is subscribed', async () => {
+    const rest = makeRest({
+      pushStatus: vi.fn().mockResolvedValue({
+        available: true,
+        enabled: true,
+        vapidPublicKey: 'public-key',
+        subscriptions: [{ id: 'sha256:other-device', enabled: true, profile: 'default', label: 'Firefox' }],
+      }),
+    });
+    render(<Settings rest={rest} onNavigate={vi.fn()} onLogout={vi.fn()} />);
+
+    expect(await screen.findByRole('button', { name: 'Enable on this device' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Send test' })).not.toBeInTheDocument();
+  });
+
   it('scopes notification status and test actions to the active profile', async () => {
+    vi.mocked(currentPushSubscriptionId).mockResolvedValueOnce('sha256:research-sub');
     useProfilesStore.setState({
       profiles: [{ name: 'research', displayName: 'Research', provider: 'anthropic', model: 'claude-sonnet-4', isActive: true }],
       activeName: 'research',

@@ -66,6 +66,15 @@ async function currentBrowserSubscription(): Promise<PushSubscription | null> {
   return registration.pushManager.getSubscription();
 }
 
+/** Server id (`sha256:<hex of endpoint>`) of this browser's push subscription, or null if it has none. */
+export async function currentPushSubscriptionId(): Promise<string | null> {
+  if (!getPushCapability().supported) return null;
+  const subscription = await currentBrowserSubscription().catch(() => null);
+  if (!subscription?.endpoint) return null;
+  const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(subscription.endpoint));
+  return 'sha256:' + Array.from(new Uint8Array(digest), (b) => b.toString(16).padStart(2, '0')).join('');
+}
+
 export async function enablePushNotifications(
   rest: RestClient,
   vapidPublicKey: string,
