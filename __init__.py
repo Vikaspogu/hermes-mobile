@@ -45,30 +45,6 @@ def _notification_profile(kwargs: dict[str, Any]) -> str:
     return str(value or "default")
 
 
-def _approval_session_key(kwargs: dict[str, Any]) -> str:
-    return str(kwargs.get("session_key") or kwargs.get("session_id") or "")
-
-
-def _approval_platform(kwargs: dict[str, Any]) -> str:
-    explicit = str(kwargs.get("platform") or kwargs.get("source") or kwargs.get("channel") or "").strip().lower()
-    if explicit:
-        return explicit
-    session_key = _approval_session_key(kwargs).lower()
-    if session_key.startswith("telegram:") or ":telegram:" in session_key or "telegram" in session_key.split(":"):
-        return "telegram"
-    return ""
-
-
-def _should_surface_pwa_approval(kwargs: dict[str, Any]) -> bool:
-    """Return True when the approval should be visible/recoverable in PWA.
-
-    Telegram-origin approvals already have a native Telegram approval surface.
-    Mirroring them into the mobile PWA creates duplicate push/card noise and can
-    leave stale PWA cards for a request that was meant to be handled in Telegram.
-    """
-    return _approval_platform(kwargs) != "telegram"
-
-
 def _on_pre_approval_request(**kwargs: Any) -> None:
     """Observe Hermes approval requests.
 
@@ -80,12 +56,6 @@ def _on_pre_approval_request(**kwargs: Any) -> None:
             logger.debug(
                 "Hermes PWA approval hook ignored non-gateway surface: %s",
                 _approval_surface(kwargs),
-            )
-            return
-        if not _should_surface_pwa_approval(kwargs):
-            logger.debug(
-                "Hermes PWA approval hook ignored Telegram-origin approval: session=%s",
-                _approval_session_key(kwargs),
             )
             return
         profile = _notification_profile(kwargs)
