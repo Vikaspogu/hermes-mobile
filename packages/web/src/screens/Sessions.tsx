@@ -6,6 +6,8 @@ import {
   sessionSourceLabel,
   sessionSourceSearchTerms,
   useSessionsStore,
+  useCronRunsStore,
+  useCronStore,
   useChatStore,
   useProfilesStore,
   type RpcClient,
@@ -172,9 +174,19 @@ export function Sessions({ rpc, rest, onSessionOpen }: SessionsProps) {
   const [search, setSearch] = useState('');
   const [actingId, setActingId] = useState<string | undefined>();
 
+  const cronRuns = useCronRunsStore();
+  const cronJobs = useCronStore((s) => s.jobs);
+  const cronMode = sourceFilter === 'cron';
+
   useEffect(() => {
     void load(rest);
   }, [rest, load]);
+
+  useEffect(() => {
+    if (!cronMode) return;
+    void useCronRunsStore.getState().load(rest);
+    if (useCronStore.getState().jobs.length === 0) void useCronStore.getState().loadJobs(rest);
+  }, [cronMode, rest]);
 
   async function handleSelect(session: Session) {
     await useChatStore.getState().resumeSessionIntoChat(rest, rpc, session.id, session.profile ?? activeName);
@@ -208,14 +220,15 @@ export function Sessions({ rpc, rest, onSessionOpen }: SessionsProps) {
 
   const sourceOptions = buildSourceFilterOptions(sessions);
 
-  const filtered = sessions
+  const baseList = cronMode ? cronRuns.runs : sessions;
+  const filtered = baseList
     .filter((s) => {
       if (filter === 'live') return s.isActive || s.active;
       if (filter === 'done') return !s.isActive && !s.active && !s.archived;
       if (filter === 'archived') return s.archived;
       return true;
     })
-    .filter((s) => (sourceFilter === 'all' ? sessionSourceKey(s) !== 'cron' : sessionSourceKey(s) === sourceFilter));
+    .filter((s) => (cronMode ? true : sourceFilter === 'all' ? sessionSourceKey(s) !== 'cron' : sessionSourceKey(s) === sourceFilter));
 
   const searched = search.trim()
     ? filtered.filter((s) => sessionSearchText(s).includes(search.toLowerCase()))
@@ -274,14 +287,42 @@ export function Sessions({ rpc, rest, onSessionOpen }: SessionsProps) {
         </div>
       )}
 
+      {cronMode && (
+        <div className="hm-sessions__cron-controls">
+          <select
+            className="hm-input hm-sessions__cron-job"
+            aria-label="Filter cron runs by job"
+            value={cronRuns.jobId ?? ''}
+            onChange={(e) => void cronRuns.load(rest, { jobId: e.target.value || undefined })}
+          >
+            <option value="">All jobs</option>
+            {cronJobs.map((j) => (
+              <option key={j.id} value={j.id}>{j.name || j.id}</option>
+            ))}
+          </select>
+          <label className="hm-sessions__cron-silent">
+            <input
+              type="checkbox"
+              checked={cronRuns.includeSilent}
+              onChange={(e) => void cronRuns.load(rest, { includeSilent: e.target.checked })}
+            />
+            Show silent
+          </label>
+        </div>
+      )}
+
       {total > 0 && (
         <p className="hm-sessions__stats">{statsLine}</p>
       )}
 
-      {error && <div className="hm-warning-banner hm-warning-banner--error">{error}</div>}
-      {loading && sessions.length === 0 && <p className="hm-muted hm-loading">Loading…</p>}
+      {(cronMode ? cronRuns.error : error) && (
+        <div className="hm-warning-banner hm-warning-banner--error">{cronMode ? cronRuns.error : error}</div>
+      )}
+      {(cronMode ? cronRuns.loading && cronRuns.runs.length === 0 : loading && sessions.length === 0) && (
+        <p className="hm-muted hm-loading">Loading…</p>
+      )}
 
-      {searched.length === 0 && !loading ? (
+      {searched.length === 0 && !(cronMode ? cronRuns.loading : loading) ? (
         <div className="hm-empty-state">
           <p>{search ? 'No matching sessions' : 'No sessions yet'}</p>
           <p className="hm-muted">Start a chat to create your first session.</p>
@@ -299,6 +340,16 @@ export function Sessions({ rpc, rest, onSessionOpen }: SessionsProps) {
             />
           ))}
         </div>
+      )}
+
+      {cronMode && cronRuns.nextCursor != null && (
+        <button
+          className="hm-filter-chip hm-sessions__load-more"
+          disabled={cronRuns.loading}
+          onClick={() => void cronRuns.loadMore(rest)}
+        >
+          {cronRuns.loading ? 'Loading…' : 'Load more'}
+        </button>
       )}
     </div>
   );

@@ -228,6 +228,7 @@ const noopRest: RestClient = {
   kanbanTaskDetail:    () => Promise.reject(new Error('preview')),
   kanbanComment:       () => Promise.resolve(),
   profileSessions:     () => Promise.resolve(previewSessions),
+  cronRuns:            () => Promise.resolve({ runs: [], nextCursor: null }),
   sessionMessages:     () => Promise.resolve({ messages: [] }),
   sessionUpdate:       () => Promise.resolve({ ok: true }),
   sessionDelete:       () => Promise.resolve({ ok: true }),
