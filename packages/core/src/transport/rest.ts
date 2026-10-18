@@ -76,6 +76,19 @@ function asArray<T>(value: unknown): T[] {
   return Array.isArray(value) ? (value as T[]) : [];
 }
 
+export interface PaperlessCandidate {
+  number: number;
+  title: string;
+  filename: string;
+  status: string;
+}
+
+export interface PaperlessPending {
+  runId: string;
+  expiresAt: string;
+  candidates: PaperlessCandidate[];
+}
+
 export interface CronRunsQuery {
   /** Resume below this started_at (the previous page's nextCursor). */
   before?: number;
@@ -294,6 +307,8 @@ export interface RestClient {
 
   profileSessions(): Promise<Session[]>;
   cronRuns(params?: CronRunsQuery): Promise<{ runs: Session[]; nextCursor: number | null }>;
+  paperlessPending(): Promise<PaperlessPending | null>;
+  paperlessDecide(action: 'approve' | 'discard', runId: string, numbers?: number[]): Promise<{ titles?: string[] }>;
   sessionMessages(sessionId: string, profile?: string): Promise<unknown>;
   sessionArtifacts(sessionId: string): Promise<Artifact[]>;
   sessionUpdate(sessionId: string, updates: { title?: string | null; archived?: boolean; profile?: string }): Promise<unknown>;
@@ -662,6 +677,29 @@ export function makeRestClient(http: Http): RestClient {
         runs: asArray<Record<string, unknown>>(raw.runs).map(cronRunToSession(profile)),
         nextCursor: typeof raw.next_cursor === 'number' ? raw.next_cursor : null,
       };
+    },
+
+    async paperlessPending(): Promise<PaperlessPending | null> {
+      const raw = await http<{ pending?: Record<string, unknown> | null }>('/api/plugins/paperless-approval/pending');
+      const p = raw.pending;
+      if (!p || typeof p.run_id !== 'string') return null;
+      return {
+        runId: p.run_id,
+        expiresAt: String(p.expires_at ?? ''),
+        candidates: asArray<Record<string, unknown>>(p.candidates).map((c) => ({
+          number: Number(c.number),
+          title: String(c.title ?? ''),
+          filename: String(c.filename ?? ''),
+          status: String(c.status ?? 'needs_review'),
+        })),
+      };
+    },
+
+    async paperlessDecide(action, runId, numbers = []): Promise<{ titles?: string[] }> {
+      return await http<{ titles?: string[] }>(`/api/plugins/paperless-approval/${action}`, {
+        method: 'POST',
+        body: JSON.stringify({ run_id: runId, numbers }),
+      });
     },
 
     async profileSessions(): Promise<Session[]> {
