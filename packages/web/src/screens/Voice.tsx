@@ -8,7 +8,9 @@ import { useReducedMotion } from '../hooks/useReducedMotion';
 // Hermes gpt-realtime-2.1), server-side task delegation, call-style controls.
 
 const API = '/api/plugins/talk-desktop';
-const IDLE_MS = 2600;
+const IDLE_MS = 3500;
+const VOICE_DELEGATE_NOTE =
+  "[voice] Reply briefly and naturally in the user's language so it can be READ ALOUD (2-4 sentences, no markdown or lists). The text is dictated and may contain errors, use the latest intent. Do not claim something is done before it actually is.\n\n";
 
 type Engine = 'codex' | 'hermes';
 type Speaker = 'user' | 'bot' | 'tool' | 'sys';
@@ -91,10 +93,22 @@ function playChime(kind: 'connect' | 'end', existing?: AudioContext | null) {
 }
 function stripMarkdown(text: string): string {
   return text
-    .replace(/```[\s\S]*?```/g, ' ')
+    .replace(/```[\s\S]*?```/g, ' (code block omitted) ')
     .replace(/`([^`]*)`/g, '$1')
+    .replace(/\*\*([^*]+)\*\*/g, '$1')
+    .replace(/__([^_]+)__/g, '$1')
     .replace(/\*([^*]+)\*/g, '$1')
+    .replace(/^#{1,6}\s+/gm, '')
+    .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
+    .replace(/\n{3,}/g, '\n\n')
     .trim();
+}
+
+// Codex Live delegation.context.append rejects payloads > 500 tokens.
+function capForVoiceContext(text: string, maxChars = 600, maxWords = 150): string {
+  const words = text.split(/\s+/);
+  const byWords = words.length > maxWords ? words.slice(0, maxWords).join(' ') + '…' : text;
+  return byWords.length > maxChars ? byWords.slice(0, maxChars - 1).trimEnd() + '…' : byWords;
 }
 
 type CallState = 'idle' | 'connecting' | 'reconnecting' | 'listening' | 'thinking' | 'working' | 'speaking';
@@ -161,9 +175,9 @@ function VoiceOrb({
     if (!ctx) return;
     // ponytail: colors are captured at mount; a theme switch mid-call keeps the old palette until remount.
     const styles = getComputedStyle(canvas);
-    const accent = hexToRgb(styles.getPropertyValue('--color-accent'), [99, 102, 241]);
-    const warn = hexToRgb(styles.getPropertyValue('--color-warning'), [245, 158, 11]);
-    const dim = hexToRgb(styles.getPropertyValue('--color-text-muted'), [107, 114, 128]);
+    const accent = hexToRgb(styles.getPropertyValue('--hm-color-accent'), [99, 102, 241]);
+    const warn = hexToRgb(styles.getPropertyValue('--hm-color-warning'), [245, 158, 11]);
+    const dim = hexToRgb(styles.getPropertyValue('--hm-color-text-muted'), [107, 114, 128]);
     const params = orbParams(accent, warn, dim);
 
     const dpr = Math.min(2, window.devicePixelRatio || 1);
@@ -317,11 +331,16 @@ export function Voice() {
     if (el && pinnedRef.current) el.scrollTop = el.scrollHeight;
   }, [items]);
   const push = useCallback((who: Speaker, text: string) => {
+    const oneShot = who === 'tool' || who === 'sys';
     setItems((prev) => {
+      const now = Date.now();
       const next = prev.slice();
       const last = next[next.length - 1];
-      if (last && last.who === who && !last.done) last.text += text;
-      else next.push({ who, text, at: Date.now(), done: false });
+      if (!oneShot && last && last.who === who && (!last.done || now - last.at < IDLE_MS)) {
+        next[next.length - 1] = { ...last, text: last.text + text, at: now, done: false };
+      } else {
+        next.push({ who, text, at: now, done: oneShot });
+      }
       return next;
     });
   }, []);
@@ -336,7 +355,7 @@ export function Voice() {
       for (let i = next.length - 1; i >= 0; i--) {
         const it = next[i];
         if (it && it.who === who && !it.done) {
-          next[i] = { ...it, text, done: true };
+          next[i] = { ...it, text: text.length > it.text.length ? text : it.text, at: Date.now(), done: true };
           break;
         }
       }
@@ -475,15 +494,19 @@ export function Voice() {
       push('tool', 'delegation: ' + dreq.slice(0, 180));
       let out = '';
       try {
-        const r = await rest<{ output?: string }>('/codexlive/delegate', { prompt: dreq, language: 'en' }, 95_000);
+        const r = await rest<{ output?: string }>(
+          '/codexlive/delegate',
+          { prompt: VOICE_DELEGATE_NOTE + dreq, language: 'en' },
+          95_000,
+        );
         out = r?.output ?? '';
       } catch (e) {
         out = 'delegation failed: ' + String(e instanceof Error ? e.message : e).slice(0, 140);
       }
       out = stripMarkdown(out || 'The task could not be completed.');
-      push('tool', 'result: ' + out.slice(0, 160));
+      push('tool', 'result: ' + (out.length > 220 ? out.slice(0, 220).trimEnd() + '…' : out));
       try {
-        feedBack(out.slice(0, 3500));
+        feedBack(capForVoiceContext(out));
       } catch {
         /* ignore */
       }
