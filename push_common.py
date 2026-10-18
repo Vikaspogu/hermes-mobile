@@ -414,6 +414,9 @@ def push_sender_availability() -> tuple[bool, str | None]:
     return True, None
 
 
+_PUSH_TTL_SECONDS = 12 * 60 * 60
+
+
 def vapid_subject() -> str:
     return os.environ.get("HERMES_PWA_VAPID_SUBJECT") or "mailto:admin@example.com"
 
@@ -430,6 +433,8 @@ def send_web_push_record(record: dict[str, Any], payload: dict[str, Any]) -> Non
         data=json.dumps(payload),
         vapid_private_key=os.environ["HERMES_PWA_VAPID_PRIVATE_KEY"].replace("\\n", "\n"),
         vapid_claims={"sub": vapid_subject()},
+        # pywebpush defaults TTL to 0: the push service drops the message if the phone is asleep.
+        ttl=_PUSH_TTL_SECONDS,
     )
 
 
