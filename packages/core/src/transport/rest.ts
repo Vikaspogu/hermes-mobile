@@ -1,5 +1,5 @@
 import type { Http } from './http';
-import { PWA_LOCAL_SESSION_SOURCE_IDS, PWA_NON_LOCAL_SESSION_SOURCES, mergeSessionsByLineage, sessionSourceId, sessionsFromResult, type Session } from '../domain/session';
+import { PWA_NON_LOCAL_SESSION_SOURCES, mergeSessionsByLineage, sessionsFromResult, toSession, type Session } from '../domain/session';
 import type { GatewayStatus } from '../domain/status';
 import type { AuthProvider, HermesUser, LoginBody, LoginResult, WsTicket } from '../domain/auth';
 import type { Artifact } from '../domain/artifact';
@@ -639,11 +639,15 @@ export function makeRestClient(http: Http): RestClient {
       // otherwise they fill the 100-row page and push real chats out (P1-S2 regression).
       const [localRaw, cronRaw] = await Promise.all([
         http<Record<string, unknown>>(profileSessionsPath(profile, [...PWA_NON_LOCAL_SESSION_SOURCES, 'cron'])),
-        http<Record<string, unknown>>(
-          profileSessionsPath(profile, [...PWA_NON_LOCAL_SESSION_SOURCES, ...PWA_LOCAL_SESSION_SOURCE_IDS.filter((id) => id !== 'cron')], 20),
-        ),
+        // Plugin route drops [SILENT] runs server-side, so frequent silent jobs can't push real results out.
+        // Fail soft: an older plugin without this route must not break the main list.
+        http<{ runs?: Record<string, unknown>[] }>(
+          `/api/plugins/hermes-pwa/cron-runs?profile=${encodeURIComponent(profile)}&limit=50`,
+        ).catch(() => ({ runs: [] })),
       ]);
-      const cron = sessionsFromResult(cronRaw).filter((s) => sessionSourceId(s) === 'cron');
+      const cron = asArray<Record<string, unknown>>(cronRaw.runs).map((r) =>
+        toSession({ id: r.session_id, title: r.title, started_at: r.started_at, source: 'cron', profile }),
+      );
       return mergeSessionsByLineage(sessionsFromResult(localRaw), cron);
     },
 

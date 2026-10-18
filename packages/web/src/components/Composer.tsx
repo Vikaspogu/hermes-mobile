@@ -153,7 +153,6 @@ export function Composer({
   onStop,
   busy,
   placeholder = 'Message Hermes…',
-  messages = [],
   onOpenVoice,
   onUploadFile,
   onLayoutChange,

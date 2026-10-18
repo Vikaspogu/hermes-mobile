@@ -2,11 +2,13 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import sqlite3
 import sys
 from datetime import datetime, timezone
 from html import escape
 from pathlib import Path
+from typing import Any
 from urllib.parse import quote
 from urllib.request import Request as UrlRequest, urlopen
 
@@ -575,6 +577,119 @@ def _messaging_binding_sessions(profile: str | None = None) -> list[dict[str, ob
 def messaging_bindings(profile: str = "default") -> JSONResponse:
     rows = _messaging_binding_sessions(profile)
     return JSONResponse({"sessions": rows, "total": len(rows)})
+
+
+def _is_silent_text(text: str) -> bool:
+    try:
+        from gateway.response_filters import is_autonomous_silence_response  # same rule as the push hook
+    except Exception:  # pragma: no cover - outside Hermes (tests)
+        return text.strip().upper().startswith("[SILENT]")
+    return bool(is_autonomous_silence_response(text))
+
+
+def _cron_job_names(home: Path) -> dict[str, str]:
+    try:
+        data = json.loads((home / "cron" / "jobs.json").read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return {}
+    jobs = data.get("jobs") if isinstance(data, dict) else data
+    if isinstance(jobs, dict):
+        jobs = list(jobs.values())
+    if not isinstance(jobs, list):
+        return {}
+    return {str(j.get("id")): str(j.get("name") or "") for j in jobs if isinstance(j, dict) and j.get("id")}
+
+
+_CRON_RUNS_BATCH = 200
+_CRON_RUNS_MAX_BATCHES = 10
+
+
+def _cron_runs(
+    profile: str | None, limit: int, before: float | None, include_silent: bool, job_id: str | None
+) -> dict[str, Any]:
+    """Newest-first cron runs, silent runs dropped unless asked.
+
+    ponytail: scans at most 10 x 200 sessions per request; next_cursor resumes the scan.
+    """
+    home = _profile_home(profile)
+    db_path = home / "state.db"
+    if not db_path.exists():
+        return {"runs": [], "next_cursor": None}
+    names = _cron_job_names(home)
+    runs: list[dict[str, Any]] = []
+    cursor = before
+    exhausted = False
+    try:
+        conn = sqlite3.connect(f"file:{db_path}?mode=ro", uri=True)
+        conn.row_factory = sqlite3.Row
+    except sqlite3.Error:
+        return {"runs": [], "next_cursor": None}
+    try:
+        for _ in range(_CRON_RUNS_MAX_BATCHES):
+            sql = "SELECT id, title, started_at FROM sessions WHERE source = 'cron'"
+            params: list[object] = []
+            if cursor is not None:
+                sql += " AND started_at < ?"
+                params.append(cursor)
+            if job_id:
+                sql += " AND id LIKE ?"
+                params.append(f"cron\\_{job_id}\\_%")
+                sql = sql.replace("LIKE ?", "LIKE ? ESCAPE '\\'")
+            sql += " ORDER BY started_at DESC LIMIT ?"
+            params.append(_CRON_RUNS_BATCH)
+            batch = conn.execute(sql, params).fetchall()
+            if not batch:
+                exhausted = True
+                break
+            for row in batch:
+                cursor = row["started_at"]
+                last = conn.execute(
+                    "SELECT content FROM messages WHERE session_id = ? AND role = 'assistant' "
+                    "AND content IS NOT NULL AND content != '' ORDER BY id DESC LIMIT 1",
+                    (row["id"],),
+                ).fetchone()
+                text = str(last["content"]) if last else ""
+                silent = not text.strip() or _is_silent_text(text)
+                if silent and not include_silent:
+                    continue
+                match = re.match(r"^cron_([0-9A-Za-z]+)_\d{8}_\d{6}$", str(row["id"]))
+                jid = match.group(1) if match else ""
+                preview = " ".join(text.split())
+                runs.append(
+                    {
+                        "session_id": row["id"],
+                        "job_id": jid,
+                        "job_name": names.get(jid, ""),
+                        "started_at": row["started_at"],
+                        "title": row["title"] or names.get(jid) or row["id"],
+                        "preview": preview[:140],
+                        "silent": silent,
+                    }
+                )
+                if len(runs) >= limit:
+                    break
+            if len(runs) >= limit:
+                break
+            if len(batch) < _CRON_RUNS_BATCH:
+                exhausted = True
+                break
+    finally:
+        conn.close()
+    return {"runs": runs, "next_cursor": None if exhausted and len(runs) < limit else cursor}
+
+
+@router.get("/cron-runs", dependencies=[Depends(_require_dashboard_auth)])
+def cron_runs(
+    profile: str = "default",
+    limit: int = 50,
+    before: float | None = None,
+    include_silent: int = 0,
+    job_id: str | None = None,
+) -> JSONResponse:
+    if job_id is not None and not re.fullmatch(r"[0-9A-Za-z]{1,64}", job_id):
+        raise HTTPException(status_code=400, detail="invalid job_id")
+    limit = max(1, min(int(limit), 200))
+    return JSONResponse(_cron_runs(profile, limit, before, bool(include_silent), job_id))
 
 
 def _push_availability() -> tuple[bool, str | None]:
