@@ -187,10 +187,9 @@ _LANGUAGE_DIRECTIVE_DEFAULT = {
         'estés usando.'
     ),
     "en": (
-        '\n\nLANGUAGE AND VOICE: Speak the language the user speaks to you — if they speak Spanish, reply in '
-        'natural Chilean Spanish; if they speak English, reply in English. Never mix languages or reply in '
-        'English when the user speaks Spanish. Your voice should sound like a native speaker of the language '
-        'you are using.'
+        '\n\nLANGUAGE AND VOICE: Speak the language the user is speaking. Match it consistently '
+        'for the whole call, including tools and delegated answers. Your voice should sound like '
+        'a native speaker of the language you are using.'
     ),
 }
 

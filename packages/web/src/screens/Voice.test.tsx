@@ -95,7 +95,7 @@ describe('Voice', () => {
     expect(sent.type).toBe('delegation.context.append');
     const appendedText = sent.content[0]?.text ?? '';
     expect(appendedText.startsWith('Yes—both apps are on Android.')).toBe(true);
-    expect(appendedText.length).toBeLessThanOrEqual(1200);
+    expect(appendedText.length).toBeLessThanOrEqual(400);
     expect(appendedText.split(/\s+/).length).toBeLessThanOrEqual(241);
   });
 
