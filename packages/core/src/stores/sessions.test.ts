@@ -9,7 +9,7 @@ describe('useSessionsStore', () => {
 
   beforeEach(() => {
     window.localStorage.clear();
-    useSessionsStore.setState({ sessions: [], loading: false, error: undefined, pinnedIds: [] });
+    useSessionsStore.setState({ sessions: [], loading: false, error: undefined, pinnedIds: [], showCronInAll: false });
 
     rpcMock = {
       request: vi.fn(),
@@ -180,5 +180,14 @@ describe('useSessionsStore', () => {
 
     useSessionsStore.getState().togglePin(session);
     expect(useSessionsStore.getState().pinnedIds).toEqual([]);
+  });
+
+  it('persists the show-cron-in-All preference (default off)', () => {
+    expect(useSessionsStore.getState().showCronInAll).toBe(false);
+    useSessionsStore.getState().setShowCronInAll(true);
+    expect(useSessionsStore.getState().showCronInAll).toBe(true);
+    expect(window.localStorage.getItem('hermes-pwa.cronInAll.v1')).toBe('1');
+    useSessionsStore.getState().setShowCronInAll(false);
+    expect(window.localStorage.getItem('hermes-pwa.cronInAll.v1')).toBe('0');
   });
 });

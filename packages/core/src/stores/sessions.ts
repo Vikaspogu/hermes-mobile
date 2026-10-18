@@ -5,12 +5,15 @@ import type { RestClient } from '../transport/rest';
 import { LONG_RPC_TIMEOUT_MS } from '../transport/timeouts';
 
 const PINNED_SESSIONS_STORAGE_KEY = 'hermes-pwa.pinnedSessions.v1';
+const CRON_IN_ALL_STORAGE_KEY = 'hermes-pwa.cronInAll.v1';
 
 export interface SessionsStore {
   sessions: Session[];
   loading: boolean;
   error: string | undefined;
   pinnedIds: string[];
+  /** Show cron runs in the Sessions "All" list (device-local preference, default off). */
+  showCronInAll: boolean;
 
   load(rest: RestClient): Promise<void>;
   create(rpc: RpcClient, params?: { profile?: string; cwd?: string }): Promise<string>;
@@ -19,8 +22,26 @@ export interface SessionsStore {
   delete(rest: RestClient, session: Session): Promise<void>;
   togglePin(session: Session): void;
   setPinnedIds(ids: string[]): void;
+  setShowCronInAll(value: boolean): void;
 }
 
+function readCronInAll(): boolean {
+  if (typeof window === 'undefined') return false;
+  try {
+    return window.localStorage.getItem(CRON_IN_ALL_STORAGE_KEY) === '1';
+  } catch {
+    return false;
+  }
+}
+
+function writeCronInAll(value: boolean): void {
+  if (typeof window === 'undefined') return;
+  try {
+    window.localStorage.setItem(CRON_IN_ALL_STORAGE_KEY, value ? '1' : '0');
+  } catch {
+    // Best-effort local preference only.
+  }
+}
 function readPinnedIds(): string[] {
   if (typeof window === 'undefined') return [];
   try {
@@ -56,6 +77,7 @@ export const useSessionsStore = create<SessionsStore>((set, get) => ({
   loading: false,
   error: undefined,
   pinnedIds: initialPinnedIds,
+  showCronInAll: readCronInAll(),
 
   async load(rest) {
     set({ loading: true, error: undefined });
@@ -131,5 +153,10 @@ export const useSessionsStore = create<SessionsStore>((set, get) => ({
     const pinnedIds = [...new Set(ids.filter(Boolean))];
     set({ pinnedIds });
     writePinnedIds(pinnedIds);
+  },
+
+  setShowCronInAll(value) {
+    set({ showCronInAll: value });
+    writeCronInAll(value);
   },
 }));

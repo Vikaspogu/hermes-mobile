@@ -167,7 +167,7 @@ function SessionRow({
 }
 
 export function Sessions({ rpc, rest, onSessionOpen }: SessionsProps) {
-  const { sessions, loading, error, load, archive: archiveSession, delete: deleteSession } = useSessionsStore();
+  const { sessions, loading, error, load, archive: archiveSession, delete: deleteSession, showCronInAll } = useSessionsStore();
   const activeName = useProfilesStore((s) => s.activeName);
   const [filter, setFilter] = useState<Filter>('all');
   const [sourceFilter, setSourceFilter] = useState<SourceFilter>('all');
@@ -228,7 +228,7 @@ export function Sessions({ rpc, rest, onSessionOpen }: SessionsProps) {
       if (filter === 'archived') return s.archived;
       return true;
     })
-    .filter((s) => (cronMode ? true : sourceFilter === 'all' ? sessionSourceKey(s) !== 'cron' : sessionSourceKey(s) === sourceFilter));
+    .filter((s) => (cronMode ? true : sourceFilter === 'all' ? showCronInAll || sessionSourceKey(s) !== 'cron' : sessionSourceKey(s) === sourceFilter));
 
   const searched = search.trim()
     ? filtered.filter((s) => sessionSearchText(s).includes(search.toLowerCase()))
