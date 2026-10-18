@@ -99,13 +99,14 @@ export async function enablePushNotifications(
   }
 
   const registration = await navigator.serviceWorker.ready;
-  let subscription = await registration.pushManager.getSubscription();
-  if (!subscription) {
-    subscription = await registration.pushManager.subscribe({
-      userVisibleOnly: true,
-      applicationServerKey: urlBase64ToUint8Array(vapidPublicKey),
-    });
-  }
+  // Explicit Enable always mints a fresh subscription: a reused one can be stale on the push
+  // service side (Chrome/FCM answers 410 Gone) while the browser still reports it as active.
+  const stale = await registration.pushManager.getSubscription();
+  if (stale) await stale.unsubscribe().catch(() => false);
+  const subscription = await registration.pushManager.subscribe({
+    userVisibleOnly: true,
+    applicationServerKey: urlBase64ToUint8Array(vapidPublicKey),
+  });
 
   const body: PushSubscribeBody = { subscription: subscription.toJSON(), label };
   return rest.pushSubscribe(body, profile);

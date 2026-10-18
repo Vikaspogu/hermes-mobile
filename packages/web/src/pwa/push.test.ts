@@ -94,6 +94,33 @@ describe('push pwa helpers', () => {
     );
   });
 
+  it('replaces an existing browser subscription on explicit enable (stale FCM endpoints return 410)', async () => {
+    setNotification('granted');
+    const stale = { unsubscribe: vi.fn().mockResolvedValue(true) };
+    const fresh = {
+      endpoint: 'https://push.example/sub/2',
+      toJSON: () => ({ endpoint: 'https://push.example/sub/2', keys: { p256dh: 'p', auth: 'a' } }),
+    } as unknown as PushSubscription;
+    const pushManager = {
+      getSubscription: vi.fn().mockResolvedValue(stale),
+      subscribe: vi.fn().mockResolvedValue(fresh),
+    };
+    setNavigator({
+      serviceWorker: { ready: Promise.resolve({ pushManager } as unknown as ServiceWorkerRegistration) } as ServiceWorkerContainer,
+      userAgent: 'Chrome',
+      platform: 'Linux',
+    });
+    (window as unknown as { PushManager?: unknown }).PushManager = function PushManager() {};
+    const rest = { pushSubscribe: vi.fn().mockResolvedValue({ id: 'sha256:sub2', enabled: true }) } as never;
+
+    await enablePushNotifications(rest, 'AQIDBA', 'default');
+    expect(stale.unsubscribe).toHaveBeenCalledTimes(1);
+    expect(pushManager.subscribe).toHaveBeenCalledTimes(1);
+    expect((rest as { pushSubscribe: ReturnType<typeof vi.fn> }).pushSubscribe.mock.calls[0]?.[0].subscription.endpoint).toBe(
+      'https://push.example/sub/2',
+    );
+  });
+
   it('unsubscribes from the active profile scope', async () => {
     const pushSubscription = {
       endpoint: 'https://push.example/sub/1',
