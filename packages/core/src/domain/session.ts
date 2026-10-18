@@ -41,6 +41,11 @@ export interface Session {
   lineageRootId?: string | undefined;
   startedAt?: number | undefined;
   lastActive?: number | undefined;
+  /** Cron run whose final reply was empty or [SILENT] (only present when asked for). */
+  silent?: boolean | undefined;
+  /** Cron job id/name for cron-run rows (from the plugin cron-runs route). */
+  cronJobId?: string | undefined;
+  cronJobName?: string | undefined;
 }
 
 const SOURCE_LABELS: Record<string, string> = {

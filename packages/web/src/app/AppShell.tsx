@@ -705,7 +705,7 @@ export function AppShell({ connectionState, rpc, rest, onRetry }: AppShellProps)
             {screen === 'chat'      && <Chat key={activeName ?? 'default'} rpc={rpc} rest={rest} onOpenVoice={() => navigate('voice')} />}
             {screen === 'voice'     && <Voice key={activeName ?? 'default'} />}
             {screen === 'sessions'  && <Sessions key={activeName ?? 'default'} rpc={rpc} rest={rest} onSessionOpen={() => navigate('chat')} />}
-            {screen === 'approvals' && <Activity key={activeName ?? 'default'} rpc={rpc} />}
+            {screen === 'approvals' && <Activity key={activeName ?? 'default'} rpc={rpc} rest={rest} />}
             {screen === 'kanban'    && <Projects key={activeName ?? 'default'} rest={rest} />}
             {screen === 'agents'    && <Agents key={activeName ?? 'default'} rpc={rpc} />}
             {screen === 'profiles'  && <Profiles key={activeName ?? 'default'} rest={rest} />}

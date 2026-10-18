@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { Sessions } from './Sessions';
-import { useSessionsStore, useChatStore, useProfilesStore, makeRpcEvents, type Session } from '@hermes-pwa/core';
+import { useSessionsStore, useChatStore, useProfilesStore, useCronRunsStore, useCronStore, makeRpcEvents, type Session } from '@hermes-pwa/core';
 
 function session(overrides: Partial<Session> & Pick<Session, 'id' | 'title'>): Session {
   return {
@@ -24,6 +24,8 @@ const restMock = {
   sessionUpdate: vi.fn().mockResolvedValue({ ok: true }),
   sessionDelete: vi.fn().mockResolvedValue({ ok: true }),
   setActiveProfile: vi.fn(),
+  cronRuns: vi.fn().mockResolvedValue({ runs: [], nextCursor: null }),
+  cronJobs: vi.fn().mockResolvedValue([]),
 } as unknown as import('@hermes-pwa/core').RestClient;
 
 describe('Sessions screen', () => {
@@ -34,6 +36,9 @@ describe('Sessions screen', () => {
     vi.mocked(restMock.profileSessions).mockResolvedValue([]);
     vi.mocked(restMock.sessionUpdate).mockResolvedValue({ ok: true });
     vi.mocked(restMock.sessionDelete).mockResolvedValue({ ok: true });
+    vi.mocked(restMock.cronRuns).mockResolvedValue({ runs: [], nextCursor: null });
+    useCronRunsStore.setState({ runs: [], nextCursor: null, includeSilent: false, jobId: undefined, loading: false, error: undefined });
+    useCronStore.setState({ jobs: [] });
   });
 
   it('shows empty state when no sessions', async () => {
@@ -119,9 +124,39 @@ describe('Sessions screen', () => {
     render(<Sessions rpc={rpcMock} rest={restMock} onSessionOpen={vi.fn()} />);
     await waitFor(() => expect(screen.getByText('Real chat')).toBeInTheDocument());
     expect(screen.queryByText('morning-brief run')).not.toBeInTheDocument();
+    vi.mocked(restMock.cronRuns).mockResolvedValue({
+      runs: [session({ id: 'cron-1', title: 'morning-brief run', source: 'cron' })],
+      nextCursor: null,
+    });
     fireEvent.click(screen.getByRole('tab', { name: /Cron/i }));
-    expect(screen.getByText('morning-brief run')).toBeInTheDocument();
+    await waitFor(() => expect(screen.getByText('morning-brief run')).toBeInTheDocument());
     expect(screen.queryByText('Real chat')).not.toBeInTheDocument();
+  });
+
+  it('pages cron runs and reloads with Show silent and the job filter', async () => {
+    vi.mocked(restMock.profileSessions).mockResolvedValue([
+      session({ id: 'cron-1', title: 'run one', source: 'cron', originSource: 'cron', currentSource: 'cron' }),
+      session({ id: 'tui-1', title: 'Real chat', source: 'tui', originSource: 'tui', currentSource: 'tui' }),
+    ]);
+    useCronStore.setState({ jobs: [{ id: 'abc123', name: 'morning-brief' } as never] });
+    vi.mocked(restMock.cronRuns)
+      .mockResolvedValueOnce({ runs: [session({ id: 'cron-1', title: 'run one', source: 'cron' })], nextCursor: 100 })
+      .mockResolvedValueOnce({ runs: [session({ id: 'cron-2', title: 'run two', source: 'cron' })], nextCursor: null });
+    render(<Sessions rpc={rpcMock} rest={restMock} onSessionOpen={vi.fn()} />);
+    await waitFor(() => expect(screen.getByText('Real chat')).toBeInTheDocument());
+    fireEvent.click(screen.getByRole('tab', { name: /Cron/i }));
+    await waitFor(() => expect(screen.getByText('run one')).toBeInTheDocument());
+
+    fireEvent.click(screen.getByRole('button', { name: 'Load more' }));
+    await waitFor(() => expect(screen.getByText('run two')).toBeInTheDocument());
+    expect(restMock.cronRuns).toHaveBeenLastCalledWith({ before: 100, includeSilent: false });
+    expect(screen.queryByRole('button', { name: 'Load more' })).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByLabelText('Show silent'));
+    await waitFor(() => expect(restMock.cronRuns).toHaveBeenLastCalledWith({ includeSilent: true }));
+
+    fireEvent.change(screen.getByLabelText('Filter cron runs by job'), { target: { value: 'abc123' } });
+    await waitFor(() => expect(restMock.cronRuns).toHaveBeenLastCalledWith({ includeSilent: true, jobId: 'abc123' }));
   });
 
   it('searches by title', async () => {

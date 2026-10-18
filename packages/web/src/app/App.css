@@ -2026,6 +2026,21 @@ a {
   word-break: break-all;
 }
 
+.hm-paperless__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--hm-space-2);
+}
+
+.hm-paperless__row {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--hm-space-2);
+  min-height: 44px;
+}
+
 .hm-approval-card__actions {
   display: flex;
   gap: var(--hm-space-2);
@@ -2933,6 +2948,30 @@ a {
 
 .hm-sessions__source-filters {
   padding-bottom: var(--hm-space-1);
+}
+
+.hm-sessions__cron-controls {
+  display: flex;
+  align-items: center;
+  gap: var(--hm-space-3);
+}
+
+.hm-sessions__cron-job {
+  flex: 1;
+  min-width: 0;
+}
+
+.hm-sessions__cron-silent {
+  display: flex;
+  align-items: center;
+  gap: var(--hm-space-2);
+  white-space: nowrap;
+  color: var(--hm-color-text-muted);
+}
+
+.hm-sessions__load-more {
+  align-self: center;
+  margin-top: var(--hm-space-3);
 }
 
 .hm-sessions__stats {
