@@ -1,9 +1,14 @@
 name: hermes-pwa
-version: 0.1.2-beta
-description: Installable mobile PWA client for Hermes Dashboard
+version: 0.2.0-beta
+description: Installable mobile PWA client for Hermes Dashboard (includes the Live Voice lanes vendored from talk-desktop)
+requires_auth:
+  - openai-codex
+# The vendored voice lanes need Hermes >=0.21.7 to sign Codex Realtime requests
+# (credentialed_provider_request, same requirement as talk-desktop 0.2.6).
+requires_hermes: '>=0.21.7'
 provides_tools: []
 python_dependencies:
-  - "pywebpush>=2.5.0"
+  - 'pywebpush>=2.5.0'
 provides_hooks:
   - pre_approval_request
   - post_approval_response

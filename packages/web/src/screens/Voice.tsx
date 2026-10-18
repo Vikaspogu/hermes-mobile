@@ -2,12 +2,13 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { Icon } from '../components/Icon';
 
 import { useReducedMotion } from '../hooks/useReducedMotion';
+import { useProfilesStore } from '@hermes-pwa/core';
 // Live voice call with the Hermes agent. Ports the talk-desktop dashboard web
 // client (agent-platform-custom images/hermes-agent/plugins/talk-desktop) into
 // a PWA screen: WebRTC realtime session, two engines (Codex Live gpt-live-1,
 // Hermes gpt-realtime-2.1), server-side task delegation, call-style controls.
 
-const API = '/api/plugins/talk-desktop';
+const API = '/api/plugins/hermes-pwa/voice';
 const IDLE_MS = 3500;
 const VOICE_DELEGATE_NOTE =
   "[voice] Reply briefly and naturally in the user's language so it can be READ ALOUD (2-4 sentences, no markdown or lists). The text is dictated and may contain errors, use the latest intent. Do not claim something is done before it actually is.\n\n";
@@ -33,6 +34,9 @@ interface LiveRefs {
   stream: MediaStream;
   dc: RTCDataChannel;
   threadId: string | null;
+  callId: string; // voice call id → persists as a Hermes session on hang-up
+  callProfile: string | null;
+  callStartedAt: number | null; // ms epoch, client clock
   timers: number[];
   audioCtx: AudioContext | null;
   remoteAnalyser: AnalyserNode | null;
@@ -316,6 +320,26 @@ export function Voice() {
   const speakingUntilRef = useRef(0);
   const [login, setLogin] = useState<LoginState | null>(null);
   const [engine, setEngine] = useState<Engine>('codex'); // codex = gpt-live-1, hermes = gpt-realtime-2.1
+  const activeProfile = useProfilesStore((s) => s.activeName);
+  const [resume, setResume] = useState<{ threadId: string; sessionId: string; endedAt: number } | null>(null);
+  useEffect(() => {
+    // Last finished call per profile → "Continue last call" (thread resume).
+    let alive = true;
+    void apiGet<{ profiles?: Record<string, { threadId?: string; sessionId?: string; endedAt?: number | null } | undefined> }>('/threads')
+      .then((r) => {
+        if (!alive) return;
+        const p = r.profiles?.[activeProfile || ''] ?? r.profiles?.[''];
+        if (p?.threadId && (p.endedAt ?? 0) > 0) {
+          setResume({ threadId: p.threadId, sessionId: p.sessionId || '', endedAt: p.endedAt || 0 });
+        } else {
+          setResume(null);
+        }
+      })
+      .catch(() => undefined);
+    return () => {
+      alive = false;
+    };
+  }, [activeProfile]);
   const refs = useRef<LiveRefs | null>(null);
   const itemsRef = useRef<TranscriptItem[]>([]);
   const transcriptRef = useRef<HTMLDivElement | null>(null);
@@ -421,7 +445,29 @@ export function Voice() {
     };
   }, [live]);
 
+  // Persist the finished call as a real Hermes session (source 'voice') so it shows
+  // in Sessions, is searchable, and can be resumed in chat. Fire-and-forget.
+  // ponytail: sendBeacon would be more unload-proof; rest() is enough for the
+  // common hang-up path — add beacon if unmount drops calls in practice.
+  const persistCall = useCallback((r: LiveRefs) => {
+    if (!r.threadId || !r.callStartedAt) return;
+    const msgs = itemsRef.current
+      .filter((it) => it.who === 'user' || it.who === 'bot')
+      .map((it) => ({ who: it.who, text: it.text, at: Math.round(it.at / 1000) }));
+    if (!msgs.length) return;
+    void rest('/call/save', {
+      callId: r.callId,
+      profile: r.callProfile,
+      threadId: r.threadId,
+      startedAt: Math.round(r.callStartedAt / 1000),
+      endedAt: Math.round(Date.now() / 1000),
+      messages: msgs,
+    }, 10_000).catch(() => undefined);
+  }, []);
+
   const stop = useCallback(async () => {
+    const r = refs.current;
+    if (r) persistCall(r);
     // Unwind a half-built call (user tapped Cancel while connecting).
     const s = startingRef.current;
     if (s) {
@@ -438,7 +484,6 @@ export function Voice() {
         /* ignore */
       }
     }
-    const r = refs.current;
     refs.current = null;
     setLive(false);
     setMuted(false);
@@ -485,7 +530,7 @@ export function Voice() {
         /* ignore */
       }
     }
-  }, []);
+  }, [persistCall]);
 
   // Delegation: the voice model asks for a task, we run it server-side via the
   // talk-desktop delegate route and feed the result back into the live session.
@@ -516,7 +561,7 @@ export function Voice() {
     [push],
   );
 
-  const start = useCallback(async () => {
+  const start = useCallback(async (resumeThreadId?: string) => {
     if (startingRef.current || refs.current) return; // double-tap guard
     setErr('');
     setItems([]);
@@ -738,7 +783,19 @@ export function Voice() {
       }, 150);
     }
 
-    refs.current = { pc, stream, dc, threadId: null, timers: [lvlTimer], audioCtx, audioEls: [], remoteAnalyser: null };
+    refs.current = {
+      pc,
+      stream,
+      dc,
+      threadId: null,
+      callId: crypto.randomUUID(),
+      callProfile: activeProfile && activeProfile !== 'default' ? activeProfile : null,
+      callStartedAt: Date.now(),
+      timers: [lvlTimer],
+      audioCtx,
+      audioEls: [],
+      remoteAnalyser: null,
+    };
     startingRef.current = null; // refs owns cleanup from here on
 
     try {
@@ -764,9 +821,11 @@ export function Voice() {
       if (engine === 'codex') {
         const r2 = await rest<{ answer?: string; threadId?: string }>('/codexlive/session', {
           language: 'en',
-          profile: null,
+          profile: activeProfile && activeProfile !== 'default' ? activeProfile : null,
           voice: 'cove',
           offer: sdp,
+          threadId: resumeThreadId,
+          callId: refs.current?.callId,
         });
         if (!r2?.answer) throw new Error('no answer SDP');
         if (refs.current) refs.current.threadId = r2.threadId || null;
@@ -806,7 +865,7 @@ export function Voice() {
       setErr('Could not start audio: ' + String(e instanceof Error ? e.message : e).slice(0, 200));
       void stop();
     }
-  }, [engine, finalize, push, runDelegation, stop, sys]);
+  }, [engine, finalize, push, runDelegation, stop, sys, activeProfile]);
 
   // Hang up if the screen unmounts mid-call (drawer navigation, tab close).
   useEffect(() => {
@@ -815,6 +874,7 @@ export function Voice() {
       const r = refs.current;
       refs.current = null;
       if (!r) return;
+      persistCall(r);
       r.timers.forEach((t) => window.clearInterval(t));
       try {
         r.stream.getTracks().forEach((t) => t.stop());
@@ -842,7 +902,7 @@ export function Voice() {
         void rest('/codexlive/stop', { threadId: r.threadId }).catch(() => undefined);
       }
     };
-  }, []);
+  }, [persistCall]);
 
   const toggleMute = useCallback(() => {
     const r = refs.current;
@@ -997,6 +1057,19 @@ export function Voice() {
             onClick={() => setEngine(engine === 'codex' ? 'hermes' : 'codex')}
           >
             Engine: {engine === 'codex' ? 'Codex' : 'Hermes'}
+          </button>
+        )}
+        {!live && resume && (
+          <button
+            type="button"
+            className="hm-voice__chip"
+            onClick={() => {
+              const tid = resume.threadId;
+              setResume(null);
+              void start(tid);
+            }}
+          >
+            Continue last call
           </button>
         )}
         {!live && err && !login && (

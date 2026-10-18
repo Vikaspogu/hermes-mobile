@@ -1,0 +1,1277 @@
+"""voice_live — Live Voice backend for the Hermes PWA, vendored from the
+talk-desktop plugin (hermes-live-voice, MIT) of the same author.
+
+Merges the desktop plugin's voice lanes into hermes-pwa so the PWA no longer
+depends on talk-desktop being installed. Reuses the Codex-OAuth lane from the
+hermes-talk plugin (talk_* vendored modules) plus identity-per-BOT (SOUL.md)
+and Codex OAuth session management (state, device-code login, logout).
+
+Routes (mounted at /api/plugins/hermes-pwa/voice/):
+  GET  /status              → auth codex ok? profile list? modelo/voz configuradas?
+  POST /session             → {profile?, voice?} → descriptor efímero (to_wire)
+  GET  /codex/status        → estado de la sesión Codex (sin secretos) + login en curso
+  POST /codex/login/start   → inicia `codex login --device-auth` (URL + código para el usuario)
+  POST /codex/login/cancel  → cancela un login pendiente
+  POST /codex/logout        → indica `hermes auth logout openai-codex` (la sesión es de Hermes)
+  GET  /codex/usage         → uso/quota del plan ChatGPT (agent.account_usage de Hermes, solo lectura)
+  GET  /voice/usage         → uso local acumulado de Live Voice (últimos 7 días)
+  POST /voice/usage/report  → {durationMs, audioMs} → acumula la sesión al día
+  POST /tool                → ejecuta una tool de voz (talk_tools) y devuelve texto para hablar
+  POST /codexlive/session   → {profile?, voice?, offer(SDP), threadId?, callId?} → gpt-live-1-codex (v3)
+  POST /codexlive/stop      → {threadId} → cierra la sesión realtime de Codex Live
+  POST /codexlive/interrupt → barge-in (turn/interrupt)
+
+El secret efímero va SOLO al cliente del PWA. Con la suscripción ChatGPT el plugin
+NUNCA toca el token: Hermes firma el request (`credentialed_provider_request`,
+requiere `requires_auth: [openai-codex]` en plugin.yaml) con su propio refresh bajo lock.
+"""
+
+from __future__ import annotations
+
+import asyncio
+import json
+import logging
+import os
+import re
+import shutil
+import subprocess
+import sys
+import threading
+import time
+from pathlib import Path
+
+_PLUGIN_ROOT = Path(__file__).resolve().parent.parent
+_TALK_VENDOR_ROOT = _PLUGIN_ROOT / "dashboard" / "talk_vendor"
+_HERMES_TALK_ROOT = Path.home() / ".hermes" / "plugins" / "hermes-talk"
+# Orden de precedencia (el último insertado gana): el plugin hermes-talk completo
+# si está instalado; si no, el bundle vendorizado que viaja en el repo.
+for _p in (str(_PLUGIN_ROOT), str(_TALK_VENDOR_ROOT), str(_HERMES_TALK_ROOT)):
+    if _p not in sys.path:
+        sys.path.insert(0, _p)
+
+def _load_vendored_talk_auth():
+    """Pin `talk_auth` to the bundled copy, even when hermes-talk is installed.
+
+    The vendored module never refreshes or rewrites a Codex token (Hermes signs those
+    requests). Registering it in sys.modules first means any hermes-talk module that does
+    `import talk_auth` in this process gets the same non-refreshing copy, so there is
+    only one refresher: Hermes.
+    """
+    import importlib.util
+
+    cached = sys.modules.get("talk_auth")
+    vendored = _TALK_VENDOR_ROOT / "talk_auth.py"
+    if cached is not None and Path(getattr(cached, "__file__", "") or "").resolve() == vendored.resolve():
+        return cached
+    spec = importlib.util.spec_from_file_location("talk_auth", vendored)
+    module = importlib.util.module_from_spec(spec)
+    sys.modules["talk_auth"] = module
+    spec.loader.exec_module(module)
+    return module
+
+
+talk_auth = _load_vendored_talk_auth()
+import talk_capabilities  # noqa: E402
+import talk_config  # noqa: E402
+import talk_host  # noqa: E402
+import talk_identity  # noqa: E402
+import talk_tools  # noqa: E402
+import talk_wire  # noqa: E402
+
+import voice_history  # noqa: E402
+try:
+    from fastapi import APIRouter, HTTPException, Request
+except ImportError:  # pragma: no cover
+    APIRouter = None
+    HTTPException = None
+    Request = None
+
+router = APIRouter() if APIRouter else None
+_log = logging.getLogger("hermes.plugins.talk-desktop")
+
+_PROFILES_ROOT = Path.home() / ".hermes" / "profiles"
+_MINT_LOCK = threading.Lock()
+
+
+def _list_bots() -> list[str]:
+    if not _PROFILES_ROOT.is_dir():
+        return []
+    return sorted(
+        e.name for e in _PROFILES_ROOT.iterdir()
+        if e.is_dir() and (e / "SOUL.md").is_file()
+    )
+
+
+def _profile_home(profile: str) -> Path | None:
+    # Nombre de perfil simple (sin traversal). Los perfiles pueden ser symlinks
+    # (p.ej. mi-bot → ~/.hermes-mi-bot), así que NO se exige que el path
+    # resuelto quede bajo profiles/ — solo que el nombre sea seguro y exista.
+    if not re.fullmatch(r"[A-Za-z0-9_-]{1,64}", profile or ""):
+        return None
+    p = _PROFILES_ROOT / profile
+    if not p.is_dir():
+        return None
+    return p.resolve()
+
+
+def _host_bot_name() -> str:
+    """Nombre del bot host: `agent.name` del config.yaml del host; si no hay, "Hermes"."""
+    try:
+        import yaml  # PyYAML viene con Hermes
+
+        cfg = yaml.safe_load((talk_config.get_hermes_home() / "config.yaml").read_text(encoding="utf-8")) or {}
+        name = str(((cfg.get("agent") or {}).get("name") or "")).strip()
+        if name and len(name) <= 64:
+            return name
+    except Exception:
+        pass
+    return "Hermes"
+
+
+def _bot_display_name(profile: str) -> str:
+    """Nombre del bot desde el encabezado del SOUL.md; fallback al slug.
+
+    Formatos vistos: "# SOUL.md — MiBot", "# Asistente — CEO de Acme", "# Ops",
+    "# MiProyecto DevOps".
+    """
+    home = _profile_home(profile)
+    if home is not None:
+        try:
+            first = ((home / "SOUL.md").read_text(encoding="utf-8", errors="replace").splitlines() or [""])[0].strip()
+        except OSError:
+            first = ""
+        first = re.sub(r"[^\w\sÁÉÍÓÚÜÑáéíóúüñ—·-]", " ", first.lstrip("#").strip())
+        parts = [p.strip() for p in first.split("—") if p.strip()]
+        name = ""
+        for part in parts:
+            if part.lower().replace(" ", "").startswith("soul.md") or part.lower().startswith("soul"):
+                continue
+            name = part
+            break
+        if not name and parts:
+            name = parts[-1]
+        name = name.split("·")[0].strip()
+        if name:
+            return name[:40]
+    return profile.capitalize()
+
+
+def _bot_identity_sections(profile: str) -> dict[str, str]:
+    """Identity del bot: SOUL.md del profile, con la misma sanitización que hermes-talk."""
+    home = _profile_home(profile)
+    if home is None:
+        return {}
+    sections: dict[str, str] = {}
+    soul = home / "SOUL.md"
+    if soul.is_file():
+        try:
+            body = soul.read_text(encoding="utf-8", errors="replace").strip()
+        except OSError:
+            body = ""
+        if body:
+            try:
+                body = talk_host._sanitize_identity_entries(body, "SOUL.md")
+            except Exception:  # noqa: BLE001
+                body = ""
+            if body:
+                sections["PERSONA"] = body[: talk_config.identity_char_limit("persona") or 8000]
+    return sections
+
+
+_DIRECTIVE_PATH = _PLUGIN_ROOT / "language_directive.txt"
+_LANGUAGE_DIRECTIVE_DEFAULT = {
+    "es": (
+        '\n\nIDIOMA Y VOZ: Habla en el idioma en que te habla el usuario — si te habla en español, responde en '
+        'español natural de Chile; si te habla en inglés, en inglés. Nunca mezcles idiomas ni respondas en '
+        'inglés cuando te hablan en español. Tu voz debe sonar como la de un hablante nativo del idioma que '
+        'estés usando.'
+    ),
+    "en": (
+        '\n\nLANGUAGE AND VOICE: Speak the language the user speaks to you — if they speak Spanish, reply in '
+        'natural Chilean Spanish; if they speak English, reply in English. Never mix languages or reply in '
+        'English when the user speaks Spanish. Your voice should sound like a native speaker of the language '
+        'you are using.'
+    ),
+}
+
+_LANGUAGE_DIRECTIVE_BUNDLE = "\n\n".join(value.strip() for value in _LANGUAGE_DIRECTIVE_DEFAULT.values())
+
+
+def _language_directive(language: str = "es") -> str:
+    """Select shipped defaults by locale; preserve custom file content verbatim."""
+    try:
+        if _DIRECTIVE_PATH.is_file():
+            text = _DIRECTIVE_PATH.read_text(encoding="utf-8")
+            shipped = {value.strip() for value in _LANGUAGE_DIRECTIVE_DEFAULT.values()}
+            shipped.add(_LANGUAGE_DIRECTIVE_BUNDLE)
+            if text.strip() and text.strip() not in shipped:
+                return "\n\n" + text
+    except OSError:
+        pass
+    return _LANGUAGE_DIRECTIVE_DEFAULT["en" if language == "en" else "es"]
+
+
+def _resolve_voice(requested: str | None) -> str:
+    """Voice pedida o la configurada (TALK_VOICE / config)."""
+    if requested:
+        v = str(requested).strip().lower()
+        if v in talk_config.OPENAI_REALTIME_VOICES:
+            return v
+        raise HTTPException(status_code=400, detail=f"voice '{v}' no disponible")
+    try:
+        return talk_config.voice() or "marin"
+    except Exception:  # noqa: BLE001
+        return "marin"
+
+
+_SEND_TO_CHAT_DESC = (
+    "Send a request to the user's currently open chat session so the REAL agent handles it "
+    "with its full context, memory and tools. The request appears in that chat as a message "
+    "from the user and the agent's reply streams there; you receive the reply text back and "
+    "read or summarize it aloud. Use this whenever the user asks for actual work, actions, or "
+    "information from their conversations, files or services \u2014 anything beyond a quick "
+    "conversational answer. Do NOT use it for small talk or things you can answer instantly."
+)
+
+
+def _send_to_chat_tool() -> dict:
+    return {
+        "type": "function",
+        "name": "send_to_chat",
+        "description": _SEND_TO_CHAT_DESC,
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "request": {
+                    "type": "string",
+                    "description": "The full request to hand to the agent, phrased naturally in the user's own language.",
+                },
+            },
+            "required": ["request"],
+        },
+    }
+
+
+def _mint_for(profile: str | None, voice: str, allow_chat: bool = True, language: str = "es"):
+    """Mint con identity del bot (o del host si no se pide profile)."""
+    tools = talk_tools.default_talk_tools()
+    if allow_chat:
+        tools = tools + [_send_to_chat_tool()]
+    if profile:
+        sections = _bot_identity_sections(profile)
+    else:
+        sections = talk_host.host().identity_sections()
+    instructions = talk_identity.build_instructions(
+        sections,
+        tools=tools,
+        lane="dashboard",
+        capabilities=talk_capabilities.instruction_section(),
+    )
+    instructions = instructions + _language_directive(language)
+    if allow_chat:
+        instructions += (
+            (
+                "\n\nVOICE + CHAT: The user has a chat open in the app. Answer quick questions and "
+                "small talk directly yourself. When they ask for REAL WORK (doing, creating, reviewing, "
+                "searching their information, or taking action), call send_to_chat with the complete "
+                "request phrased naturally in their language. The system sends it to their open chat, "
+                "where the real agent replies. You will then receive the result; read or summarize it "
+                "aloud naturally in no more than 2-3 sentences. If no chat is open, the tool will tell you."
+            ) if language == "en" else (
+                "\n\nVOZ + CHAT: el usuario tiene un chat abierto en la aplicaci\u00f3n. Para conversaci\u00f3n "
+                "r\u00e1pida, preguntas simples o charla, responde T\u00da directo. Cuando pida TRABAJO REAL "
+                "(hacer, crear, revisar, buscar en sus cosas, actuar sobre algo), llama a send_to_chat con la "
+                "petici\u00f3n completa y natural en su idioma: el sistema la env\u00eda a su chat abierto, el "
+                "agente real responde all\u00ed, y luego recibir\u00e1s el resultado \u2014 l\u00e9elo o "
+                "res\u00famelo en voz alta con naturalidad, m\u00e1ximo 2-3 frases. Si no hay chat abierto, "
+                "la herramienta te lo dir\u00e1."
+            )
+        )
+    instructions += _voice_policy(language)
+    if profile:
+        name = _bot_display_name(profile)
+        if "You are Hermes, speaking live" in instructions:
+            instructions = instructions.replace("You are Hermes, speaking live", f"You are {name}, speaking live", 1)
+        instructions += (
+            (
+                f"\n\nIDENTITY: You are {name}. If asked who you are, "
+                f"answer as {name} in that role — never say you are Hermes, a model, or a generic assistant."
+            ) if language == "en" else (
+                f"\n\nIDENTIDAD: Eres {name}. Si te preguntan quién eres, "
+                f"responde como {name} con su rol — nunca digas que eres Hermes, un modelo, ni un asistente genérico."
+            )
+        )
+    auth = talk_auth.resolve_auth()
+    model = talk_config.talk_model()
+    if auth.source == "codex-oauth":  # talk_auth.SOURCE_CODEX_OAUTH: no token, Hermes signs
+        session = talk_wire.build_session_payload(
+            model=model, voice=voice, instructions=instructions, tools=tools, text_output=False,
+        )
+        secret, expires_at_ms = talk_wire.parse_client_secret(_post_client_secret(session))
+        descriptor = talk_wire.TalkSessionDescriptor(
+            client_secret=secret,
+            expires_at_ms=expires_at_ms,
+            offer_url=talk_wire.OPENAI_REALTIME_OFFER_URL,
+            model=model,
+            voice=voice,
+        )
+    else:
+        # The operator's own API key (TALK_OPENAI_API_KEY / OPENAI_API_KEY).
+        descriptor = talk_wire.mint_ephemeral_session(
+            auth_token=auth.token,
+            model=model,
+            voice=voice,
+            instructions=instructions,
+            tools=tools,
+            text_output=False,
+        )
+    return descriptor, auth
+
+
+# ── Hermes-signed provider requests (the plugin never holds the Codex token) ──
+
+_HERMES_LOGOUT_CMD = "hermes auth logout openai-codex"
+
+
+def _provider_requests():
+    """Hermes core's signed-request API; None on a Hermes too old to ship it."""
+    try:
+        from hermes_cli import plugin_provider_requests
+    except ImportError:
+        return None
+    return plugin_provider_requests
+
+
+def _post_client_secret(session: dict) -> dict:
+    """Mint a Realtime client secret with the user's Hermes openai-codex sign-in.
+
+    Hermes resolves the token through its own locked refresh, sends it only to
+    api.openai.com and never follows redirects. This must stay a plugin function
+    called from plugin code: Hermes attributes the request to the plugin it finds
+    on the call stack, and checks `requires_auth: [openai-codex]` in plugin.yaml.
+    """
+    ppr = _provider_requests()
+    if ppr is None:
+        raise talk_wire.TalkUpstreamError(
+            "This Hermes is too old for subscription voice: update Hermes "
+            "(it needs core-signed provider requests), or set TALK_OPENAI_API_KEY."
+        )
+    try:
+        r = ppr.credentialed_provider_request(
+            "openai-codex", "POST", talk_wire.CLIENT_SECRETS_URL,
+            json={"session": session}, timeout=30,
+        )
+    except ppr.ProviderNotSignedIn as exc:
+        raise talk_wire.TalkUpstreamError(str(exc)) from exc
+    if r.status >= 400:
+        raise talk_wire.TalkUpstreamError(
+            f"OpenAI Realtime client secret failed ({r.status}): {r.text[:300]}"
+        )
+    try:
+        payload = r.json()
+    except Exception as exc:  # noqa: BLE001
+        raise talk_wire.TalkUpstreamError("OpenAI Realtime client secret returned non-JSON") from exc
+    if not isinstance(payload, dict):
+        raise talk_wire.TalkUpstreamError("OpenAI Realtime client secret returned invalid payload")
+    return payload
+
+
+# Hermes labels the Codex windows "Session" (5h) and "Weekly"; the panel keeps its own labels.
+_CODEX_WINDOWS = {"session": ("5h", 300), "weekly": ("semanal", 7 * 1440)}
+
+
+def _window_minutes(label: str) -> tuple[str, int | None]:
+    return _CODEX_WINDOWS.get((label or "").strip().lower(), (str(label), None))
+
+
+def _codex_usage_snapshot() -> dict:
+    """Plan usage from Hermes's own read-only fetcher, in the panel's shape."""
+    try:
+        from agent.account_usage import fetch_account_usage
+    except ImportError:
+        return {"ok": False, "error": "update Hermes to read Codex usage"}
+    try:
+        snap = fetch_account_usage("openai-codex", read_only=True)
+    except Exception as exc:  # noqa: BLE001
+        return {"ok": False, "error": f"{type(exc).__name__}: {exc}"[:160]}
+    if snap is None:
+        return {"ok": False, "error": "usage unavailable (sign in to openai-codex in Hermes)"}
+    if getattr(snap, "unavailable_reason", None):
+        return {"ok": False, "error": str(snap.unavailable_reason)[:160]}
+    windows: dict = {}
+    for w in getattr(snap, "windows", ()) or ():
+        if getattr(w, "scope", "account") != "account":
+            continue
+        reset = getattr(w, "reset_at", None)
+        label, minutes = _window_minutes(str(w.label))
+        windows[label] = {
+            "usedPercent": None if w.used_percent is None else round(float(w.used_percent)),
+            "windowMinutes": minutes,
+            "resetsAt": int(reset.timestamp()) if reset is not None else None,
+        }
+    return {"ok": True, "plan": getattr(snap, "plan", None) or None, "windows": windows}
+
+
+# ── Codex OAuth: sesión de voz (device-code login / logout / status) ─────────
+
+_LOGIN_URL = "https://auth.openai.com/codex/device"
+_URL_RE = re.compile(r"https://auth\.openai\.com/codex/device")
+# Device code is a hyphenated uppercase token (codex 0.145 prints e.g.
+# "IK34-27GA1"). codex wraps it in ANSI SGR colour codes with no surrounding
+# whitespace, so the escape's trailing "m" (a word char) sits right before the
+# code and defeats a leading \b word boundary — the old pattern silently never
+# matched, so the code was never exposed (the URL regex has no \b, which is
+# exactly why copying the sign-in link worked). Strip ANSI first, then match.
+_ANSI_RE = re.compile(r"\x1b\[[0-9;]*m")
+_CODE_RE = re.compile(r"\b([A-Z0-9]{4}-[A-Z0-9]{4,5})\b")
+_LOGIN_TIMEOUT_S = 16 * 60
+
+_LOGIN: dict = {
+    "status": "idle",  # idle | pending | done | error
+    "url": None,
+    "code": None,
+    "message": None,
+    "started_at": None,
+    "proc": None,
+    "output": "",
+}
+_LOGIN_LOCK = threading.Lock()
+
+
+def _codex_auth_path() -> Path:
+    configured = os.environ.get("CODEX_HOME", "").strip()
+    base = Path(configured) if configured else Path.home() / ".codex"
+    return base / "auth.json"
+
+
+def _codex_binary() -> str | None:
+    candidates = (str(Path.home() / ".local" / "bin" / "codex"), shutil.which("codex"), "/usr/local/bin/codex")
+    for cand in candidates:
+        if cand and os.access(cand, os.X_OK):
+            return cand
+    return None
+
+
+def _terminate(proc) -> None:
+    try:
+        proc.terminate()
+        try:
+            proc.wait(timeout=4)
+        except Exception:  # noqa: BLE001
+            proc.kill()
+    except Exception:  # noqa: BLE001
+        pass
+
+
+def _login_reader(proc) -> None:
+    try:
+        for line in iter(proc.stdout.readline, ""):
+            _LOGIN["output"] = (_LOGIN["output"] + line)[-4000:]
+            clean = _ANSI_RE.sub("", line)
+            if not _LOGIN["url"]:
+                m = _URL_RE.search(clean)
+                if m:
+                    _LOGIN["url"] = m.group(0)
+            if not _LOGIN["code"]:
+                m = _CODE_RE.search(clean)
+                if m:
+                    _LOGIN["code"] = m.group(1)
+    except Exception:  # noqa: BLE001
+        pass
+
+
+def _login_check() -> None:
+    """Fold the device-login process state into _LOGIN (call before reporting)."""
+    proc = _LOGIN.get("proc")
+    if _LOGIN.get("status") != "pending":
+        return
+    if proc is not None and proc.poll() is None:
+        started = _LOGIN.get("started_at") or 0
+        if time.time() - started > _LOGIN_TIMEOUT_S:
+            _terminate(proc)
+            _LOGIN.update(status="error", message="timeout: el código expiró sin aprobarse", proc=None)
+        return
+    # process finished (or vanished)
+    try:
+        diag = talk_auth.auth_diagnostic()
+        state = diag.get("codex_oauth")
+    except Exception:  # noqa: BLE001
+        state = None
+    if state in {"valid", "expired"}:
+        _LOGIN.update(status="done", message="Sesión iniciada", proc=None, url=None, code=None,
+                      output="")
+    else:
+        tail = " / ".join((_LOGIN.get("output") or "").strip().splitlines()[-3:])
+        _LOGIN.update(status="error", message=("No se pudo iniciar sesión" + (f": {tail}" if tail else "")),
+                      proc=None)
+
+
+def _start_codex_login() -> dict:
+    with _LOGIN_LOCK:
+        _login_check()
+        proc = _LOGIN.get("proc")
+        if proc is not None and proc.poll() is None:
+            _terminate(proc)
+        binary = _codex_binary()
+        if not binary:
+            return {"ok": False, "message": "codex CLI no encontrado en el servidor"}
+        # Respaldo de la sesión actual: iniciar un login nuevo puede reemplazar/limpiar
+        # ~/.codex/auth.json antes de completarse (verificado 2026-09-11).
+        auth_path = _codex_auth_path()
+        if auth_path.exists():
+            try:
+                ts = time.strftime("%Y%m%dT%H%M%SZ", time.gmtime())
+                shutil.copy2(auth_path, auth_path.with_name(f"auth.json.bak-pre-login-{ts}"))
+            except OSError:
+                pass
+        env = os.environ.copy()
+        # El home resuelto (CODEX_HOME si está definido) es el mismo que usan
+        # backup/estado/logout: no se poppea para que todo lea el mismo auth.json.
+        proc = subprocess.Popen(
+            [binary, "login", "--device-auth"],
+            stdin=subprocess.DEVNULL,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            text=True,
+            bufsize=1,
+            env=env,
+            cwd=str(Path.home()),
+        )
+        _LOGIN.update(status="pending", url=None, code=None, message=None,
+                      started_at=time.time(), proc=proc, output="")
+        threading.Thread(target=_login_reader, args=(proc,), daemon=True).start()
+    # el reader tarda unos ms en capturar URL/código — esperar un poco
+    deadline = time.time() + 8
+    while time.time() < deadline and not (_LOGIN.get("url") and _LOGIN.get("code")):
+        time.sleep(0.2)
+    return {"ok": True, "url": _LOGIN.get("url") or _LOGIN_URL, "code": _LOGIN.get("code"),
+            "status": _LOGIN["status"]}
+
+
+if router is not None:
+
+    @router.get("/status")
+    async def status() -> dict:
+        try:
+            auth = talk_auth.resolve_auth()
+            auth_source = auth.source
+        except Exception as exc:  # noqa: BLE001
+            auth_source = f"unavailable: {exc}"
+        return {
+            "ok": True,
+            "auth": auth_source,
+            "model": talk_config.talk_model(),
+            "voices": list(talk_config.OPENAI_REALTIME_VOICES),
+            "bots": _list_bots(),
+        }
+
+    @router.post("/session")
+    async def create_session(request: Request) -> dict:
+        body = {}
+        try:
+            body = await request.json()
+        except Exception:  # noqa: BLE001
+            body = {}
+        profile = str(body.get("profile") or "").strip() or None
+        allow_chat = bool(body.get("allowChat", True))
+        if profile and _profile_home(profile) is None:
+            raise HTTPException(status_code=400, detail=f"perfil '{profile}' no existe")
+        voice = _resolve_voice(body.get("voice"))
+
+        def _do():
+            # Serializar mints con identity override: el patch de get_hermes_home es
+            # global al proceso mientras dura _mint_for; un mint a la vez. El lock
+            # vive en este worker, no en el coroutine: un threading.Lock tomado a
+            # través de un await bloquea el event loop — al esperar el lock, el
+            # callback que lo liberaría no puede correr (deadlock). Así el override
+            # también se restaura en el mismo worker que mintea.
+            with _MINT_LOCK:
+                if profile:
+                    orig = talk_config.get_hermes_home
+                    talk_config.get_hermes_home = lambda: _profile_home(profile)
+                    try:
+                        return _mint_for(profile, voice, allow_chat, body.get("language"))
+                    finally:
+                        talk_config.get_hermes_home = orig
+                return _mint_for(None, voice, allow_chat, body.get("language"))
+
+        descriptor, auth = await asyncio.to_thread(_do)
+        return {
+            "ok": True,
+            "profile": profile,
+            "botName": _bot_display_name(profile) if profile else _host_bot_name(),
+            **descriptor.to_wire(),
+            "authSource": auth.source,
+            "voiceMode": "native",
+        }
+
+    @router.get("/codex/status")
+    async def codex_status() -> dict:
+        _login_check()
+        try:
+            st = talk_auth.auth_status()
+            diag = talk_auth.auth_diagnostic()
+        except Exception as exc:  # noqa: BLE001
+            return {"ok": False, "error": f"{type(exc).__name__}: {exc}",
+                    "login": {k: _LOGIN.get(k) for k in ("status", "url", "code", "message")}}
+        return {
+            "ok": True,
+            "configured": st.get("configured"),
+            "lane": st.get("source"),
+            "detail": st.get("detail"),
+            "codexOauth": diag.get("codex_oauth"),
+            "refreshRequired": diag.get("refresh_required"),
+            "preference": diag.get("preference"),
+            "login": {k: _LOGIN.get(k) for k in ("status", "url", "code", "message")},
+        }
+
+    @router.get("/codex/usage")
+    async def codex_usage() -> dict:
+        return await asyncio.to_thread(_codex_usage_snapshot)
+
+    # ── uso de Live Voice (metrado local por sesión) ──────────────────────────
+    _VU_FILE = _PLUGIN_ROOT / "data" / "voice-usage.json"
+    _VU_LOCK = threading.Lock()
+
+    def _vu_load() -> dict:
+        try:
+            data = json.loads(_VU_FILE.read_text(encoding="utf-8"))
+            if isinstance(data, dict) and isinstance(data.get("sessions"), list):
+                return data
+        except Exception:  # noqa: BLE001
+            pass
+        return {"sessions": []}
+
+    def _vu_save(data: dict) -> None:
+        try:
+            _VU_FILE.parent.mkdir(parents=True, exist_ok=True)
+            _VU_FILE.write_text(json.dumps(data, ensure_ascii=False), encoding="utf-8")
+        except Exception:  # noqa: BLE001
+            pass
+
+    @router.post("/voice/usage/report")
+    async def voice_usage_report(request: Request) -> dict:
+        try:
+            body = await request.json()
+        except Exception:  # noqa: BLE001
+            body = {}
+        dur = max(0, int((body or {}).get("durationMs") or 0))
+        aud = max(0, int((body or {}).get("audioMs") or 0))
+        if dur <= 0:
+            return {"ok": False, "error": "durationMs requerido"}
+        now_ms = int(time.time() * 1000)
+        with _VU_LOCK:
+            data = _vu_load()
+            sess = data.setdefault("sessions", [])
+            sess.append({"t": now_ms, "ms": dur, "audio_ms": aud})
+            keep = [s for s in sess if isinstance(s, dict) and int(s.get("t") or 0) > now_ms - 8 * 24 * 3600 * 1000]
+            data["sessions"] = keep[-2000:]
+            _vu_save(data)
+        return {"ok": True}
+
+    @router.get("/voice/usage")
+    async def voice_usage() -> dict:
+        with _VU_LOCK:
+            data = _vu_load()
+        import datetime as _dt
+        now_ms = int(time.time() * 1000)
+        midnight = _dt.datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
+        today_ms = int(midnight.timestamp() * 1000)
+        sess = [s for s in (data.get("sessions") or []) if isinstance(s, dict)]
+
+        def agg(since_ms: int) -> dict:
+            ms = aud = n = 0
+            for s in sess:
+                if int(s.get("t") or 0) >= since_ms:
+                    ms += int(s.get("ms") or 0)
+                    aud += int(s.get("audio_ms") or 0)
+                    n += 1
+            return {"minutes": ms / 60000.0, "audioMinutes": aud / 60000.0, "sessions": n}
+
+        return {
+            "ok": True,
+            "rolling5h": agg(now_ms - 5 * 3600 * 1000),
+            "rolling24h": agg(now_ms - 24 * 3600 * 1000),
+            "week": agg(now_ms - 7 * 24 * 3600 * 1000),
+            "today": agg(today_ms),
+        }
+
+    @router.post("/tool")
+    async def run_tool(request: Request) -> dict:
+        body = {}
+        try:
+            body = await request.json()
+        except Exception:  # noqa: BLE001
+            body = {}
+        language = body.get("language")
+        name = str(body.get("name") or "").strip()
+        arguments = body.get("arguments")
+        if not isinstance(arguments, dict):
+            arguments = {}
+        if not name:
+            raise HTTPException(status_code=400, detail="name is required" if language == "en" else "name requerido")
+        try:
+            output = await asyncio.wait_for(
+                asyncio.to_thread(
+                    talk_tools.execute_talk_tool, name, arguments,
+                    **({"language": language} if getattr(talk_tools, "SUPPORTS_LANGUAGE", False) else {}),
+                ),
+                timeout=110,
+            )
+        except asyncio.TimeoutError:
+            output = (
+                (
+                    f"The tool {name} is still running; I will stop waiting here. "
+                    "Ask me to check the result in a moment."
+                ) if language == "en" else (
+                    f"La herramienta {name} sigue corriendo; no espero más aquí. "
+                    "Pídeme revisar el resultado en un momento."
+                )
+            )
+        except talk_tools.TalkToolError as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
+        return {"ok": True, "output": output}
+
+    _DELEGATE_LOCK = asyncio.Lock()
+    _DELEGATE_SESSION_KEY = "voice-delegate"
+
+    @router.post("/codex/login/start")
+    @router.post("/codexlive/delegate")
+    async def codexlive_delegate(request: Request) -> dict:
+        """Web-client voice delegation: submit the task to a long-lived dashboard
+        session (same agent + toolsets as the chat, no ~50s cold spawn) and return
+        the final assistant text so the voice model can read it aloud."""
+        try:
+            body = await request.json()
+        except Exception:  # noqa: BLE001
+            body = {}
+        language = body.get("language")
+        prompt = str(body.get("prompt") or "").strip()
+        if not prompt:
+            raise HTTPException(status_code=400, detail="prompt is required" if language == "en" else "prompt requerido")
+        try:
+            from tui_gateway import server as _tui_server
+        except Exception as exc:  # noqa: BLE001
+            raise HTTPException(status_code=500, detail=f"delegate backend unavailable: {exc}") from exc
+
+        def _rpc(method: str, params: dict) -> dict:
+            return _tui_server.handle_request(
+                {"jsonrpc": "2.0", "id": f"voice-delegate-{method}", "method": method, "params": params}
+            ) or {}
+
+        try:
+            async with _DELEGATE_LOCK:
+                created = await asyncio.to_thread(_rpc, "session.create", {"idempotency_key": _DELEGATE_SESSION_KEY})
+                sid = (created.get("result") or {}).get("session_id")
+                if not sid:
+                    raise HTTPException(status_code=500, detail=f"delegate session unavailable: {created.get('error')}")
+                base = await asyncio.to_thread(_rpc, "session.history", {"session_id": sid})
+                base_count = int((base.get("result") or {}).get("count") or 0)
+                submitted = await asyncio.to_thread(_rpc, "prompt.submit", {"session_id": sid, "text": prompt})
+                if submitted.get("error"):
+                    raise HTTPException(status_code=500, detail=f"delegate submit failed: {submitted['error']}")
+                answer = ""
+                last_text = None
+                # ponytail: poll history; done when the tail is a stable assistant message. 50*2s = old 100s cap.
+                for _ in range(50):
+                    await asyncio.sleep(2)
+                    hist = await asyncio.to_thread(_rpc, "session.history", {"session_id": sid})
+                    result = hist.get("result") or {}
+                    msgs = result.get("messages") or []
+                    if int(result.get("count") or 0) < base_count + 2 or not msgs:
+                        continue
+                    if msgs[-1].get("role") != "assistant":
+                        continue
+                    text = msgs[-1].get("text") or ""
+                    if text and text == last_text:
+                        answer = text
+                        break
+                    last_text = text
+                if not answer:
+                    answer = "The task is still running; tell the user you will check the result in a moment."
+                return {"ok": True, "output": answer[:3500]}
+        except HTTPException:
+            raise
+        except Exception as exc:  # noqa: BLE001
+            raise HTTPException(status_code=500, detail=f"delegate failed: {exc}") from exc
+
+    async def codex_login_start() -> dict:
+        return await asyncio.to_thread(_start_codex_login)
+
+    @router.post("/codex/login/cancel")
+    async def codex_login_cancel() -> dict:
+        with _LOGIN_LOCK:
+            proc = _LOGIN.get("proc")
+            if proc is not None and proc.poll() is None:
+                _terminate(proc)
+            _LOGIN.update(status="idle", proc=None, url=None, code=None, message=None, output="")
+
+        def _restore_if_needed() -> None:
+            # Un login cancelado puede dejar ~/.codex/auth.json limpio; restaurar el
+            # respaldo pre-login más reciente para no perder la sesión previa.
+            path = _codex_auth_path()
+            if path.exists():
+                return
+            backups = sorted(path.parent.glob("auth.json.bak-pre-login-*"))
+            if backups:
+                try:
+                    shutil.copy2(backups[-1], path)
+                except OSError:
+                    pass
+
+        await asyncio.to_thread(_restore_if_needed)
+        return {"ok": True}
+
+    @router.post("/codex/logout")
+    async def codex_logout() -> dict:
+        # The sign-in belongs to Hermes (and the Codex CLI), not to this plugin: deleting
+        # ~/.codex/auth.json here used to sign the Codex CLI out too. Point at Hermes instead.
+        return {
+            "ok": False,
+            "managedBy": "hermes",
+            "command": _HERMES_LOGOUT_CMD,
+            "message": f"Sign out with `{_HERMES_LOGOUT_CMD}` or Hermes Desktop > Providers.",
+        }
+
+
+# ── Codex Live-1 (gpt-live-1-codex, v3/frameless) vía codex app-server ───────
+#
+# El app-server de Codex (>=0.154) negocia una sesión WebRTC contra el backend
+# de ChatGPT usando la suscripción (model_provider=openai). El cliente manda su
+# SDP offer; acá se devuelve el answer. El audio va directo cliente<->OpenAI.
+
+_CL: dict = {"proc": None, "notifs": [], "seq": 0, "thread_id": None, "threads": {}}
+_CL_LOCK = threading.Lock()
+
+
+def _cl_send(obj: dict) -> None:
+    proc = _CL["proc"]
+    if proc is None or proc.poll() is not None:
+        raise RuntimeError("codex app-server no disponible")
+    proc.stdin.write(json.dumps(obj) + "\n")
+    proc.stdin.flush()
+
+
+def _cl_reader(proc) -> None:
+    try:
+        for line in proc.stdout:
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                _CL["notifs"].append(json.loads(line))
+            except Exception:  # noqa: BLE001
+                continue
+            if len(_CL["notifs"]) > 6000:
+                del _CL["notifs"][:2000]
+    except Exception:  # noqa: BLE001
+        pass
+
+
+def _cl_request(method: str, params: dict, timeout: float = 30.0):
+    _CL["seq"] += 1
+    rid = _CL["seq"]
+    _cl_send({"jsonrpc": "2.0", "id": rid, "method": method, "params": params})
+    t0 = time.time()
+    while time.time() - t0 < timeout:
+        # Escanear por id: el pruner de _cl_reader borra el inicio del buffer, así
+        # que una posición `start` puede quedar stale y perder la respuesta.
+        for m in list(_CL["notifs"]):
+            if m.get("id") == rid:
+                if "error" in m:
+                    raise RuntimeError(str(m["error"].get("message") or m["error"])[:400])
+                return m.get("result")
+        time.sleep(0.1)
+    raise TimeoutError(f"codex app-server: {method} sin respuesta")
+
+
+def _codex_binary() -> str | None:
+    """Resuelve el binario de codex aunque el PATH del servicio no traiga ~/.npm-global/bin."""
+    try:
+        found = shutil.which("codex")
+    except Exception:  # noqa: BLE001
+        found = None
+    if found:
+        return found
+    for cand in (Path.home() / ".npm-global" / "bin" / "codex",
+                 Path("/usr/local/bin/codex"),
+                 Path.home() / ".local" / "bin" / "codex",
+                 Path("/usr/bin/codex")):
+        if cand.exists():
+            return str(cand)
+    try:
+        out = subprocess.run(["bash", "-lc", "command -v codex"], capture_output=True, text=True, timeout=10)
+        if out.returncode == 0 and out.stdout.strip():
+            return out.stdout.strip().splitlines()[0]
+    except Exception:  # noqa: BLE001
+        pass
+    return None
+
+
+def _cl_ensure() -> None:
+    # PATCH (agent-platform-custom): codex app-server refuses to start when
+    # CODEX_HOME points at a missing directory (exits 1 before replying to
+    # initialize), which surfaced as "codex app-server: initialize sin
+    # respuesta" on a fresh volume. Create it before spawning. Removable once
+    # upstream guards this itself.
+    _cx_home = os.environ.get("CODEX_HOME") or str(Path.home() / ".codex")
+    try:
+        Path(_cx_home).mkdir(parents=True, exist_ok=True)
+    except Exception:  # noqa: BLE001
+        pass
+    proc = _CL["proc"]
+    if proc is not None and proc.poll() is None:
+        return
+    binary = _codex_binary()
+    if not binary:
+        raise RuntimeError("codex no encontrado (PATH del servicio sin ~/.npm-global/bin)")
+    env = os.environ.copy()
+    env["PATH"] = (str(Path.home() / ".npm-global" / "bin") + ":" + env.get("PATH", "")).strip(":")
+    # clave: la lane de voz usa la SUSCRIPCIÓN (auth.json), no una API key de entorno
+    env.pop("OPENAI_API_KEY", None)
+    env.pop("CODEX_API_KEY", None)
+    proc = subprocess.Popen(
+        [binary, "app-server", "--listen", "stdio://",
+         "--enable", "realtime_conversation",
+         "-c", "model_provider=openai",
+         "-c", "suppress_unstable_features_warning=true"],
+        stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,
+        text=True, bufsize=1, env=env,
+    )
+    _CL["proc"] = proc
+    _CL["notifs"] = []
+    _CL["thread_id"] = None
+    threading.Thread(target=_cl_reader, args=(proc,), daemon=True).start()
+    _cl_request("initialize", {"clientInfo": {"name": "hermes-talk-desktop", "version": "1.0"},
+                               "capabilities": {"experimentalApi": True}}, timeout=25)
+
+
+def _codexlive_persona(profile: str | None, language: str = "es") -> str:
+    if profile:
+        sections = _bot_identity_sections(profile)
+        name = _bot_display_name(profile)
+    else:
+        sections = talk_host.host().identity_sections()
+        name = _host_bot_name()
+    base = talk_identity.build_instructions(sections, tools=[], lane="dashboard")
+    if profile and "You are Hermes, speaking live" in base:
+        base = base.replace("You are Hermes, speaking live", f"You are {name}, speaking live", 1)
+    base += _language_directive(language)
+    base += (
+        (
+            f"\n\nVOICE: You are speaking with the user in a live voice session. Keep replies brief, natural, and to the point."
+            f" IDENTITY: You are {name}; if asked who you are, answer as {name} in that role — never as a generic assistant."
+        ) if language == "en" else (
+            f"\n\nVOZ: hablas con el usuario en una sesión de voz en vivo. Respuestas breves, naturales y al grano."
+            f" IDENTIDAD: eres {name}; si te preguntan quién eres, responde como {name} con su rol — nunca como un asistente genérico."
+        )
+    )
+    base += _voice_policy(language)
+    return base
+
+
+_AGENT_INSTR = {
+    "es": (
+        'Estás conectado a una sesión de voz en vivo con el usuario. Cuando la sesión de voz te delegue una '
+        'petición, actúala con tus herramientas y responde conciso: tu texto se leerá en voz alta.'
+    ),
+    "en": (
+        'You are connected to a live voice session with the user. When the voice session delegates a request '
+        'to you, carry it out with your tools and reply concisely: your text will be read aloud.'
+    ),
+}
+
+# Modo cliente (default): el CLIENTE ejecuta lo que la voz pide (chat de Hermes del usuario).
+# El core igual rutea cada delegación a este thread como fallback fantasma — si el agente
+# hiciera trabajo aquí (tool calls, gpt-5.6-sol), quemaría el plan ChatGPT y duplicaría todo.
+# Esta instrucción lo neutraliza: responder 'skip' sin usar herramientas.
+_AGENT_INSTR_SKIP = {
+    "es": (
+        'Estás conectado a una sesión de voz en vivo, pero es el CLIENTE (la app) quien ejecuta las '
+        'peticiones de esa sesión. Si recibes un mensaje <realtime_delegation>, NO ejecutes nada, NO uses '
+        'herramientas y NO leas archivos: responde únicamente la palabra: skip'
+    ),
+    "en": (
+        'You are connected to a live voice session, but the CLIENT (the app) executes the requests from that '
+        'session. If you receive a <realtime_delegation> message, do NOT execute anything, do NOT use tools, '
+        'and do NOT read files: reply with only the word: skip'
+    ),
+}
+
+# Política de delegación para el MODELO DE VOZ (el que decide qué pasa al backend).
+# Sin esto delega cualquier cosa (saludos, fragmentos, "aló") y satura el chat con turnos largos.
+_VOICE_POLICY = (
+    "\n\nVOICE DELEGATION POLICY (live call):\n"
+    "- Delegate to the chat/backend ONLY when the user asks you to DO something (check, review, find, run, make, fix, send, remember) or when answering needs real facts/actions from the backend.\n"
+    "- Do NOT delegate greetings, small talk, acknowledgements, filler, thinking out loud, fragments, or repeats of something already answered (e.g. 'dale', 'ok', 'ya', 'bueno', '¿aló?', '¿me escuchas?'). Answer those yourself, briefly, or stay quiet.\n"
+    "- If the request is unclear, ask ONE short clarifying question yourself instead of delegating.\n"
+    "- While a task is running: say ONE brief line in the user's language ('sure, I will check') and WAIT silently; do not guess results, do not delegate again in the meantime; if the user speaks, tell them you are still on it.\n"
+    "- When the result arrives, read the key facts back in one or two short sentences."
+)
+
+
+def _voice_policy(language: str = "es") -> str:
+    # The shared English policy is outside localization scope; localize its example.
+    return _VOICE_POLICY if language == "en" else _VOICE_POLICY.replace("sure, I will check", "dale, lo reviso")
+
+
+def _talk_settings() -> dict:
+    try:
+        p = _PLUGIN_ROOT / "settings.json"
+        if p.is_file():
+            data = json.loads(p.read_text(encoding="utf-8"))
+            if isinstance(data, dict):
+                return data
+    except Exception:  # noqa: BLE001
+        pass
+    return {}
+
+
+def _agent_model() -> str | None:
+    """Modelo del agente delegado (el thread de Codex que ejecuta tareas de voz).
+    En cajas con un modelo default no-ChatGPT (p.ej. un proxy) hay que forzar un
+    modelo oficial; si no, el turno del agente falla con 400."""
+    v = os.environ.get("TALK_CODEX_AGENT_MODEL") or str(_talk_settings().get("codexAgentModel") or "")
+    v = v.strip()
+    return v or None
+
+
+def _cl_thread_ensure(language: str = "es", profile: str | None = None, thread_id: str | None = None) -> str:
+    """Obtiene (o crea) el thread Codex Live para (profile, language, modelo).
+
+    Perfil+idioma+modelo distintos → threads distintos: cada bot (SOUL.md) habla
+    sobre SU thread y no filtra contexto del otro. `thread_id` explícito →
+    reanuda ese thread (continue last call)."""
+    language = "en" if language == "en" else "es"
+    want = _agent_model()
+    key = (profile or "", language, want)
+    if thread_id:
+        _CL["threads"][key] = thread_id
+        _CL["thread_id"] = thread_id  # legacy: último thread conocido (fallback de stop/interrupt)
+        return thread_id
+    tid = _CL["threads"].get(key)
+    if tid:
+        return tid
+    body = {"cwd": str(Path.home()), "modelProvider": "openai"}
+    if want:
+        body["model"] = want
+    th = _cl_request("thread/start", body, timeout=30)
+    tid = ((th or {}).get("thread") or {}).get("id")
+    if not tid:
+        raise RuntimeError("codex: no se pudo crear el thread")
+    _CL["threads"][key] = tid
+    _CL["thread_id"] = tid
+    return tid
+
+# Campos opcionales de thread/realtime/start que se pueden omitir si el app-server (más viejo)
+# los rechaza. Clave normalizada (sin "_", minúsculas) -> campos a quitar juntos.
+_RT_DROPPABLE = {
+    "delegationackfiller": ("delegationAckFiller",),
+    "realtimestartinstructions": ("realtimeStartInstructions", "prompt"),
+    "prompt": ("realtimeStartInstructions", "prompt"),
+}
+
+
+def _rejected_field_name(message: str) -> str | None:
+    """Nombre del campo que el servidor dice no conocer (serde-style), o None si no se puede leer.
+
+    Acepta: unknown field `foo`, unknown field "foo", unknown field: foo, unknown field `foo`, expected one of ...
+    """
+    m = re.search(r"unknown\s+field\s*[:=]?\s*[`'\"]?([A-Za-z_][A-Za-z0-9_.\-]*)", str(message), re.IGNORECASE)
+    return m.group(1) if m else None
+
+
+def _codexlive_start(profile: str | None, voice: str, offer: str, language: str = "es", thread_id: str | None = None) -> dict:
+    _cl_ensure()
+    tid = _cl_thread_ensure(language, profile=profile, thread_id=thread_id)
+    persona = _codexlive_persona(profile, language)
+    client_managed = str(_talk_settings().get("delegation") or "client").strip().lower() != "server"
+    params = {
+        "threadId": tid,
+        "transport": {"type": "webrtc", "sdp": offer},
+        "outputModality": "audio",
+        "version": "v3",
+        "voice": voice or "cove",
+        "prompt": persona,
+        "realtimeStartInstructions": (_AGENT_INSTR if not client_managed else _AGENT_INSTR_SKIP)["en" if language == "en" else "es"],
+        # Gestión de tareas delegadas por voz: POR DEFECTO el CLIENTE (el desktop) las
+        # ejecuta en el chat de Hermes del usuario — usa SU configuración/modelos/providers.
+        # Solo si settings.json lleva {"delegation": "server"} se deja que el core las
+        # mande al agente Codex del thread (lane ChatGPT). ackFiller = frases de espera.
+        "clientManagedHandoffs": client_managed,
+        "delegationAckFiller": True,
+    }
+    dropped: list[str] = []
+    start = len(_CL["notifs"])
+    while True:
+        try:
+            _cl_request("thread/realtime/start", params, timeout=25)
+            break
+        except RuntimeError as exc:
+            low = str(exc).lower()
+            if "unknown field" in low:
+                # Solo se omite lo que el servidor NOMBRA y es opcional; cada campo a lo más una vez
+                # (si ya no está en params, el siguiente intento no puede repetir el mismo error).
+                name = _rejected_field_name(str(exc))
+                norm = (name or "").replace("_", "").lower()
+                if norm == "clientmanagedhandoffs" and "clientManagedHandoffs" in params:
+                    if client_managed:
+                        raise RuntimeError(
+                            "LIVE_HANDOFF_NO_SOPORTADO: el app-server de Codex no soporta clientManagedHandoffs; "
+                            "actualiza Codex, usa delegation=server o el motor gpt-realtime"
+                        ) from exc
+                    params.pop("clientManagedHandoffs")
+                    dropped.append("clientManagedHandoffs")
+                    start = len(_CL["notifs"])
+                    continue
+                group = _RT_DROPPABLE.get(norm)
+                if group and any(f in params for f in group):
+                    for f in group:
+                        if f in params:
+                            params.pop(f)
+                            dropped.append(f)
+                    start = len(_CL["notifs"])
+                    continue
+                shown = f"'{name}'" if name else "(sin nombre legible)"
+                raise RuntimeError(
+                    f"codex live: el app-server rechazó el campo {shown} de thread/realtime/start "
+                    f"y no se puede omitir: {str(exc)[:200]}"
+                ) from exc
+            if "thread" in low and ("not found" in low or "no such" in low or "not loaded" in low or "missing" in low):
+                # thread obsoleto: recrear y reintentar una vez
+                _CL["threads"].pop(((profile or ""), "en" if language == "en" else "es", _agent_model()), None)
+                _CL["thread_id"] = None
+                tid2 = _cl_thread_ensure(language, profile=profile)
+                params["threadId"] = tid2
+                start = len(_CL["notifs"])
+                _cl_request("thread/realtime/start", params, timeout=25)
+                break
+            if "usage limit" in low or "hit your usage" in low:
+                raise RuntimeError(
+                    "LIVE_SIN_QUOTA: el plan ChatGPT llegó a su límite semanal (Live Voice comparte esa cuota). "
+                    "Cambia el Motor de voz a gpt-realtime-2.1 en la configuración, o espera el reset semanal."
+                )
+            if "already" in low:
+                # sesión realtime colgada en el thread: cerrarla y reintentar
+                try:
+                    _cl_request("thread/realtime/stop", {"threadId": params.get("threadId")}, timeout=10)
+                except Exception:  # noqa: BLE001
+                    pass
+                start = len(_CL["notifs"])
+                _cl_request("thread/realtime/start", params, timeout=25)
+                break
+            raise
+    answer = None
+    rsid = None
+    t0 = time.time()
+    while time.time() - t0 < 45:
+        for m in list(_CL["notifs"])[start:]:
+            meth = m.get("method") or ""
+            if meth == "thread/realtime/sdp":
+                answer = (m.get("params") or {}).get("sdp") or answer
+            elif meth == "thread/realtime/started":
+                rsid = (m.get("params") or {}).get("realtimeSessionId") or rsid
+            elif meth == "thread/realtime/error":
+                raise RuntimeError("codex live: " + str((m.get("params") or {}).get("message"))[:300])
+        if answer:
+            break
+        time.sleep(0.15)
+    if not answer:
+        raise TimeoutError("codex live: sin SDP de respuesta")
+    result = {"answer": answer, "realtimeSessionId": rsid, "threadId": params.get("threadId") or tid, "version": "v3", "engine": "codex",
+              "handoff": "client" if client_managed else "server"}
+    if dropped:
+        _log.warning("codex live: app-server no soporta %s (se omitieron)", ", ".join(dropped))
+        result["droppedFields"] = dropped
+        result["warning"] = "el app-server no soporta: " + ", ".join(dropped) + " (se omitieron)"
+    return result
+
+
+def _codexlive_stop(thread_id: str | None) -> None:
+    if not thread_id:
+        return
+    try:
+        _cl_request("thread/realtime/stop", {"threadId": thread_id}, timeout=10)
+    except Exception:  # noqa: BLE001
+        pass
+
+
+if router is not None:
+    @router.post("/codexlive/session")
+    async def codexlive_session(request: Request) -> dict:
+        body = {}
+        try:
+            body = await request.json()
+        except Exception:  # noqa: BLE001
+            body = {}
+        profile = str(body.get("profile") or "").strip() or None
+        if profile and _profile_home(profile) is None:
+            raise HTTPException(status_code=400, detail=f"perfil '{profile}' no existe")
+        voice = str(body.get("voice") or "cove")
+        offer = str(body.get("offer") or "")
+        if not offer:
+            raise HTTPException(status_code=400, detail="falta el SDP offer")
+        # Reanudar un thread previo (continue last call) y registrar el callId para
+        # que el hang-up persista la llamada como session real en state.db.
+        thread_id = str(body.get("threadId") or "").strip() or None
+        call_id = str(body.get("callId") or "").strip() or None
+
+        def _do():
+            with _CL_LOCK:
+                return _codexlive_start(profile, voice, offer, body.get("language"), thread_id)
+
+        try:
+            result = await asyncio.to_thread(_do)
+        except Exception as exc:  # noqa: BLE001
+            raise HTTPException(status_code=502, detail=str(exc)[:400]) from exc
+        if call_id and voice_history._CALL_ID_RE.fullmatch(call_id) and result.get("threadId"):
+            try:
+                voice_history.remember_thread(
+                    profile or "",
+                    result["threadId"],
+                    f"voice-{call_id}",
+                    body.get("language") or "es",
+                    _agent_model(),
+                    started_at=time.time(),
+                )
+            except Exception as exc:  # noqa: BLE001
+                _log.warning("voice: no se pudo registrar el thread: %s", exc)
+        return {
+            "ok": True,
+            "engine": "codex",
+            "profile": profile,
+            "botName": _bot_display_name(profile) if profile else _host_bot_name(),
+            **result,
+        }
+
+    @router.post("/codexlive/interrupt")
+    async def codexlive_interrupt(request: Request) -> dict:
+        """Barge-in: corta el turno actual de la voz (turn/interrupt del app-server)."""
+        body = {}
+        try:
+            body = await request.json()
+        except Exception:  # noqa: BLE001
+            body = {}
+        turn_id = str(body.get("turnId") or "").strip()
+        thread_id = str(body.get("threadId") or "").strip() or _CL.get("thread_id")
+        if not turn_id or not thread_id:
+            return {"ok": False, "error": "faltan turnId/threadId"}
+        try:
+            await asyncio.to_thread(
+                _cl_request, "turn/interrupt", {"threadId": thread_id, "turnId": turn_id}, timeout=8
+            )
+            return {"ok": True}
+        except Exception as exc:  # noqa: BLE001
+            return {"ok": False, "error": str(exc)[:200]}
+
+    @router.post("/codexlive/stop")
+    async def codexlive_stop_route(request: Request) -> dict:
+        body = {}
+        try:
+            body = await request.json()
+        except Exception:  # noqa: BLE001
+            body = {}
+        tid = str(body.get("threadId") or _CL.get("thread_id") or "")
+        await asyncio.to_thread(_codexlive_stop, tid)
+        return {"ok": True}
+
