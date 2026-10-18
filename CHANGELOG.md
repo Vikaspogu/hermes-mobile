@@ -5,6 +5,24 @@ All notable changes are documented here. The format follows
 
 ## Unreleased
 
+### Added
+
+- **Cron push notifications.** Each cron run sends one push to the profile's PWA devices
+  (`post_llm_call` with `platform="cron"`). The title is the job name and the body has no
+  result text. Silent runs do not push. Tapping it opens the run (`#/chat?session=<id>`).
+- **Cron runs list.** New plugin route `GET /api/plugins/hermes-pwa/cron-runs` returns cron
+  runs newest first, hides `[SILENT]` runs by default, and pages with a cursor. The Sessions
+  Cron chip uses it, with **Load more**, a **Show silent** toggle and a job filter.
+- **Setting "Show cron results in All"** (off by default) adds non-silent cron runs to the
+  All list.
+
+### Fixed
+
+- Web pushes wait up to 12 h on the push service instead of being dropped while the phone sleeps.
+- Settings shows **Enable on this device** when only another device is subscribed.
+- **Enable on this device** replaces an old browser subscription, so an expired endpoint
+  (HTTP 410) no longer blocks **Send test**.
+
 ## 0.1.2-beta — 2026-06-28
 
 ### Fixed
