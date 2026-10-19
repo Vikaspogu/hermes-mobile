@@ -302,7 +302,7 @@ function fmtElapsed(s: number): string {
   const ss = Math.floor(s % 60);
   return mm + ':' + String(ss).padStart(2, '0');
 }
-export function Voice() {
+export function Voice({ onClose }: { onClose?: () => void }) {
   const [stage, setStage] = useState('');
   const [err, setErr] = useState('');
   const [muted, setMuted] = useState(false);
@@ -982,6 +982,11 @@ export function Voice() {
 
   return (
     <div className="hm-voice">
+      {onClose && (
+        <button type="button" className="hm-voice__close" aria-label="Close voice" onClick={onClose}>
+          ✕
+        </button>
+      )}
       <div className={`hm-voice__stage hm-voice__stage--${callState}`}>
         <VoiceOrb state={callState} micRef={micLevelRef} remoteRef={remoteLevelRef} />
         <p className="hm-voice__status" aria-live="polite">

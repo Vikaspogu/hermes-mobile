@@ -1,4 +1,4 @@
-import { Suspense, lazy, useEffect, useRef, useState } from 'react';
+import { startTransition, Suspense, lazy, useEffect, useRef, useState } from 'react';
 import type { Approval, Clarify, ConnectionState, RpcClient, RestClient, RpcEvent, UpdateCheck } from '@hermes-pwa/core';
 import { connectionStateLabel, useActivityStore, useProfilesStore, useSessionsStore, useChatStore, useConnectionStore, useProjectsStore } from '@hermes-pwa/core';
 import { Chats } from '../screens/Chats';
@@ -167,6 +167,7 @@ export function AppShell({ connectionState, rpc, rest, onRetry }: AppShellProps)
   const navStackRef = useRef(navStack);
   const screen: Screen = navStack[navStack.length - 1] ?? 'home';
   const [moreOpen, setMoreOpen] = useState(false);
+  const [voiceOpen, setVoiceOpen] = useState(false);
   const [gatewayHealth, setGatewayHealth] = useState<GatewayHealth>('checking');
   const [updateCheck, setUpdateCheck] = useState<UpdateCheck | undefined>();
   const [updateDismissedVersion, setUpdateDismissedVersion] = useState<string | null>(() => {
@@ -504,7 +505,6 @@ export function AppShell({ connectionState, rpc, rest, onRetry }: AppShellProps)
     { key: 'cron', label: 'Schedules', icon: 'cron' },
     { key: 'artifacts', label: 'Artifacts', icon: 'file' },
     { key: 'command', label: 'System', icon: 'system', sub: gatewayLabel },
-    { key: 'voice', label: 'Voice', icon: 'wave' },
     { key: 'settings', label: 'Settings', icon: 'settings' },
   ];
 
@@ -550,8 +550,7 @@ export function AppShell({ connectionState, rpc, rest, onRetry }: AppShellProps)
       <main className="hm-screen">
         <LazyScreenErrorBoundary key={screen}>
           <Suspense fallback={<p className="hm-muted hm-loading">Loading…</p>}>
-            {screen === 'chat'      && <Chat key={activeName ?? 'default'} rpc={rpc} rest={rest} onOpenVoice={() => navigate('voice')} />}
-            {screen === 'voice'     && <Voice key={activeName ?? 'default'} />}
+            {screen === 'chat'      && <Chat key={activeName ?? 'default'} rpc={rpc} rest={rest} onOpenVoice={() => startTransition(() => setVoiceOpen(true))} />}
             {screen === 'sessions'  && <Sessions key={activeName ?? 'default'} rpc={rpc} rest={rest} onSessionOpen={() => navigate('chat')} />}
             {screen === 'approvals' && <Activity key={activeName ?? 'default'} rpc={rpc} />}
             {screen === 'kanban'    && <Projects key={activeName ?? 'default'} rest={rest} />}
@@ -635,6 +634,11 @@ export function AppShell({ connectionState, rpc, rest, onRetry }: AppShellProps)
               ))}
             </div>
           </div>
+        </div>
+      )}
+      {voiceOpen && (
+        <div className="hm-voice-overlay">
+          <Voice key={activeName ?? 'default'} onClose={() => setVoiceOpen(false)} />
         </div>
       )}
     </div>
