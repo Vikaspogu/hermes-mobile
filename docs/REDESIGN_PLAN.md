@@ -6,17 +6,16 @@ UX reviews. This is a **restyle/restructure of existing screens** — no new bac
 dependencies, existing `tokens.css` variables only, core/shell boundary stays intact
 (`packages/core` free of React/DOM; components never call fetch/WebSocket directly).
 
-
 ## Status — 2026-10-19: ALL 8 SLICES IMPLEMENTED on branch feat/mobile-ux-redesign
 
-| Slice | Commit |
-|---|---|
-| S1 nav shell + Chats home | 1f0d2a2 |
+| Slice                                                                    | Commit                    |
+| ------------------------------------------------------------------------ | ------------------------- |
+| S1 nav shell + Chats home                                                | 1f0d2a2                   |
 | S2 chat approvals (risk tiers, session context) + S3 Inbox + S5 More hub | ff85811 (folded together) |
-| S4 Work: kanban pills + Schedules | 5528f99 |
-| S6 voice overlay | d889637 |
-| S7 offline state | 8f5146d |
-| S8 desktop rail + split + caps | 905fa5b |
+| S4 Work: kanban pills + Schedules                                        | 5528f99                   |
+| S6 voice overlay                                                         | d889637                   |
+| S7 offline state                                                         | 8f5146d                   |
+| S8 desktop rail + split + caps                                           | 905fa5b                   |
 
 Deviation from mockups: the sticky approval dock above the composer (M3)
 was skipped — the inline approval card renders directly under the tool
