@@ -352,6 +352,23 @@ describe('AppShell', () => {
     await waitFor(() => expect(screen.getByRole('heading', { name: 'System' })).toBeInTheDocument());
   });
 
+  it('shows the gateway health summary in the More sheet', async () => {
+    vi.mocked(restMock.systemStats).mockResolvedValue({
+      uptimeSeconds: 22320,
+      cpuPercent: 18,
+      memoryUsedMb: 2150,
+      memoryTotalMb: 8192,
+      diskUsedMb: 59392,
+      diskTotalMb: 102400,
+    } as unknown as import('@hermes-pwa/core').SystemStats);
+    render(<AppShell connectionState="connected" rpc={rpcMock} rest={restMock} />);
+    fireEvent.click(screen.getByRole('button', { name: 'More' }));
+    const sheet = await screen.findByRole('dialog', { name: 'More' });
+    await waitFor(() => expect(within(sheet).getByTestId('more-health')).toBeInTheDocument());
+    expect(within(sheet).getByText(/Gateway running · up 6h 12m/)).toBeInTheDocument();
+    expect(within(sheet).getByText(/CPU 18\.0% · RAM 2\.1 GB \/ 8\.0 GB/)).toBeInTheDocument();
+  });
+
   it('hides the status chip when connected and the gateway is healthy', async () => {
     render(<AppShell connectionState="connected" rpc={rpcMock} rest={restMock} />);
     await waitFor(() => expect(screen.queryByTestId('status-chip')).not.toBeInTheDocument());

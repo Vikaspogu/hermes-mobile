@@ -155,7 +155,7 @@ export function toSession(raw: Record<string, unknown>): Session {
     title: typeof raw.title === 'string' && raw.title.trim() ? raw.title : 'Untitled',
     updatedAt: Number(raw.updated_at ?? raw.updatedAt ?? raw.last_active ?? raw.started_at ?? 0),
     messageCount: optionalNumber(raw.message_count ?? raw.messageCount),
-    previewText: optionalString(raw.preview_text ?? raw.previewText ?? raw.last_message),
+    previewText: optionalString(raw.preview_text ?? raw.previewText ?? raw.last_message ?? raw.preview),
     profile: optionalString(raw.profile),
     source,
     originSource,

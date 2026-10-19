@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useChatStore, type RestClient, type Artifact as DomainArtifact } from '@hermes-pwa/core';
+import { HermesHttpError, useChatStore, type RestClient, type Artifact as DomainArtifact } from '@hermes-pwa/core';
 
 interface ArtifactsProps {
   rest: RestClient;
@@ -99,7 +99,15 @@ export function Artifacts({ rest }: ArtifactsProps) {
     void rest
       .sessionArtifacts(sessionId)
       .then((raw) => setArtifacts(raw.map(parseArtifact)))
-      .catch((err) => setError(err instanceof Error ? err.message : 'Failed to load'))
+      .catch((err) =>
+        setError(
+          err instanceof HermesHttpError && err.status === 404
+            ? 'Artifacts need a newer Hermes backend — this server has no artifacts API yet.'
+            : err instanceof Error
+              ? err.message
+              : 'Failed to load',
+        ),
+      )
       .finally(() => setLoading(false));
   }, [rest, sessionId]);
 

@@ -45,4 +45,13 @@ describe('Artifacts', () => {
     expect(screen.getAllByTestId('artifact-row').length).toBe(1);
     expect(screen.getByText('https://example.com')).toBeInTheDocument();
   });
+
+  it('shows a friendly note when the backend has no artifacts API (404)', async () => {
+    const { HermesHttpError } = await import('@hermes-pwa/core');
+    const rest = makeRest({
+      sessionArtifacts: vi.fn().mockRejectedValue(new HermesHttpError(404, 'Not Found', '{"detail":"No such API endpoint"}')),
+    });
+    render(<Artifacts rest={rest} />);
+    await waitFor(() => expect(screen.getByText(/no artifacts API yet/i)).toBeInTheDocument());
+  });
 });

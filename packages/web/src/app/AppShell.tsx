@@ -1,5 +1,5 @@
 import { startTransition, Suspense, lazy, useEffect, useRef, useState } from 'react';
-import type { Approval, Clarify, ConnectionState, RpcClient, RestClient, RpcEvent, UpdateCheck } from '@hermes-pwa/core';
+import type { Approval, Clarify, ConnectionState, RpcClient, RestClient, RpcEvent, SystemStats, UpdateCheck } from '@hermes-pwa/core';
 import { connectionStateLabel, useActivityStore, useProfilesStore, useSessionsStore, useChatStore, useConnectionStore, useProjectsStore } from '@hermes-pwa/core';
 import { Chats } from '../screens/Chats';
 import { ConnectionBanner } from '../components/ConnectionBanner';
@@ -9,6 +9,7 @@ import { LazyScreenErrorBoundary } from './LazyScreenErrorBoundary';
 import { usePresence } from '../hooks/usePresence';
 import { getInitialScreen, persistScreen, sessionFromLocationHash } from '../lib/screenStorage';
 import { dismissTopBackLayer, registerBackLayer } from '../lib/backLayers';
+import { fmtGb, fmtPercent, fmtUptime } from '../lib/formatStats';
 import { HERMES_PWA_VERSION_LABEL } from './version';
 import { syncPushSubscription } from '../pwa/push';
 
@@ -168,6 +169,7 @@ export function AppShell({ connectionState, rpc, rest, onRetry, connectionError 
   const navStackRef = useRef(navStack);
   const screen: Screen = navStack[navStack.length - 1] ?? 'home';
   const [moreOpen, setMoreOpen] = useState(false);
+  const [moreStats, setMoreStats] = useState<SystemStats | null>(null);
   const [voiceOpen, setVoiceOpen] = useState(false);
   const [gatewayHealth, setGatewayHealth] = useState<GatewayHealth>('checking');
   const [updateCheck, setUpdateCheck] = useState<UpdateCheck | undefined>();
@@ -202,6 +204,21 @@ export function AppShell({ connectionState, rpc, rest, onRetry, connectionError 
   useEffect(() => {
     persistScreen(screen);
   }, [screen]);
+
+  // Lazy-load gateway stats for the More sheet health summary (M7 mockup).
+  useEffect(() => {
+    if (!moreOpen) return undefined;
+    let cancelled = false;
+    rest
+      .systemStats()
+      .then((s) => {
+        if (!cancelled) setMoreStats(s);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [moreOpen, rest]);
 
   useEffect(() => {
     function persistCurrentScreen() {
@@ -658,6 +675,18 @@ export function AppShell({ connectionState, rpc, rest, onRetry, connectionError 
           <button className="hm-more-sheet__overlay" onClick={() => setMoreOpen(false)} aria-hidden="true" tabIndex={-1} />
           <div className="hm-more-sheet__panel" ref={moreSheetRef}>
             <div className="hm-more-sheet__grabber" aria-hidden="true" />
+            {gatewayHealth === 'running' && moreStats && (
+              <div className="hm-more-health" data-testid="more-health">
+                <span className="hm-more-health__line">
+                  <span className="hm-more-health__dot" aria-hidden="true" />
+                  Gateway running · up {fmtUptime(moreStats.uptimeSeconds)}
+                </span>
+                <span className="hm-more-health__line hm-more-health__line--muted">
+                  CPU {fmtPercent(moreStats.cpuPercent)} · RAM {fmtGb(moreStats.memoryUsedMb)} / {fmtGb(moreStats.memoryTotalMb)} · Disk{' '}
+                  {fmtGb(moreStats.diskUsedMb)} / {fmtGb(moreStats.diskTotalMb)}
+                </span>
+              </div>
+            )}
             <div className="hm-more-sheet__list">
               {MORE_ITEMS.map((item) => (
                 <button key={item.key} type="button" className="hm-more-row" onClick={() => navigate(item.key)}>
