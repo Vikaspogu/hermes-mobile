@@ -9,6 +9,7 @@ import { LazyScreenErrorBoundary } from './LazyScreenErrorBoundary';
 import { usePresence } from '../hooks/usePresence';
 import { getInitialScreen, persistScreen, sessionFromLocationHash } from '../lib/screenStorage';
 import { dismissTopBackLayer, registerBackLayer } from '../lib/backLayers';
+import { HERMES_PWA_VERSION_LABEL } from './version';
 import { syncPushSubscription } from '../pwa/push';
 
 export type Screen =
@@ -670,6 +671,7 @@ export function AppShell({ connectionState, rpc, rest, onRetry, connectionError 
                 </button>
               ))}
             </div>
+            <div className="hm-more-sheet__version">Hermes PWA v{HERMES_PWA_VERSION_LABEL}</div>
           </div>
         </div>
       )}
