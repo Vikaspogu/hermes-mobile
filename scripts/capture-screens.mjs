@@ -15,29 +15,35 @@ const tabs = [
 const moreItems = [
   { key: 'profiles', row: 'Profiles' },
   { key: 'agents', row: 'Agents' },
-  { key: 'sessions', row: 'Sessions' },
   { key: 'cron', row: 'Schedules' },
   { key: 'artifacts', row: 'Artifacts' },
-  { key: 'system', row: 'System' },
-  { key: 'voice', row: 'Voice' },
+  { key: 'command', row: 'System' },
   { key: 'settings', row: 'Settings' },
 ];
 
+const width = Number(process.env.CAPTURE_WIDTH ?? 390);
+const height = Number(process.env.CAPTURE_HEIGHT ?? 844);
+const prefix = process.env.CAPTURE_PREFIX ?? 'm';
+const dark = process.env.CAPTURE_DARK === '1';
+
 async function capture() {
   const browser = await chromium.launch({ headless: true });
-  const context = await browser.newContext({ viewport: { width: 390, height: 844 } });
+  const context = await browser.newContext({
+    viewport: { width, height },
+    ...(dark ? { colorScheme: 'dark' } : {}),
+  });
   const page = await context.newPage();
   await page.goto('http://127.0.0.1:3010/?preview');
   await page.waitForSelector('[data-testid="app-header"]', { timeout: 10000 });
 
   async function shot(key) {
     await page.waitForTimeout(400);
-    await page.screenshot({ path: join(outDir, `m-${key}.png`), fullPage: true });
+    await page.screenshot({ path: join(outDir, `${prefix}-${key}.png`), fullPage: true });
     console.log('Captured', key);
   }
 
   for (const { key, tab, fuzzy } of tabs) {
-    await page.getByRole('button', { name: tab, exact: !fuzzy }).click();
+    await page.getByRole('button', { name: tab, exact: !fuzzy }).first().click();
     await shot(key);
   }
 
@@ -60,7 +66,7 @@ async function capture() {
   await page.waitForSelector('[data-testid="thread-row"]', { timeout: 5000 });
   await page.locator('[data-testid="thread-row"]').first().click();
   await page.waitForTimeout(1800);
-  await page.screenshot({ path: join(outDir, 'm-chat.png'), fullPage: true });
+  await page.screenshot({ path: join(outDir, `${prefix}-chat.png`), fullPage: true });
   console.log('Captured chat');
 
   await browser.close();

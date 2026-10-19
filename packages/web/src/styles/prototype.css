@@ -1388,6 +1388,12 @@ body,
   min-width: 0;
 }
 
+.hm-projects__new-task {
+  background: var(--hm-color-tint);
+  color: var(--hm-color-primary);
+  box-shadow: none;
+}
+
 .hm-projects__board-name,
 .hm-task-card__assignee {
   min-width: 0;
@@ -1949,6 +1955,21 @@ select:focus-visible,
     justify-content: flex-end;
   }
 
+.hm-approval-card__scope {
+  border: 1px solid var(--hm-color-border);
+  background: var(--hm-color-surface);
+  color: var(--hm-color-text-2);
+  border-radius: var(--hm-radius-md);
+  padding: 0 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.hm-approval-card__scope:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
   .hm-approval-card__actions button {
     flex: none;
     width: auto;
@@ -1974,5 +1995,20 @@ select:focus-visible,
 @media (max-width: 1199px) {
   .hm-desktop-split__side {
     display: none;
+  }
+}
+
+@media (min-width: 900px) {
+  .hm-projects__board {
+    display: flex;
+    flex-direction: row;
+    align-items: flex-start;
+    gap: 14px;
+    overflow-x: auto;
+  }
+
+  .hm-projects__column {
+    flex: 1 1 0;
+    min-width: 230px;
   }
 }
