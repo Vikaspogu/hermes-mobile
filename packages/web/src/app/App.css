@@ -3102,11 +3102,11 @@ a {
 }
 
 .hm-command__gateway-card {
-  background: linear-gradient(135deg, #2540ff, #4661ff);
+  background: var(--hm-color-surface);
+  border: 1px solid var(--hm-color-border);
   border-radius: 16px;
   padding: 15px;
-  color: #fff;
-  box-shadow: 0 10px 24px rgba(37, 64, 255, 0.22);
+  color: var(--hm-color-text);
 }
 
 .hm-command__gateway-head {
@@ -3145,7 +3145,7 @@ a {
 
 .hm-command__gateway-stat-label {
   font-size: 11px;
-  opacity: 0.8;
+  color: var(--hm-color-text-muted);
 }
 
 .hm-command__gateway-stat-value {
@@ -3163,15 +3163,14 @@ a {
 .hm-command__gw-btn {
   flex: 1;
   padding: 9px;
-  border: none;
-  background: rgba(255, 255, 255, 0.18);
-  color: #fff;
+  border: 1px solid var(--hm-color-border);
+  background: var(--hm-color-surface-2);
+  color: var(--hm-color-text);
   border-radius: 10px;
   font-size: 12.5px;
   font-weight: var(--hm-fw-bold);
   cursor: pointer;
   font-family: inherit;
-  backdrop-filter: blur(4px);
 }
 
 .hm-command__gw-btn:disabled {
@@ -3180,7 +3179,9 @@ a {
 }
 
 .hm-command__gw-btn--danger {
-  background: rgba(220, 75, 70, 0.24);
+  background: var(--hm-color-danger-bg);
+  color: var(--hm-color-danger);
+  border-color: color-mix(in srgb, var(--hm-color-danger) 30%, var(--hm-color-border));
 }
 
 .hm-command__resources {
@@ -3388,8 +3389,8 @@ a {
   padding: 0 12px;
   border: none;
   border-radius: 13px;
-  background: var(--hm-color-primary);
-  color: #fff;
+  background: var(--hm-color-primary-tint);
+  color: var(--hm-color-primary);
   font-family: inherit;
   font-size: 12px;
   font-weight: var(--hm-fw-bold);
@@ -4490,7 +4491,7 @@ a {
   margin-top: 2px;
   padding: 13px;
   border: 1.5px dashed var(--hm-color-primary-soft);
-  background: var(--hm-color-tint);
+  background: var(--hm-color-primary-tint);
   color: var(--hm-color-primary);
   border-radius: 14px;
   font-size: var(--hm-fs-body);

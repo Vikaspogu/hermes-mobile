@@ -1389,7 +1389,7 @@ body,
 }
 
 .hm-projects__new-task {
-  background: var(--hm-color-tint);
+  background: var(--hm-color-primary-tint);
   color: var(--hm-color-primary);
   box-shadow: none;
 }
@@ -2045,7 +2045,7 @@ select:focus-visible,
   appearance: none;
   border: 0;
   border-radius: 11px;
-  background: var(--hm-color-tint);
+  background: var(--hm-color-primary-tint);
   color: var(--hm-color-primary);
   box-shadow: none;
   display: inline-flex;
