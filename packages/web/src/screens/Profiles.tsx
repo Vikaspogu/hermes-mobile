@@ -31,6 +31,7 @@ export function Profiles({ rest }: ProfilesProps) {
   const [cloneFromDefault, setCloneFromDefault] = useState(true);
   const [creating, setCreating] = useState(false);
   const [actingName, setActingName] = useState<string | undefined>();
+  const [menuProfile, setMenuProfile] = useState<Profile | undefined>();
   const [formError, setFormError] = useState<string | undefined>();
   const [modelProfile, setModelProfile] = useState<Profile | undefined>();
   const [selectedProvider, setSelectedProvider] = useState('');
@@ -98,6 +99,16 @@ export function Profiles({ rest }: ProfilesProps) {
     }
   }
 
+  async function handleActivate(profileName: string) {
+    setActingName(profileName);
+    try {
+      await activate(rest, profileName);
+      useChatStore.getState().startNewSession(profileName);
+      setMenuProfile(undefined);
+    } finally {
+      setActingName(undefined);
+    }
+  }
   async function handleRename(profileName: string) {
     const nextName = window.prompt(`Rename profile "${profileName}" to:`, profileName)?.trim();
     if (!nextName || nextName === profileName) return;
@@ -196,109 +207,99 @@ export function Profiles({ rest }: ProfilesProps) {
 
       <div className="hm-agents__list">
         {profiles.map((p) => {
-          const protectedProfile = p.name === 'default' || p.name === activeName || p.name === currentName || p.isActive;
-          const acting = actingName === p.name;
           return (
-            <div
+            <button
               key={p.name}
-              className={`hm-agent-card${p.isActive ? ' hm-agent-card--active' : ''}`}
+              type="button"
+              className={`hm-profile-row${p.isActive ? ' hm-profile-row--active' : ''}`}
               data-testid="agent-card"
+              onClick={() => setMenuProfile(p)}
+              aria-label={`Open actions for profile ${p.name}`}
             >
-              <div className="hm-agent-card__header">
-                <span className="hm-agent-card__avatar" aria-hidden="true">
-                  <Icon name="robot" size={20} />
-                </span>
-                <div className="hm-agent-card__info">
+              <span className="hm-agent-card__avatar" aria-hidden="true">
+                <Icon name="robot" size={20} />
+              </span>
+              <span className="hm-profile-row__body">
+                <span className="hm-profile-row__title">
                   <span className="hm-agent-card__name">{p.displayName ?? p.name}</span>
                   {p.isActive && (
                     <span className="hm-badge hm-badge--active" aria-label="Active profile">
                       ACTIVE
                     </span>
                   )}
-                </div>
-              </div>
-
-              {p.description && <p className="hm-agent-card__desc hm-muted">{p.description}</p>}
-
-              <div className="hm-profile-model-summary" aria-label={`Current model settings for profile ${p.name}`}>
-                <div className="hm-profile-model-summary__line">
-                  <span className="hm-profile-model-summary__label">Provider</span>
-                  <span className="hm-profile-model-summary__value">{p.provider ?? '—'}</span>
-                </div>
-                <div className="hm-profile-model-summary__line">
-                  <span className="hm-profile-model-summary__label">Model</span>
-                  <span className="hm-profile-model-summary__value">{p.model ?? '—'}</span>
-                </div>
-                <div className="hm-profile-model-summary__line">
-                  <span className="hm-profile-model-summary__label">Effort</span>
-                  <span className="hm-profile-model-summary__value">{reasoningLabel(p.reasoningEffort)}</span>
-                </div>
-                <div className="hm-profile-model-summary__line">
-                  <span className="hm-profile-model-summary__label">Thinking</span>
-                  <span className="hm-profile-model-summary__value">{thinkingLabel(p.showReasoning)}</span>
-                </div>
-              </div>
-
-              <div className="hm-agent-card__footer">
-                <button
-                  type="button"
-                  className="hm-agent-card__model hm-agent-card__model--button"
-                  onClick={() => openModelSheet(p)}
-                  disabled={modelLoading || acting}
-                  aria-label={`Change model for profile ${p.name}`}
-                  title="Change provider, model, effort and thinking for this profile"
-                >
-                  <Icon name="sparkle" size={12} />
-                  <span>Change model settings</span>
-                  <Icon name="chevR" size={12} />
-                </button>
-                <div className="hm-profile-actions">
-                  {p.isActive ? null : (
-                    <button
-                      className="hm-agent-card__activate"
-                      onClick={async () => {
-                        setActingName(p.name);
-                        try {
-                          await activate(rest, p.name);
-                          useChatStore.getState().startNewSession(p.name);
-                        } finally {
-                          setActingName(undefined);
-                        }
-                      }}
-                      aria-label={`Activate ${p.name}`}
-                      disabled={acting}
-                    >
-                      Activate
-                    </button>
-                  )}
-                  <button
-                    type="button"
-                    className="hm-row-action"
-                    onClick={() => void handleRename(p.name)}
-                    disabled={acting || protectedProfile}
-                    aria-label={`Rename profile ${p.name}`}
-                    title={protectedProfile ? 'Switch away before renaming this profile' : 'Rename profile'}
-                  >
-                    <Icon name="edit" size={14} />
-                    <span>Rename</span>
-                  </button>
-                  <button
-                    type="button"
-                    className="hm-row-action hm-row-action--danger"
-                    onClick={() => void handleDelete(p.name)}
-                    disabled={acting || protectedProfile}
-                    aria-label={`Delete profile ${p.name}`}
-                    title={protectedProfile ? 'Default/current/active profiles are protected' : 'Delete profile'}
-                  >
-                    <Icon name="trash" size={14} />
-                    <span>Delete</span>
-                  </button>
-                </div>
-              </div>
-            </div>
+                </span>
+                <span className="hm-profile-row__sub hm-muted">
+                  {[p.model, p.description].filter(Boolean).join(' · ') || 'No model set'}
+                </span>
+              </span>
+              <span className="hm-profile-row__chev" aria-hidden="true">
+                <Icon name="chevR" size={14} />
+              </span>
+            </button>
           );
         })}
       </div>
+
+      {menuProfile && (() => {
+        const p = menuProfile;
+        const protectedProfile = p.name === 'default' || p.name === activeName || p.name === currentName || p.isActive;
+        const acting = actingName === p.name;
+        const modelLine = [
+          p.model ?? 'No model set',
+          p.reasoningEffort ? `Effort ${reasoningLabel(p.reasoningEffort)}` : '',
+          p.showReasoning !== undefined ? `Thinking ${thinkingLabel(p.showReasoning)}` : '',
+        ].filter(Boolean).join(' · ');
+        return (
+          <BottomSheet title={p.displayName ?? p.name} onClose={() => setMenuProfile(undefined)}>
+            <p className="hm-muted hm-profile-sheet__summary">{modelLine}</p>
+            <div className="hm-sheet-actions">
+              <button
+                type="button"
+                className="hm-primary"
+                onClick={() => {
+                  setMenuProfile(undefined);
+                  openModelSheet(p);
+                }}
+                disabled={modelLoading || acting}
+                aria-label={`Change model for profile ${p.name}`}
+              >
+                Change model settings
+              </button>
+              {!p.isActive && (
+                <button
+                  type="button"
+                  className="hm-ghost"
+                  onClick={() => void handleActivate(p.name)}
+                  disabled={acting}
+                  aria-label={`Activate ${p.name}`}
+                >
+                  Activate
+                </button>
+              )}
+              <button
+                type="button"
+                className="hm-ghost"
+                onClick={() => void handleRename(p.name)}
+                disabled={acting || protectedProfile}
+                title={protectedProfile ? 'Switch away before renaming this profile' : 'Rename profile'}
+                aria-label={`Rename profile ${p.name}`}
+              >
+                Rename
+              </button>
+              <button
+                type="button"
+                className="hm-ghost hm-text-danger"
+                onClick={() => void handleDelete(p.name)}
+                disabled={acting || protectedProfile}
+                title={protectedProfile ? 'Default/current/active profiles are protected' : 'Delete profile'}
+                aria-label={`Delete profile ${p.name}`}
+              >
+                Delete
+              </button>
+            </div>
+          </BottomSheet>
+        );
+      })()}
 
       {modelProfile && (
         <BottomSheet

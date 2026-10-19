@@ -56,7 +56,13 @@ function ArtifactItem({ artifact }: { artifact: Artifact }) {
   const icon = artifact.kind === 'image' ? '🖼' : artifact.kind === 'link' ? '🔗' : '📎';
   return (
     <div className="hm-artifact-row" data-testid="artifact-row">
-      <span className="hm-artifact-row__icon" aria-hidden="true">{icon}</span>
+      <span className="hm-artifact-row__icon" aria-hidden="true">
+        {artifact.kind === 'image' && artifact.url ? (
+          <img className="hm-artifact-row__thumb" src={artifact.url} alt="" loading="lazy" />
+        ) : (
+          icon
+        )}
+      </span>
       <span className="hm-artifact-row__body">
         <span className="hm-artifact-row__name">{artifact.name}</span>
         {(artifact.mimeType || artifact.size) && (

@@ -26,6 +26,11 @@ const makeRest = (overrides = {}) =>
     ...overrides,
   }) as unknown as import('@hermes-pwa/core').RestClient;
 
+
+async function openProfileActions(name: string) {
+  fireEvent.click(await screen.findByRole('button', { name: new RegExp(`Open actions for profile ${name}`, 'i') }));
+}
+
 describe('Profiles', () => {
   beforeEach(() => {
     window.localStorage.clear();
@@ -54,7 +59,8 @@ describe('Profiles', () => {
     const rest = makeRest();
     render(<Profiles rest={rest} />);
     await waitFor(() => expect(screen.getByText('Research')).toBeInTheDocument());
-    fireEvent.click(screen.getByRole('button', { name: /Activate research/i }));
+    await openProfileActions('research');
+    fireEvent.click(await screen.findByRole('button', { name: /Activate research/i }));
     await waitFor(() => expect(rest.profileActivate).toHaveBeenCalledWith('research'));
   });
 
@@ -81,7 +87,8 @@ describe('Profiles', () => {
 
     render(<Profiles rest={rest} />);
     await waitFor(() => expect(screen.getByText('Research')).toBeInTheDocument());
-    fireEvent.click(screen.getByRole('button', { name: /Activate research/i }));
+    await openProfileActions('research');
+    fireEvent.click(await screen.findByRole('button', { name: /Activate research/i }));
 
     await waitFor(() => expect(rest.profileActivate).toHaveBeenCalledWith('research'));
     expect(useChatStore.getState()).toMatchObject({
@@ -116,7 +123,8 @@ describe('Profiles', () => {
     render(<Profiles rest={rest} />);
     await waitFor(() => expect(screen.getByText('Research')).toBeInTheDocument());
 
-    fireEvent.click(screen.getByRole('button', { name: /Rename profile research/i }));
+    await openProfileActions('research');
+    fireEvent.click(await screen.findByRole('button', { name: /Rename profile research/i }));
 
     await waitFor(() => expect(rest.profileRename).toHaveBeenCalledWith('research', 'research-v2'));
     prompt.mockRestore();
@@ -128,8 +136,11 @@ describe('Profiles', () => {
     render(<Profiles rest={rest} />);
     await waitFor(() => expect(screen.getByText('Research')).toBeInTheDocument());
 
+    await openProfileActions('default');
     expect(screen.getByRole('button', { name: /Delete profile default/i })).toBeDisabled();
-    fireEvent.click(screen.getByRole('button', { name: /Delete profile research/i }));
+    fireEvent.keyDown(document.body, { key: 'Escape' });
+    await openProfileActions('research');
+    fireEvent.click(await screen.findByRole('button', { name: /Delete profile research/i }));
 
     await waitFor(() => expect(rest.profileDelete).toHaveBeenCalledWith('research'));
     confirm.mockRestore();
@@ -141,7 +152,8 @@ describe('Profiles', () => {
     await waitFor(() => expect(screen.getByText('Research')).toBeInTheDocument());
     await waitFor(() => expect(rest.modelOptions).toHaveBeenCalled());
 
-    fireEvent.click(screen.getByRole('button', { name: /Change model for profile research/i }));
+    await openProfileActions('research');
+    fireEvent.click(await screen.findByRole('button', { name: /Change model for profile research/i }));
     await waitFor(() => expect(screen.getByText('Model for Research')).toBeInTheDocument());
     fireEvent.change(screen.getByLabelText('Provider'), { target: { value: 'kimi-coding' } });
     fireEvent.change(screen.getByLabelText('Model'), { target: { value: 'kimi-k2.6' } });

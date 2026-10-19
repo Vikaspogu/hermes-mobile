@@ -1,7 +1,7 @@
-import { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import type { Approval, Clarify, ConnectionState, RpcClient, RestClient, RpcEvent, Session, UpdateCheck } from '@hermes-pwa/core';
-import { connectionStateLabel, sessionSourceId, sessionSourceLabel, useActivityStore, useProfilesStore, useSessionsStore, useChatStore, useConnectionStore, useProjectsStore } from '@hermes-pwa/core';
-import { Home } from '../screens/Home';
+import { startTransition, Suspense, lazy, useEffect, useRef, useState } from 'react';
+import type { Approval, Clarify, ConnectionState, RpcClient, RestClient, RpcEvent, UpdateCheck } from '@hermes-pwa/core';
+import { connectionStateLabel, useActivityStore, useProfilesStore, useSessionsStore, useChatStore, useConnectionStore, useProjectsStore } from '@hermes-pwa/core';
+import { Chats } from '../screens/Chats';
 import { ConnectionBanner } from '../components/ConnectionBanner';
 import { Icon, type IconName } from '../components/Icon';
 import { UpdateNotification } from '../components/UpdateNotification';
@@ -31,9 +31,9 @@ interface AppShellProps {
   rpc: RpcClient;
   rest: RestClient;
   onRetry?: () => void;
+  connectionError?: string | undefined;
 }
 
-type SourceFilter = 'all' | string;
 const UPDATE_DISMISSED_STORAGE_KEY = 'hermes-pwa:update-dismissed-version';
 
 const Chat = lazy(() => import('../screens/Chat').then((module) => ({ default: module.Chat })));
@@ -47,46 +47,6 @@ const Cron = lazy(() => import('../screens/Cron').then((module) => ({ default: m
 const Artifacts = lazy(() => import('../screens/Artifacts').then((module) => ({ default: module.Artifacts })));
 const Settings = lazy(() => import('../screens/Settings').then((module) => ({ default: module.Settings })));
 const Voice = lazy(() => import('../screens/Voice').then((module) => ({ default: module.Voice })));
-
-const DRAWER_FOCUSABLE_SELECTOR = [
-  'a[href]',
-  'button:not([disabled])',
-  'textarea:not([disabled])',
-  'input:not([disabled])',
-  'select:not([disabled])',
-  '[tabindex]:not([tabindex="-1"])',
-].join(',');
-
-function drawerFocusableElements(root: HTMLElement): HTMLElement[] {
-  return Array.from(root.querySelectorAll<HTMLElement>(DRAWER_FOCUSABLE_SELECTOR)).filter((element) => {
-    if (element.hasAttribute('disabled')) return false;
-    if (element.getAttribute('aria-hidden') === 'true') return false;
-    if (element.hidden) return false;
-    return true;
-  });
-}
-
-interface SourceFilterOption {
-  key: SourceFilter;
-  label: string;
-  count: number;
-}
-
-function sessionSourceKey(session: Pick<Session, 'source'>): string {
-  return sessionSourceId(session) ?? 'unknown';
-}
-
-function buildSourceFilterOptions(sessions: Session[]): SourceFilterOption[] {
-  const counts = new Map<string, number>();
-  for (const session of sessions) {
-    counts.set(sessionSourceKey(session), (counts.get(sessionSourceKey(session)) ?? 0) + 1);
-  }
-  const sourceOptions = Array.from(counts.entries())
-    .map(([key, count]) => ({ key, label: sessionSourceLabel(key) ?? 'Unknown', count }))
-    .sort((a, b) => a.label.localeCompare(b.label));
-  const allCount = sessions.filter((s) => sessionSourceKey(s) !== 'cron').length;
-  return [{ key: 'all', label: 'All', count: allCount }, ...sourceOptions];
-}
 
 function eventPayload(event: RpcEvent): Record<string, unknown> {
   return event.payload && typeof event.payload === 'object'
@@ -136,23 +96,6 @@ function clarifyFromEvent(event: RpcEvent): Clarify {
   return item;
 }
 
-const DRAWER_ITEMS: { key: Screen; label: string; icon: IconName }[] = [
-  { key: 'home', label: 'Home', icon: 'home' },
-  { key: 'profiles', label: 'Profiles', icon: 'profiles' },
-  { key: 'chat', label: 'Chat', icon: 'chat' },
-  { key: 'voice', label: 'Voice', icon: 'wave' },
-  { key: 'approvals', label: 'Approvals', icon: 'shield' },
-  { key: 'sessions', label: 'Sessions', icon: 'sessions' },
-  { key: 'kanban', label: 'Kanban', icon: 'kanban' },
-  { key: 'cron', label: 'Cron', icon: 'cron' },
-  { key: 'agents', label: 'Agents', icon: 'agents' },
-  // TODO: Skills/Tools is temporarily hidden from the PWA menu until we decide
-  // whether this administrative surface belongs in the mobile app.
-  // { key: 'skills', label: 'Skills & Tools', icon: 'skills' },
-  { key: 'command', label: 'System', icon: 'system' },
-  { key: 'settings', label: 'Settings', icon: 'settings' },
-];
-
 const HIDDEN_ADMIN_SCREENS = new Set<Screen>([
   // TODO: Skills/Tools is temporarily hidden from the PWA until we decide
   // whether this administrative surface belongs in the mobile app.
@@ -162,7 +105,7 @@ const HIDDEN_ADMIN_SCREENS = new Set<Screen>([
 ]);
 
 const SCREEN_TITLES: Record<Screen, string> = {
-  home: 'Home',
+  home: 'Chats',
   chat: 'Chat',
   voice: 'Voice',
   sessions: 'Sessions',
@@ -170,7 +113,7 @@ const SCREEN_TITLES: Record<Screen, string> = {
   kanban: 'Kanban',
   agents: 'Agents',
   profiles: 'Profiles',
-  cron: 'Cron',
+  cron: 'Schedules',
   artifacts: 'Artifacts',
   skills: 'Skills',
   command: 'System',
@@ -215,54 +158,29 @@ function gatewayStatusLabel(state: ConnectionState, gatewayHealth: GatewayHealth
   return 'Gateway ?';
 }
 
-function gatewayStatusTone(state: ConnectionState, gatewayHealth: GatewayHealth): 'ok' | 'warn' | 'error' {
-  if (state === 'connected' && gatewayHealth === 'running') return 'ok';
-  if (state === 'offline') return 'error';
-  return 'warn';
-}
 
-function DrawerSessionRow({
-  dot,
-  title,
-  msgs,
-  onClick,
-}: {
-  dot: string;
-  title: string;
-  msgs: number;
-  onClick: () => void;
-}) {
-  return (
-    <button type="button" className="hm-drawer__session" onClick={onClick}>
-      <span className="hm-drawer__session-dot" style={{ background: dot }} />
-      <span className="hm-drawer__session-title">{title}</span>
-      <span className="hm-drawer__session-msgs">{msgs}</span>
-    </button>
-  );
-}
 
-export function AppShell({ connectionState, rpc, rest, onRetry }: AppShellProps) {
+export function AppShell({ connectionState, rpc, rest, onRetry, connectionError }: AppShellProps) {
   const [navStack, setNavStack] = useState<Screen[]>(() => {
     const initial = getInitialScreen();
     return initial === 'home' ? ['home'] : ['home', initial];
   });
   const navStackRef = useRef(navStack);
   const screen: Screen = navStack[navStack.length - 1] ?? 'home';
-  const [drawerOpen, setDrawerOpen] = useState(false);
-  const [drawerSourceFilter, setDrawerSourceFilter] = useState<SourceFilter>('all');
+  const [moreOpen, setMoreOpen] = useState(false);
+  const [voiceOpen, setVoiceOpen] = useState(false);
   const [gatewayHealth, setGatewayHealth] = useState<GatewayHealth>('checking');
   const [updateCheck, setUpdateCheck] = useState<UpdateCheck | undefined>();
   const [updateDismissedVersion, setUpdateDismissedVersion] = useState<string | null>(() => {
     if (typeof localStorage === 'undefined') return null;
     return localStorage.getItem(UPDATE_DISMISSED_STORAGE_KEY);
   });
-  const drawer = usePresence(drawerOpen, 260);
+  const moreSheet = usePresence(moreOpen, 220);
   const activeName = useProfilesStore((s) => s.activeName);
   const currentName = useProfilesStore((s) => s.currentName);
   const { profiles, load: loadProfiles } = useProfilesStore();
   const { sessions, load } = useSessionsStore();
   const { sessionId, storedSessionId } = useChatStore();
-  const { startNewSession } = useChatStore();
   const addActivityItem = useActivityStore((s) => s.addItem);
   const loadActivity = useActivityStore((s) => s.load);
   const pendingApprovals = useActivityStore(
@@ -276,10 +194,7 @@ export function AppShell({ connectionState, rpc, rest, onRetry }: AppShellProps)
     return false;
   });
   const screenTitle = screen === 'chat' && currentSession?.title ? currentSession.title : SCREEN_TITLES[screen];
-  const menuRef = useRef<HTMLButtonElement>(null);
-  const drawerPanelRef = useRef<HTMLElement>(null);
-  const drawerCloseRef = useRef<HTMLButtonElement>(null);
-  const drawerPreviousFocusRef = useRef<HTMLElement | null>(null);
+  const moreSheetRef = useRef<HTMLDivElement>(null);
   const pendingRefreshInFlightRef = useRef(false);
   const chatRecoveryInFlightRef = useRef(false);
   const pushSyncInFlightRef = useRef(false);
@@ -327,16 +242,28 @@ export function AppShell({ connectionState, rpc, rest, onRetry }: AppShellProps)
     return () => window.removeEventListener('popstate', onPopState);
   }, []);
 
-  // The drawer is the topmost back layer: Back closes it before navigating.
+  // The More sheet is the topmost back layer: Back closes it before navigating.
   useEffect(() => {
-    if (!drawerOpen) return undefined;
-    return registerBackLayer({ priority: 100, dismiss: () => setDrawerOpen(false) });
-  }, [drawerOpen]);
+    if (!moreOpen) return undefined;
+    return registerBackLayer({ priority: 100, dismiss: () => setMoreOpen(false) });
+  }, [moreOpen]);
 
   useEffect(() => {
-    if (!drawerOpen) return;
+    if (!moreOpen) return;
     void load(rest);
-  }, [drawerOpen, load, rest]);
+  }, [moreOpen, load, rest]);
+
+  useEffect(() => {
+    if (!moreOpen) return;
+    function onKey(e: KeyboardEvent) {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        setMoreOpen(false);
+      }
+    }
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [moreOpen]);
 
   useEffect(() => {
     void loadProfiles(rest);
@@ -542,58 +469,6 @@ export function AppShell({ connectionState, rpc, rest, onRetry }: AppShellProps)
   }, [rpc, addActivityItem]);
 
 
-  useEffect(() => {
-    if (!drawer.mounted || !drawerOpen) return;
-    drawerPreviousFocusRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
-    const fallbackFocus = menuRef.current;
-    if (drawerCloseRef.current) {
-      drawerCloseRef.current.focus();
-    }
-    return () => {
-      const previous = drawerPreviousFocusRef.current;
-      drawerPreviousFocusRef.current = null;
-      if (previous && document.contains(previous)) {
-        previous.focus({ preventScroll: true });
-      } else {
-        fallbackFocus?.focus({ preventScroll: true });
-      }
-    };
-  }, [drawer.mounted, drawerOpen]);
-
-  useEffect(() => {
-    if (!drawerOpen) return;
-    function onKey(e: KeyboardEvent) {
-      if (e.key === 'Escape') {
-        e.preventDefault();
-        setDrawerOpen(false);
-        return;
-      }
-      if (e.key !== 'Tab') return;
-      const panel = drawerPanelRef.current;
-      if (!panel) return;
-      const focusable = drawerFocusableElements(panel);
-      if (focusable.length === 0) {
-        e.preventDefault();
-        panel.focus({ preventScroll: true });
-        return;
-      }
-      const first = focusable[0]!;
-      const last = focusable[focusable.length - 1]!;
-      const active = document.activeElement;
-      if (!panel.contains(active)) {
-        e.preventDefault();
-        first.focus({ preventScroll: true });
-      } else if (e.shiftKey && active === first) {
-        e.preventDefault();
-        last.focus({ preventScroll: true });
-      } else if (!e.shiftKey && active === last) {
-        e.preventDefault();
-        first.focus({ preventScroll: true });
-      }
-    }
-    document.addEventListener('keydown', onKey);
-    return () => document.removeEventListener('keydown', onKey);
-  }, [drawerOpen]);
 
   function navigate(s: Screen) {
     if (HIDDEN_ADMIN_SCREENS.has(s)) {
@@ -606,26 +481,14 @@ export function AppShell({ connectionState, rpc, rest, onRetry }: AppShellProps)
       window.history.pushState({ hmNav: next.length - 1 }, '');
     }
     persistScreen(s);
-    setDrawerOpen(false);
+    setMoreOpen(false);
   }
 
-  function handleNewSession() {
-    startNewSession(activeName);
-    navigate('chat');
-  }
-
-  const handleDrawerSession = useCallback(async (session: Session) => {
-    await useChatStore.getState().resumeSessionIntoChat(rest, rpc, session.id, session.profile ?? activeName);
-    navigate('chat');
-  }, [activeName, rest, rpc]);
 
   const activeProfile = profiles.find((p) => p.name === activeName);
   const activeModel = activeProfile?.model?.trim() || 'Model not set';
-  const activeProvider = activeProfile?.provider?.trim();
   const activeProfileLabel = activeProfile?.displayName ?? activeName ?? 'default';
-  const modelDetail = activeProvider ? `${activeProvider} · ${activeProfileLabel}` : activeProfileLabel;
   const gatewayLabel = gatewayStatusLabel(connectionState, gatewayHealth);
-  const gatewayTone = gatewayStatusTone(connectionState, gatewayHealth);
   const showUpdateNotification = updateCheck?.updateAvailable === true && updateCheck.latest !== updateDismissedVersion;
 
   function dismissUpdateNotification() {
@@ -635,41 +498,28 @@ export function AppShell({ connectionState, rpc, rest, onRetry }: AppShellProps)
     setUpdateDismissedVersion(version);
   }
 
-  const visibleSessions = useMemo(() => sessions.filter((s) => !s.archived), [sessions]);
-  const drawerSourceOptions = useMemo(() => buildSourceFilterOptions(visibleSessions), [visibleSessions]);
-  const filteredDrawerSessions = useMemo(
-    () =>
-      drawerSourceFilter === 'all'
-        ? visibleSessions.filter((s) => sessionSourceKey(s) !== 'cron')
-        : visibleSessions.filter((s) => sessionSourceKey(s) === drawerSourceFilter),
-    [drawerSourceFilter, visibleSessions],
-  );
-  const drawerSessions = useMemo(
-    () =>
-      filteredDrawerSessions.slice(0, 7).map((s) => ({
-        id: s.id,
-        title: `${sessionSourceLabel(sessionSourceKey(s)) ?? 'Unknown'} · ${s.title?.trim() || 'Untitled'}`,
-        msgs: s.messageCount ?? 0,
-        dot: s.isActive || s.active ? '#15a06a' : '#9aa2b4',
-        onClick: () => void handleDrawerSession(s),
-      })),
-    [filteredDrawerSessions, handleDrawerSession],
-  );
+
+  const MORE_ITEMS: { key: Screen; label: string; icon: IconName; sub?: string }[] = [
+    { key: 'profiles', label: 'Profiles', icon: 'profiles', sub: activeProfile ? `${activeProfileLabel} · ${activeModel}` : activeModel },
+    { key: 'agents', label: 'Agents', icon: 'agents' },
+    { key: 'sessions', label: 'Sessions', icon: 'sessions', sub: `${sessions.length} total` },
+    { key: 'cron', label: 'Schedules', icon: 'cron' },
+    { key: 'artifacts', label: 'Artifacts', icon: 'file' },
+    { key: 'command', label: 'System', icon: 'system', sub: gatewayLabel },
+    { key: 'settings', label: 'Settings', icon: 'settings' },
+  ];
+
+  const TABS: { key: Screen | 'more'; label: string; icon: IconName; badge?: number | undefined }[] = [
+    { key: 'home', label: 'Chats', icon: 'chat' },
+    { key: 'approvals', label: 'Inbox', icon: 'shield', badge: pendingApprovals || undefined },
+    { key: 'kanban', label: 'Work', icon: 'kanban' },
+    { key: 'more', label: 'More', icon: 'menu' },
+  ];
 
   return (
     <div className="hm-app-shell">
       {/* ── Header ───────────────────────────────────────────────── */}
       <header className="hm-header" data-testid="app-header">
-        <button
-          ref={menuRef}
-          className="hm-header__menu"
-          onClick={() => setDrawerOpen(true)}
-          aria-label="Open menu"
-          aria-expanded={drawerOpen}
-          aria-haspopup="dialog"
-        >
-          <Icon name="menu" size={22} />
-        </button>
         {navStack.length > 1 && (
           <button
             type="button"
@@ -686,14 +536,15 @@ export function AppShell({ connectionState, rpc, rest, onRetry }: AppShellProps)
           className="hm-header__status"
           onClick={() => navigate('command')}
           aria-label="Open system status"
-          aria-haspopup="dialog"
         >
           <StatusChip state={connectionState} gatewayHealth={gatewayHealth} />
         </button>
       </header>
 
       {/* ── Connection banner ────────────────────────────────────── */}
-      <ConnectionBanner state={connectionState} error={undefined} onRetry={onRetry} />
+      {connectionState !== 'offline' && (
+        <ConnectionBanner state={connectionState} error={connectionError} onRetry={onRetry} />
+      )}
       {showUpdateNotification && updateCheck ? (
         <UpdateNotification update={updateCheck} onDismiss={dismissUpdateNotification} />
       ) : null}
@@ -702,15 +553,42 @@ export function AppShell({ connectionState, rpc, rest, onRetry }: AppShellProps)
       <main className="hm-screen">
         <LazyScreenErrorBoundary key={screen}>
           <Suspense fallback={<p className="hm-muted hm-loading">Loading…</p>}>
-            {screen === 'chat'      && <Chat key={activeName ?? 'default'} rpc={rpc} rest={rest} onOpenVoice={() => navigate('voice')} />}
-            {screen === 'voice'     && <Voice key={activeName ?? 'default'} />}
+        {connectionState === 'offline' ? (
+          <div className="hm-offline-card" data-testid="offline-card">
+            <span className="hm-offline-card__icon" aria-hidden="true">
+              <Icon name="alert" size={28} />
+            </span>
+            <h2 className="hm-offline-card__title">Can&rsquo;t reach the gateway</h2>
+            <p className="hm-offline-card__url hm-mono">{typeof window !== 'undefined' ? window.location.host : ''}</p>
+            <p className="hm-muted">{connectionError ?? 'Connection failed.'}</p>
+            <div className="hm-offline-card__actions">
+              {onRetry && (
+                <button type="button" className="hm-primary" onClick={onRetry}>
+                  Retry
+                </button>
+              )}
+              <button type="button" className="hm-ghost" onClick={() => navigate('settings')}>
+                Connection settings
+              </button>
+            </div>
+          </div>
+        ) : (
+          <>
+            {screen === 'chat'      && (
+              <div className="hm-desktop-split">
+                <div className="hm-desktop-split__side" aria-hidden="false">
+                  <Sessions key={`side-${activeName ?? 'default'}`} rpc={rpc} rest={rest} onSessionOpen={() => navigate('chat')} />
+                </div>
+                <Chat key={activeName ?? 'default'} rpc={rpc} rest={rest} onOpenVoice={() => startTransition(() => setVoiceOpen(true))} />
+              </div>
+            )}
             {screen === 'sessions'  && <Sessions key={activeName ?? 'default'} rpc={rpc} rest={rest} onSessionOpen={() => navigate('chat')} />}
             {screen === 'approvals' && <Activity key={activeName ?? 'default'} rpc={rpc} rest={rest} />}
             {screen === 'kanban'    && <Projects key={activeName ?? 'default'} rest={rest} />}
             {screen === 'agents'    && <Agents key={activeName ?? 'default'} rpc={rpc} />}
             {screen === 'profiles'  && <Profiles key={activeName ?? 'default'} rest={rest} />}
-            {screen === 'home'      && <Home key={activeName ?? 'default'} rpc={rpc} rest={rest} onNavigate={(s) => navigate(s as Screen)} />}
             {screen === 'command'   && <CommandCenter key={activeName ?? 'default'} rest={rest} />}
+            {screen === 'home'      && <Chats key={activeName ?? 'default'} rpc={rpc} rest={rest} onNavigate={(s) => navigate(s as Screen)} />}
             {screen === 'cron'      && <Cron key={activeName ?? 'default'} rest={rest} />}
             {screen === 'artifacts' && <Artifacts key={activeName ?? 'default'} rest={rest} />}
             {screen === 'settings'  && (
@@ -721,130 +599,79 @@ export function AppShell({ connectionState, rpc, rest, onRetry }: AppShellProps)
                 onLogout={() => void useConnectionStore.getState().logout()}
               />
             )}
+          </>
+        )}
           </Suspense>
         </LazyScreenErrorBoundary>
       </main>
 
-      {/* ── Drawer ───────────────────────────────────────────────── */}
-      {(drawerOpen || drawer.mounted) && (
+      {/* ── Bottom tab bar ─────────────────────────────────────────── */}
+      <nav className="hm-tabbar" aria-label="Primary">
+        {TABS.map((tab) => {
+          if (tab.key === 'more') {
+            return (
+              <button
+                key="more"
+                type="button"
+                className={`hm-tab${moreOpen ? ' hm-tab--active' : ''}`}
+                onClick={() => setMoreOpen(true)}
+                aria-haspopup="dialog"
+                aria-expanded={moreOpen}
+              >
+                <Icon name={tab.icon} size={22} />
+                <span className="hm-tab__label">{tab.label}</span>
+              </button>
+            );
+          }
+          const active = screen === tab.key;
+          return (
+            <button
+              key={tab.key}
+              type="button"
+              className={`hm-tab${active ? ' hm-tab--active' : ''}`}
+              onClick={() => navigate(tab.key as Screen)}
+              aria-current={active ? 'page' : undefined}
+            >
+              <span className="hm-tab__icon">
+                <Icon name={tab.icon} size={22} />
+                {tab.badge != null && tab.badge > 0 && <span className="hm-tab__badge">{tab.badge}</span>}
+              </span>
+              <span className="hm-tab__label">{tab.label}</span>
+            </button>
+          );
+        })}
+      </nav>
+
+      {/* ── More sheet ─────────────────────────────────────────────── */}
+      {(moreOpen || moreSheet.mounted) && (
         <div
-          className="hm-drawer"
+          className="hm-more-sheet"
           role="dialog"
           aria-modal="true"
-          aria-label="Navigation menu"
-          data-closing={drawer.leaving || undefined}
+          aria-label="More"
+          data-closing={moreSheet.leaving || undefined}
         >
-          <button
-            className="hm-drawer__overlay"
-            onClick={() => setDrawerOpen(false)}
-            aria-hidden="true"
-            tabIndex={-1}
-          />
-          <nav className="hm-drawer__panel" ref={drawerPanelRef} tabIndex={-1}>
-            <div className="hm-drawer__header">
-              <span className="hm-drawer__brand">
-                <img className="hm-drawer__brand-logo" src="./icons/icon-192.png" alt="" aria-hidden="true" />
-                <span className="hm-drawer__wordmark">Hermes-Agent PWA (unofficial)</span>
-              </span>
-              <button
-                ref={drawerCloseRef}
-                className="hm-drawer__close"
-                onClick={() => setDrawerOpen(false)}
-                aria-label="Close menu"
-              >
-                <Icon name="close" size={17} />
-              </button>
-            </div>
-
-            <div className="hm-drawer__cta">
-              <button type="button" className="hm-drawer__new" onClick={handleNewSession}>
-                <Icon name="plus" size={18} />
-                <span>New session</span>
-              </button>
-            </div>
-
-            <div className="hm-drawer__nav">
-              {DRAWER_ITEMS.map((item) => (
-                <button
-                  key={item.key}
-                  className={`hm-drawer__item${screen === item.key ? ' hm-drawer__item--active' : ''}`}
-                  onClick={() => navigate(item.key)}
-                  aria-current={screen === item.key ? 'page' : undefined}
-                >
-                  <span className="hm-drawer__item-icon" aria-hidden="true">
-                    <Icon name={item.icon} size={18} />
+          <button className="hm-more-sheet__overlay" onClick={() => setMoreOpen(false)} aria-hidden="true" tabIndex={-1} />
+          <div className="hm-more-sheet__panel" ref={moreSheetRef}>
+            <div className="hm-more-sheet__grabber" aria-hidden="true" />
+            <div className="hm-more-sheet__list">
+              {MORE_ITEMS.map((item) => (
+                <button key={item.key} type="button" className="hm-more-row" onClick={() => navigate(item.key)}>
+                  <span className="hm-more-row__icon" aria-hidden="true"><Icon name={item.icon} size={20} /></span>
+                  <span className="hm-more-row__text">
+                    <span className="hm-more-row__label">{item.label}</span>
+                    {item.sub && <span className="hm-more-row__sub">{item.sub}</span>}
                   </span>
-                  <span className="hm-drawer__item-label">{item.label}</span>
-                  {item.key === 'approvals' && pendingApprovals > 0 && (
-                    <span className="hm-drawer__badge">{pendingApprovals}</span>
-                  )}
-                  {item.key === 'sessions' && sessions.length > 0 && (
-                    <span className="hm-drawer__badge hm-drawer__badge--muted">{sessions.length}</span>
-                  )}
+                  <Icon name="chevR" size={16} />
                 </button>
               ))}
             </div>
-
-            {visibleSessions.length > 0 && (
-              <>
-                <div className="hm-drawer__section-head">
-                  <span>Sessions</span>
-                  <span className="hm-drawer__section-count">{filteredDrawerSessions.length}/{visibleSessions.length}</span>
-                </div>
-                <div className="hm-drawer__source-filters" role="tablist" aria-label="Session source filters">
-                  {drawerSourceOptions.map((option) => (
-                    <button
-                      key={option.key}
-                      type="button"
-                      className={`hm-drawer__source-chip${drawerSourceFilter === option.key ? ' hm-drawer__source-chip--active' : ''}`}
-                      onClick={() => setDrawerSourceFilter(option.key)}
-                      role="tab"
-                      aria-selected={drawerSourceFilter === option.key}
-                    >
-                      <span>{option.label}</span>
-                      <span className="hm-drawer__source-count">{option.count}</span>
-                    </button>
-                  ))}
-                </div>
-                <div className="hm-drawer__sessions" aria-live="polite">
-                  {drawerSessions.map((s) => (
-                    <DrawerSessionRow
-                      key={s.id}
-                      dot={s.dot}
-                      title={s.title}
-                      msgs={s.msgs}
-                      onClick={s.onClick}
-                    />
-                  ))}
-                  {drawerSessions.length === 0 && (
-                    <div className="hm-drawer__sessions-empty">No sessions for this source.</div>
-                  )}
-                </div>
-              </>
-            )}
-
-            <div className="hm-drawer__footer">
-              <button
-                type="button"
-                className="hm-drawer__footer-row hm-drawer__footer-row--model"
-                onClick={() => navigate('settings')}
-                aria-label="Open model settings"
-              >
-                <span className="hm-drawer__footer-main">{activeModel}</span>
-                <span className="hm-drawer__footer-sub">{modelDetail}</span>
-              </button>
-              <button
-                type="button"
-                className="hm-drawer__footer-row hm-drawer__footer-row--gateway"
-                onClick={() => navigate('command')}
-                aria-label="Open system status"
-              >
-                <span className={`hm-drawer__status-dot hm-drawer__status-dot--${gatewayTone}`} />
-                <span className="hm-drawer__status-text">{gatewayLabel}</span>
-                <span className="hm-drawer__footer-sub">System</span>
-              </button>
-            </div>
-          </nav>
+          </div>
+        </div>
+      )}
+      {voiceOpen && (
+        <div className="hm-voice-overlay">
+          <Voice key={activeName ?? 'default'} onClose={() => setVoiceOpen(false)} />
         </div>
       )}
     </div>

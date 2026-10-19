@@ -7,6 +7,7 @@ import type {
   SystemStats as DomainSystemStats,
 } from '@hermes-pwa/core';
 import { Icon } from '../components/Icon';
+import { BottomSheet } from '../components/BottomSheet';
 import { HERMES_PWA_VERSION_LABEL } from '../app/version';
 
 interface SystemScreenProps {
@@ -194,6 +195,7 @@ function fallbackLines(command: string, result: OpsRunResult): string[] {
 export function CommandCenter({ rest }: SystemScreenProps) {
   const [stats, setStats] = useState<SystemStats | null>(null);
   const [backups, setBackups] = useState<BackupEntry[]>([]);
+  const [gatewaySheetOpen, setGatewaySheetOpen] = useState(false);
   const [backupsOpen, setBackupsOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [opsResult, setOpsResult] = useState<Record<string, string>>({});
@@ -378,19 +380,10 @@ export function CommandCenter({ rest }: SystemScreenProps) {
         <div className="hm-command__gateway-actions">
           <button
             className="hm-command__gw-btn"
-            aria-label="Restart gateway"
-            onClick={() => void runGatewayAction('restart')}
-            disabled={opsRunning === 'gateway-restart'}
+            aria-label="Manage gateway"
+            onClick={() => setGatewaySheetOpen(true)}
           >
-            {opsRunning === 'gateway-restart' ? '…' : 'Restart'}
-          </button>
-          <button
-            className="hm-command__gw-btn hm-command__gw-btn--danger"
-            aria-label="Stop gateway"
-            onClick={() => void runGatewayAction('stop')}
-            disabled={opsRunning === 'gateway-stop'}
-          >
-            {opsRunning === 'gateway-stop' ? '…' : 'Stop'}
+            Manage gateway
           </button>
         </div>
       </div>
@@ -401,6 +394,9 @@ export function CommandCenter({ rest }: SystemScreenProps) {
             <div className="hm-command__resource-chip">
               <span className="hm-command__resource-label">CPU</span>
               <span className="hm-command__resource-value">{fmtPercent(stats!.cpuPercent)}</span>
+              <span className="hm-meter" aria-hidden="true">
+                <span style={{ width: `${Math.min(100, stats!.cpuPercent ?? 0)}%` }} />
+              </span>
               <span className="hm-command__resource-detail">current load</span>
             </div>
           )}
@@ -408,6 +404,9 @@ export function CommandCenter({ rest }: SystemScreenProps) {
             <div className="hm-command__resource-chip">
               <span className="hm-command__resource-label">RAM</span>
               <span className="hm-command__resource-value">{fmtPercent(stats!.memoryPercent)}</span>
+              <span className="hm-meter" aria-hidden="true">
+                <span style={{ width: `${Math.min(100, stats!.memoryPercent ?? 0)}%` }} />
+              </span>
               <span className="hm-command__resource-detail">
                 {fmtGb(stats!.memoryMb)} / {fmtGb(stats!.memoryTotalMb)} used
               </span>
@@ -417,6 +416,9 @@ export function CommandCenter({ rest }: SystemScreenProps) {
             <div className="hm-command__resource-chip">
               <span className="hm-command__resource-label">Disk</span>
               <span className="hm-command__resource-value">{fmtPercent(stats!.diskPercent)}</span>
+              <span className="hm-meter" aria-hidden="true">
+                <span style={{ width: `${Math.min(100, stats!.diskPercent ?? 0)}%` }} />
+              </span>
               <span className="hm-command__resource-detail">
                 {fmtGb(stats!.diskUsedMb)} / {fmtGb(stats!.diskTotalMb)} used
               </span>
@@ -520,6 +522,35 @@ export function CommandCenter({ rest }: SystemScreenProps) {
             </pre>
           </div>
         </div>
+      )}
+      {gatewaySheetOpen && (
+        <BottomSheet title="Manage gateway" onClose={() => setGatewaySheetOpen(false)}>
+          <p className="hm-muted">Restarting or stopping the gateway interrupts all live sessions.</p>
+          <div className="hm-sheet-actions">
+            <button
+              type="button"
+              className="hm-ghost"
+              disabled={opsRunning === 'gateway-restart'}
+              onClick={() => {
+                setGatewaySheetOpen(false);
+                void runGatewayAction('restart');
+              }}
+            >
+              {opsRunning === 'gateway-restart' ? 'Restarting…' : 'Restart gateway'}
+            </button>
+            <button
+              type="button"
+              className="hm-ghost hm-text-danger"
+              disabled={opsRunning === 'gateway-stop'}
+              onClick={() => {
+                setGatewaySheetOpen(false);
+                void runGatewayAction('stop');
+              }}
+            >
+              {opsRunning === 'gateway-stop' ? 'Stopping…' : 'Stop gateway'}
+            </button>
+          </div>
+        </BottomSheet>
       )}
     </div>
   );

@@ -10,10 +10,12 @@ interface ProjectsProps {
 }
 
 const COLUMNS: TaskStatus[] = [
+  'backlog',
   'triage',
   'todo',
   'scheduled',
   'ready',
+  'in_progress',
   'running',
   'blocked',
   'review',
@@ -91,6 +93,7 @@ export function Projects({ rest }: ProjectsProps) {
   const profiles = useProfilesStore((s) => s.profiles);
 
   const [selectorOpen, setSelectorOpen] = useState(false);
+  const [stageFilter, setStageFilter] = useState<TaskStatus | 'all'>('all');
   const [commentText, setCommentText] = useState('');
   const [creatingBoard, setCreatingBoard] = useState(false);
   const [newBoardName, setNewBoardName] = useState('');
@@ -145,6 +148,20 @@ export function Projects({ rest }: ProjectsProps) {
       tasks: tasks.filter((t) => t.status === status),
     }));
   }, [tasks]);
+
+  const nonEmptyColumns = useMemo(() => columns.filter((c) => c.tasks.length > 0), [columns]);
+
+  const visibleColumns = useMemo(() => {
+    if (stageFilter !== 'all') return columns.filter((c) => c.status === stageFilter);
+    // ponytail: empty stages collapse out of the default view; the pills are how you focus one.
+    return nonEmptyColumns.length > 0 ? nonEmptyColumns : columns;
+  }, [columns, nonEmptyColumns, stageFilter]);
+
+  useEffect(() => {
+    if (stageFilter !== 'all' && !columns.some((c) => c.status === stageFilter && c.tasks.length > 0)) {
+      setStageFilter('all');
+    }
+  }, [columns, stageFilter]);
 
   const assigneeOptions = useMemo(
     () => profiles.map((p) => ({ value: p.name, label: p.displayName ?? p.name })),
@@ -289,6 +306,40 @@ export function Projects({ rest }: ProjectsProps) {
         >
           <Icon name="refresh" size={14} />
         </button>
+        <button
+          type="button"
+          className="hm-primary hm-projects__new-task"
+          onClick={() => openCreateForm(stageFilter !== 'all' ? stageFilter : 'todo')}
+          data-testid="kanban-new-task"
+        >
+          <Icon name="plus" size={14} /> New
+        </button>
+      </div>
+
+      <div className="hm-projects__stage-pills" role="tablist" aria-label="Stage filter">
+        <button
+          type="button"
+          role="tab"
+          aria-selected={stageFilter === 'all'}
+          className={`hm-projects__stage-pill${stageFilter === 'all' ? ' hm-projects__stage-pill--active' : ''}`}
+          onClick={() => setStageFilter('all')}
+        >
+          All
+          <span className="hm-projects__stage-count">{tasks.length}</span>
+        </button>
+        {nonEmptyColumns.map((col) => (
+          <button
+            key={col.status}
+            type="button"
+            role="tab"
+            aria-selected={stageFilter === col.status}
+            className={`hm-projects__stage-pill${stageFilter === col.status ? ' hm-projects__stage-pill--active' : ''}`}
+            onClick={() => setStageFilter(col.status)}
+          >
+            {col.label}
+            <span className="hm-projects__stage-count">{col.tasks.length}</span>
+          </button>
+        ))}
       </div>
 
       {selectorOpen && (
@@ -353,20 +404,12 @@ export function Projects({ rest }: ProjectsProps) {
       {loading && tasks.length === 0 && <p className="hm-muted hm-loading">Loading board…</p>}
 
       <div className="hm-projects__board">
-        {columns.map((col) => (
+        {visibleColumns.map((col) => (
           <div key={col.status} className="hm-projects__column">
             <div className="hm-projects__column-header">
               <span className="hm-projects__column-dot" style={{ background: col.tint }} />
               <span className="hm-projects__column-title">{col.label}</span>
               <span className="hm-projects__column-count">{col.tasks.length}</span>
-              <button
-                type="button"
-                className="hm-projects__column-add"
-                onClick={() => openCreateForm(col.status)}
-                aria-label={`Add task to ${col.label}`}
-              >
-                <Icon name="plus" size={14} />
-              </button>
             </div>
 
             <div className="hm-projects__column-tasks">
@@ -380,14 +423,14 @@ export function Projects({ rest }: ProjectsProps) {
         {tasks.length === 0 && !loading && (
           <div className="hm-projects__empty-board">
             <p>No tasks on this board</p>
-            <p className="hm-muted">Tap + in a column to add one.</p>
+            <p className="hm-muted">Tap New above to add one.</p>
           </div>
         )}
       </div>
 
       {createForm.open && createForm.column && (
         <BottomSheet
-          title={`New task · ${COLUMN_LABEL[createForm.column]}`}
+          title="New task"
           onClose={closeCreateForm}
           footer={
             <div className="hm-projects__inline-actions">
@@ -405,6 +448,21 @@ export function Projects({ rest }: ProjectsProps) {
             </div>
           }
         >
+          <div className="hm-projects__field">
+            <label className="hm-projects__label">Stage</label>
+            <select
+              className="hm-select"
+              value={createForm.column}
+              onChange={(e) => setCreateForm((f) => ({ ...f, column: e.target.value as TaskStatus }))}
+            >
+              {MOVE_STATUSES.map((st) => (
+                <option key={st} value={st}>
+                  {COLUMN_LABEL[st]}
+                </option>
+              ))}
+            </select>
+          </div>
+
           <div className="hm-projects__field">
             <label className="hm-projects__label">Title</label>
             <textarea

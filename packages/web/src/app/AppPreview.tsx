@@ -11,6 +11,7 @@ import {
   useActivityStore,
   useChatStore,
   useProjectsStore,
+  useSpawnStore,
 } from '@hermes-pwa/core';
 import type { RpcClient, RestClient, Approval } from '@hermes-pwa/core';
 import type {
@@ -280,7 +281,7 @@ const noopRest: RestClient = {
   cronDeleteJob:       () => Promise.reject(new Error('preview')),
   cronDeliveryTargets: () => Promise.resolve([{ id: 'local', name: 'Local', homeTargetSet: true, homeEnvVar: null }]),
   sessionArtifacts:   () => Promise.resolve([
-    { id: 'a1', name: 'architecture.png', type: 'image/png', path: '#', createdAt: Date.now() },
+    { id: 'a1', name: 'architecture.png', type: 'image/png', path: "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='80' height='80'><rect width='80' height='80' fill='%232540ff'/><circle cx='40' cy='34' r='14' fill='%23ffffff' opacity='0.85'/></svg>", createdAt: Date.now() },
     { id: 'a2', name: 'output.txt',       type: 'text/plain', path: '#', createdAt: Date.now() },
     { id: 'a3', name: 'https://anthropic.com/docs', type: 'link', path: 'https://anthropic.com/docs', createdAt: Date.now() },
   ] as Artifact[]),
@@ -372,6 +373,32 @@ export function AppPreview() {
       loading: false,
       error: undefined,
     });
+    useSpawnStore.setState({
+      sessionId: 'live-prev-1',
+      agents: [
+        {
+          id: 'sp1', parentId: null, sessionId: 'live-prev-1',
+          goal: 'Review gateway reconnect diff', model: 'GPT-5.5', status: 'running',
+          taskIndex: 1, taskCount: 2, startedAt: Date.now() - 46_000, updatedAt: Date.now(),
+          inputTokens: 3_120, outputTokens: 940,
+          filesRead: ['packages/web/src/screens/Chat.tsx'],
+          filesWritten: [],
+          stream: [{ kind: 'tool', text: 'git diff --stat HEAD~1', at: Date.now() }],
+        },
+        {
+          id: 'sp2', parentId: null, sessionId: 'live-prev-1',
+          goal: 'Audit WS ticket TTL', model: 'GPT-5.5', status: 'completed',
+          taskIndex: 2, taskCount: 2, startedAt: Date.now() - 420_000, updatedAt: Date.now() - 336_000,
+          durationSeconds: 84, inputTokens: 5_400, outputTokens: 1_230,
+          filesRead: ['packages/core/src/transport/tickets.ts'],
+          filesWritten: [],
+          stream: [{ kind: 'summary', text: 'TTL is 30s; refresh at 20s.', at: Date.now() - 336_000 }],
+        },
+      ] as unknown as import('@hermes-pwa/core').SpawnedAgent[],
+    });
+    useSpawnStore.setState((st) => ({
+      tree: st.agents.map((a) => ({ ...a, children: [] })),
+    }));
   }, []);
 
   return <AppShell connectionState="connected" rpc={noopRpc} rest={noopRest} />;

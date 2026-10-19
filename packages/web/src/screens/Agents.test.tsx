@@ -17,7 +17,7 @@ describe('Agents (spawn tree)', () => {
 
   it('shows empty state when no agents', () => {
     render(<Agents rpc={rpcMock} />);
-    expect(screen.getByText(/No active agents/i)).toBeInTheDocument();
+    expect(screen.getByText(/No agents yet/i)).toBeInTheDocument();
   });
 
   it('renders spawn tree for current session', () => {

@@ -51,7 +51,7 @@ const restMock = {
   sessionArtifacts: vi.fn().mockResolvedValue([]),
   envList: vi.fn().mockResolvedValue([]),
   mcpServers: vi.fn().mockResolvedValue([]),
-  mcpToggle: vi.fn().mockResolvedValue(undefined),
+  mcpToggle: vi.fn().mockResolvedValue('submitted'),
   skillsList: vi.fn().mockResolvedValue([]),
 } as unknown as import('@hermes-pwa/core').RestClient;
 
@@ -92,9 +92,9 @@ describe('AppShell', () => {
     window.history.replaceState(null, '', '/');
   });
 
-  it('renders home screen by default', () => {
+  it('renders the chats screen by default', () => {
     render(<AppShell connectionState="connected" rpc={rpcMock} rest={restMock} />);
-    expect(screen.getByRole('heading', { name: 'Home' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Chats' })).toBeInTheDocument();
   });
 
   it('shows update notification when backend reports a newer version', async () => {
@@ -178,7 +178,7 @@ describe('AppShell', () => {
 
     render(<AppShell connectionState="connected" rpc={rpcMock} rest={restMock} />);
 
-    expect(screen.getByRole('heading', { name: 'Home' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Chats' })).toBeInTheDocument();
     expect(screen.queryByText('Gateway ready')).not.toBeInTheDocument();
     expect(screen.queryByText('GPT-5.5')).not.toBeInTheDocument();
     expect(document.querySelector('.hm-home__chips')).not.toBeInTheDocument();
@@ -206,175 +206,149 @@ describe('AppShell', () => {
       });
     });
 
-    const row = screen.getByTestId('recent-session');
+    const row = screen.getByText('Recent work').closest('[data-testid="thread-row"]')!;
     expect(row).toHaveTextContent('Recent work');
-    expect(row.querySelector('.hm-home__recent-dot')).not.toBeInTheDocument();
-    expect(row.querySelector('.hm-home__recent-chevron')).not.toBeInTheDocument();
+    expect(row).toHaveTextContent('3 msgs');
   });
 
-  it('keeps message input off Home but available in Chat', async () => {
+  it('starts a new chat from the home composer', async () => {
+    const submit = vi.spyOn(useChatStore.getState(), 'submit').mockResolvedValue('submitted');
     render(<AppShell connectionState="connected" rpc={rpcMock} rest={restMock} />);
-    expect(screen.getByRole('heading', { name: 'Home' })).toBeInTheDocument();
-    expect(screen.queryByLabelText('Message input')).not.toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Chats' })).toBeInTheDocument();
 
-    fireEvent.click(screen.getByTestId('tile-chat'));
-    await waitFor(() => expect(screen.getByLabelText('Message input')).toBeInTheDocument());
+    const input = screen.getByTestId('chats-composer');
+    fireEvent.change(input, { target: { value: 'hello agent' } });
+    fireEvent.submit(input.closest('form')!);
+
+    await waitFor(() => expect(submit).toHaveBeenCalledWith(rpcMock, 'hello agent', undefined));
   });
 
-  it('shows header with menu button and title', () => {
+  it('shows the tab bar with Chats active', () => {
     render(<AppShell connectionState="connected" rpc={rpcMock} rest={restMock} />);
-    expect(screen.getByRole('button', { name: /open menu/i })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: 'Home' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Chats' })).toBeInTheDocument();
+    const nav = screen.getByRole('navigation', { name: 'Primary' });
+    expect(within(nav).getByRole('button', { name: 'Chats' })).toHaveAttribute('aria-current', 'page');
+    expect(within(nav).getByRole('button', { name: 'Inbox' })).toBeInTheDocument();
+    expect(within(nav).getByRole('button', { name: 'Work' })).toBeInTheDocument();
+    expect(within(nav).getByRole('button', { name: 'More' })).toBeInTheDocument();
   });
 
-  it('opens and closes drawer', async () => {
+  it('opens and closes the More sheet', async () => {
     render(<AppShell connectionState="connected" rpc={rpcMock} rest={restMock} />);
-    fireEvent.click(screen.getByRole('button', { name: /open menu/i }));
-    const drawer = screen.getByRole('dialog', { name: /navigation menu/i });
-    expect(drawer).toBeInTheDocument();
-    expect(within(drawer).getByText('Hermes-Agent PWA (unofficial)')).toBeInTheDocument();
-    expect(within(drawer).getByRole('button', { name: 'New session' })).toBeInTheDocument();
-    expect(within(drawer).queryByText('⌘N')).not.toBeInTheDocument();
-    expect(drawer.querySelector('.hm-drawer__brand-logo')).toHaveAttribute('src', './icons/icon-192.png');
-    fireEvent.click(screen.getByRole('button', { name: /close menu/i }));
-    await waitFor(() =>
-      expect(screen.queryByRole('dialog', { name: /navigation menu/i })).not.toBeInTheDocument(),
-    );
-  });
-
-  it('traps drawer focus and restores focus to the menu button', async () => {
-    render(<AppShell connectionState="connected" rpc={rpcMock} rest={restMock} />);
-    const menuButton = screen.getByRole('button', { name: /open menu/i });
-    menuButton.focus();
-    fireEvent.click(menuButton);
-
-    const drawer = screen.getByRole('dialog', { name: /navigation menu/i });
-    const closeButton = within(drawer).getByRole('button', { name: /close menu/i });
-    const lastButton = within(drawer).getByRole('button', { name: /open system status/i });
-    await waitFor(() => expect(closeButton).toHaveFocus());
-
-    fireEvent.keyDown(document, { key: 'Tab', shiftKey: true });
-    expect(lastButton).toHaveFocus();
-
-    fireEvent.keyDown(document, { key: 'Tab' });
-    expect(closeButton).toHaveFocus();
-
+    fireEvent.click(screen.getByRole('button', { name: 'More' }));
+    const sheet = screen.getByRole('dialog', { name: 'More' });
+    expect(within(sheet).getByRole('button', { name: /Profiles/ })).toBeInTheDocument();
+    expect(within(sheet).getByRole('button', { name: /Agents/ })).toBeInTheDocument();
+    expect(within(sheet).getByRole('button', { name: /Settings/ })).toBeInTheDocument();
     fireEvent.keyDown(document, { key: 'Escape' });
     await waitFor(() =>
-      expect(screen.queryByRole('dialog', { name: /navigation menu/i })).not.toBeInTheDocument(),
+      expect(screen.queryByRole('dialog', { name: 'More' })).not.toBeInTheDocument(),
     );
-    await waitFor(() => expect(menuButton).toHaveFocus());
   });
 
-  it('hides undecided administrative surfaces from the drawer', () => {
+  it('hides undecided administrative surfaces from the More sheet', () => {
     render(<AppShell connectionState="connected" rpc={rpcMock} rest={restMock} />);
-    fireEvent.click(screen.getByRole('button', { name: /open menu/i }));
-    const drawer = screen.getByRole('dialog', { name: /navigation menu/i });
-    expect(within(drawer).queryByRole('button', { name: 'Skills & Tools' })).not.toBeInTheDocument();
-    expect(within(drawer).queryByRole('button', { name: 'Messaging' })).not.toBeInTheDocument();
-    expect(within(drawer).queryByText('Telegram')).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'More' }));
+    const sheet = screen.getByRole('dialog', { name: 'More' });
+    expect(within(sheet).queryByRole('button', { name: 'Skills & Tools' })).not.toBeInTheDocument();
+    expect(within(sheet).queryByRole('button', { name: 'Messaging' })).not.toBeInTheDocument();
+    expect(within(sheet).queryByText('Telegram')).not.toBeInTheDocument();
   });
 
   it('does not restore hidden administrative screens from localStorage', () => {
     localStorage.setItem('hermes-mobile-screen', 'skills');
     render(<AppShell connectionState="connected" rpc={rpcMock} rest={restMock} />);
-    expect(screen.getByRole('heading', { name: 'Home' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Chats' })).toBeInTheDocument();
     expect(restMock.skillsList).not.toHaveBeenCalled();
 
     localStorage.clear();
     vi.clearAllMocks();
     localStorage.setItem('hermes-mobile-screen', 'messaging');
     render(<AppShell connectionState="connected" rpc={rpcMock} rest={restMock} />);
-    expect(screen.getAllByRole('heading', { name: 'Home' })).toHaveLength(2);
+    expect(screen.getAllByRole('heading', { name: 'Chats' })).toHaveLength(2);
   });
 
-  it('shows Profiles in the main drawer directly after Home and opens it', async () => {
+  it('shows Profiles first in the More sheet and opens it', async () => {
     render(<AppShell connectionState="connected" rpc={rpcMock} rest={restMock} />);
-    fireEvent.click(screen.getByRole('button', { name: /open menu/i }));
-    const drawer = screen.getByRole('dialog', { name: /navigation menu/i });
-    const navItems = within(drawer).getAllByRole('button').map((button) => button.textContent?.replace(/\s+/g, ' ').trim());
-    const homeIndex = navItems.indexOf('Home');
-    const profilesIndex = navItems.indexOf('Profiles');
-    expect(homeIndex).toBeGreaterThanOrEqual(0);
-    expect(profilesIndex).toBe(homeIndex + 1);
+    fireEvent.click(screen.getByRole('button', { name: 'More' }));
+    const sheet = screen.getByRole('dialog', { name: 'More' });
+    const firstRow = sheet.querySelector('.hm-more-row');
+    expect(firstRow).toHaveTextContent('Profiles');
 
-    fireEvent.click(within(drawer).getByRole('button', { name: 'Profiles' }));
+    fireEvent.click(within(sheet).getByRole('button', { name: /Profiles/ }));
     await waitFor(() => expect(screen.getByRole('heading', { name: 'Profiles' })).toBeInTheDocument());
   });
 
-  it('filters main drawer sessions by source', async () => {
-    vi.mocked(restMock.profileSessions).mockResolvedValue([
-      { id: 'cli-1', title: 'CLI case', source: 'cli', message_count: 3, updated_at: Date.now() },
-      { id: 'tui-1', title: 'TUI case', source: 'tui', message_count: 2, updated_at: Date.now() },
-    ] as unknown as import('@hermes-pwa/core').Session[]);
-
+  it('filters chats by search', async () => {
     render(<AppShell connectionState="connected" rpc={rpcMock} rest={restMock} />);
-    fireEvent.click(screen.getByRole('button', { name: /open menu/i }));
-    const drawer = screen.getByRole('dialog', { name: /navigation menu/i });
+    act(() => {
+      useSessionsStore.setState({
+        sessions: [
+          { id: 'cli-1', title: 'CLI case', messageCount: 3, updatedAt: Date.now(), profile: 'default' },
+          { id: 'tui-1', title: 'TUI case', messageCount: 2, updatedAt: Date.now(), profile: 'default' },
+        ],
+        loading: false,
+        error: undefined,
+        pinnedIds: [],
+      });
+    });
 
-    await waitFor(() => expect(within(drawer).getByText('CLI · CLI case')).toBeInTheDocument());
-    expect(within(drawer).getByText('TUI · TUI case')).toBeInTheDocument();
+    expect(screen.getByText('CLI case')).toBeInTheDocument();
+    expect(screen.getByText('TUI case')).toBeInTheDocument();
 
-    fireEvent.click(within(drawer).getByRole('tab', { name: /TUI/i }));
-    expect(within(drawer).getByText('TUI · TUI case')).toBeInTheDocument();
-    expect(within(drawer).queryByText('CLI · CLI case')).not.toBeInTheDocument();
+    fireEvent.change(screen.getByTestId('chats-search'), { target: { value: 'tui' } });
+    expect(screen.getByText('TUI case')).toBeInTheDocument();
+    expect(screen.queryByText('CLI case')).not.toBeInTheDocument();
   });
 
-  it('navigates via drawer and updates title', async () => {
+  it('navigates via the tab bar and updates title', async () => {
     render(<AppShell connectionState="connected" rpc={rpcMock} rest={restMock} />);
-    fireEvent.click(screen.getByRole('button', { name: /open menu/i }));
-    fireEvent.click(screen.getByRole('button', { name: 'Approvals' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Inbox' }));
     await waitFor(() =>
       expect(screen.getByRole('heading', { name: 'Approvals' })).toBeInTheDocument(),
     );
-    await waitFor(() =>
-      expect(screen.queryByRole('dialog', { name: /navigation menu/i })).not.toBeInTheDocument(),
-    );
   });
 
-  it('switches to kanban via drawer', async () => {
+  it('switches to kanban via the Work tab', async () => {
     render(<AppShell connectionState="connected" rpc={rpcMock} rest={restMock} />);
-    fireEvent.click(screen.getByRole('button', { name: /open menu/i }));
-    fireEvent.click(screen.getByRole('button', { name: /^Kanban$/i }));
+    fireEvent.click(screen.getByRole('button', { name: 'Work' }));
     await waitFor(() =>
       expect(screen.getByRole('heading', { name: 'Kanban' })).toBeInTheDocument(),
     );
   });
 
-  it('navigates to settings screen', async () => {
+  it('navigates to settings screen via the More sheet', async () => {
     render(<AppShell connectionState="connected" rpc={rpcMock} rest={restMock} />);
-    fireEvent.click(screen.getByRole('button', { name: /open menu/i }));
-    fireEvent.click(screen.getByRole('button', { name: 'Settings' }));
+    fireEvent.click(screen.getByRole('button', { name: 'More' }));
+    fireEvent.click(screen.getByRole('button', { name: /Settings/ }));
     await waitFor(() =>
       expect(screen.getByRole('heading', { name: 'Settings' })).toBeInTheDocument(),
     );
   });
 
-  it('shows model details in drawer footer and opens settings', async () => {
+  it('shows the active model on the Profiles row and opens Profiles', async () => {
     vi.mocked(restMock.profileList).mockResolvedValue([
       { name: 'default', displayName: 'default', provider: 'openai-codex', model: 'gpt-5.5', isActive: true },
     ] as unknown as import('@hermes-pwa/core').Profile[]);
     vi.mocked(restMock.profileActive).mockResolvedValue({ active: 'default', current: 'default' });
 
     render(<AppShell connectionState="connected" rpc={rpcMock} rest={restMock} />);
-    fireEvent.click(screen.getByRole('button', { name: /open menu/i }));
-    const drawer = await screen.findByRole('dialog', { name: /navigation menu/i });
+    fireEvent.click(screen.getByRole('button', { name: 'More' }));
+    const sheet = await screen.findByRole('dialog', { name: 'More' });
 
-    await waitFor(() => expect(within(drawer).getByText('gpt-5.5')).toBeInTheDocument());
-    expect(within(drawer).queryByRole('button', { name: /Open profile switcher/i })).not.toBeInTheDocument();
-    expect(within(drawer).queryByRole('button', { name: /Activate default profile/i })).not.toBeInTheDocument();
+    await waitFor(() => expect(within(sheet).getByText(/gpt-5.5/)).toBeInTheDocument());
 
-    fireEvent.click(within(drawer).getByRole('button', { name: /Open model settings/i }));
-    await waitFor(() => expect(screen.getByRole('heading', { name: 'Settings' })).toBeInTheDocument());
+    fireEvent.click(within(sheet).getByRole('button', { name: /Profiles/ }));
+    await waitFor(() => expect(screen.getByRole('heading', { name: 'Profiles' })).toBeInTheDocument());
   });
 
-  it('opens system status from the drawer footer', async () => {
+  it('opens system status from the More sheet', async () => {
     render(<AppShell connectionState="connected" rpc={rpcMock} rest={restMock} />);
-    fireEvent.click(screen.getByRole('button', { name: /open menu/i }));
-    const drawer = await screen.findByRole('dialog', { name: /navigation menu/i });
-    await waitFor(() => expect(within(drawer).getByText(/Gateway ready/i)).toBeInTheDocument());
+    fireEvent.click(screen.getByRole('button', { name: 'More' }));
+    const sheet = await screen.findByRole('dialog', { name: 'More' });
+    await waitFor(() => expect(within(sheet).getByText(/Gateway ready/i)).toBeInTheDocument());
 
-    fireEvent.click(within(drawer).getByRole('button', { name: /Open system status/i }));
+    fireEvent.click(within(sheet).getByRole('button', { name: /System/ }));
     await waitFor(() => expect(screen.getByRole('heading', { name: 'System' })).toBeInTheDocument());
   });
 
@@ -400,8 +374,7 @@ describe('AppShell', () => {
 
   it('keeps the current screen persisted when the PWA is backgrounded or closed', async () => {
     render(<AppShell connectionState="connected" rpc={rpcMock} rest={restMock} />);
-    fireEvent.click(screen.getByRole('button', { name: /open menu/i }));
-    fireEvent.click(screen.getByRole('button', { name: 'Kanban' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Work' }));
     await waitFor(() => expect(screen.getByRole('heading', { name: 'Kanban' })).toBeInTheDocument());
     localStorage.removeItem('hermes-mobile-screen');
     window.dispatchEvent(new Event('pagehide'));
@@ -410,15 +383,15 @@ describe('AppShell', () => {
 
   it('persists screen to localStorage when navigating', async () => {
     render(<AppShell connectionState="connected" rpc={rpcMock} rest={restMock} />);
-    fireEvent.click(screen.getByRole('button', { name: /open menu/i }));
-    fireEvent.click(screen.getByRole('button', { name: 'Agents' }));
+    fireEvent.click(screen.getByRole('button', { name: 'More' }));
+    fireEvent.click(screen.getByRole('button', { name: /Agents/ }));
     await waitFor(() =>
       expect(screen.getByRole('heading', { name: 'Agents' })).toBeInTheDocument(),
     );
     expect(localStorage.getItem('hermes-mobile-screen')).toBe('agents');
   });
 
-  it('opens drawer sessions with the selected session profile', async () => {
+  it('opens a chat thread with the selected session profile', async () => {
     useProfilesStore.setState({
       profiles: [{ name: 'default', displayName: 'default', isActive: true }],
       activeName: 'default',
@@ -432,10 +405,8 @@ describe('AppShell', () => {
     const resume = vi.spyOn(useChatStore.getState(), 'resumeSessionIntoChat').mockResolvedValue(undefined);
 
     render(<AppShell connectionState="connected" rpc={rpcMock} rest={restMock} />);
-    fireEvent.click(screen.getByRole('button', { name: /open menu/i }));
-    const drawer = await screen.findByRole('dialog', { name: /navigation menu/i });
-    await waitFor(() => expect(within(drawer).getByText(/Other profile session/)).toBeInTheDocument());
-    fireEvent.click(within(drawer).getByText(/Other profile session/));
+    await waitFor(() => expect(screen.getByText(/Other profile session/)).toBeInTheDocument());
+    fireEvent.click(screen.getByText(/Other profile session/));
 
     await waitFor(() =>
       expect(resume).toHaveBeenCalledWith(restMock, rpcMock, 'sess-2', 'research'),
@@ -519,10 +490,9 @@ describe('AppShell', () => {
       },
     });
 
-    fireEvent.click(screen.getByRole('button', { name: /open menu/i }));
-    const drawer = await screen.findByRole('dialog', { name: /navigation menu/i });
-    await waitFor(() => expect(within(drawer).getByText('1')).toBeInTheDocument());
-    fireEvent.click(within(drawer).getByRole('button', { name: /Approvals/ }));
+    const nav = screen.getByRole('navigation', { name: 'Primary' });
+    await waitFor(() => expect(within(nav).getByText('1')).toBeInTheDocument());
+    fireEvent.click(within(nav).getByRole('button', { name: /Inbox/ }));
 
     await waitFor(() => expect(screen.getByText(/rm -rf \/tmp\/test/)).toBeInTheDocument());
   });

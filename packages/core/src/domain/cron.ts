@@ -269,7 +269,14 @@ export function describeSchedule(
   fallbackDisplay: string | undefined,
   strings: ScheduleDescribeStrings,
 ): string {
-  if (!schedule) return fallbackDisplay || strings.none;
+  if (!schedule) {
+    if (fallbackDisplay) {
+      const cronDesc = describeCronExpression(fallbackDisplay, strings);
+      if (cronDesc) return cronDesc;
+      return fallbackDisplay;
+    }
+    return strings.none;
+  }
 
   if (schedule.kind === 'interval' && typeof schedule.minutes === 'number') {
     return describeInterval(schedule.minutes, strings);
@@ -320,6 +327,20 @@ function describeCronExpression(
   ];
 
   if (monField !== '*') return null;
+
+  // ponytail: common step forms only; anything fancier falls back to the raw expression.
+  if (domField === '*' && dowField === '*') {
+    const minStep = /^\*\/(\d+)$/.exec(minField);
+    const hourStep = /^\*\/(\d+)$/.exec(hourField);
+    if (minStep && hourField === '*') {
+      const n = parseInt(minStep[1]!, 10);
+      if (n > 0 && n < 60) return describeInterval(n, strings);
+    }
+    if (hourStep && /^\d+$/.test(minField)) {
+      const n = parseInt(hourStep[1]!, 10);
+      if (n > 0 && n <= 24) return describeInterval(n * 60, strings);
+    }
+  }
 
   const isLiteralOrList = (f: string) => /^\d+(,\d+)*$/.test(f) || /^\*$/.test(f);
   if (!isLiteralOrList(minField) || !isLiteralOrList(hourField)) return null;

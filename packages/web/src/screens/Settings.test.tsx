@@ -70,7 +70,7 @@ describe('Settings', () => {
     const rest = makeRest();
     render(<Settings rest={rest} onNavigate={vi.fn()} onLogout={vi.fn()} />);
     await waitFor(() => expect(rest.systemStats).toHaveBeenCalled());
-    await waitFor(() => expect(rest.modelOptions).toHaveBeenCalled());
+    await waitFor(() => expect(rest.modelInfo).toHaveBeenCalled());
     await waitFor(() => expect(screen.getByText('PWA client')).toBeInTheDocument());
     expect(screen.getByText(HERMES_PWA_RELEASE_VERSION)).toBeInTheDocument();
     expect(screen.getByText('Hermes backend')).toBeInTheDocument();
@@ -86,65 +86,6 @@ describe('Settings', () => {
     expect(onNavigate).toHaveBeenCalledWith('profiles');
   });
 
-  it('opens model picker and saves model for the selected profile only', async () => {
-    const rest = makeRest();
-    render(<Settings rest={rest} onNavigate={vi.fn()} onLogout={vi.fn()} />);
-    await waitFor(() => expect(screen.getByRole('button', { name: /Change/i })).toBeInTheDocument());
-    fireEvent.click(screen.getByRole('button', { name: /Change/i }));
-    await waitFor(() => expect(screen.getByText('Save model')).toBeInTheDocument());
-    fireEvent.change(screen.getByDisplayValue('gpt-5.5'), { target: { value: 'gpt-5' } });
-    fireEvent.click(screen.getByText('Save model'));
-    await waitFor(() =>
-      expect(rest.profileUpdateModel).toHaveBeenCalledWith('default', {
-        provider: 'openai-codex',
-        model: 'gpt-5',
-        reasoning_effort: 'high',
-        show_reasoning: false,
-      }),
-    );
-    expect(rest.modelSet).not.toHaveBeenCalled();
-  });
-
-  it('uses the active non-default profile model as picker state and update target', async () => {
-    useProfilesStore.setState({
-      profiles: [{ name: 'research', displayName: 'Research', provider: 'anthropic', model: 'claude-sonnet-4', isActive: true }],
-      activeName: 'research',
-      currentName: 'default',
-      loading: false,
-      error: undefined,
-    });
-    const rest = makeRest({
-      profileList: vi.fn().mockResolvedValue([{ name: 'research', displayName: 'Research', provider: 'anthropic', model: 'claude-opus-4', isActive: true }]),
-      profileActive: vi.fn().mockResolvedValue({ active: 'research', current: 'default' }),
-    });
-
-    render(<Settings rest={rest} onNavigate={vi.fn()} onLogout={vi.fn()} />);
-    await waitFor(() => expect(screen.getByText(/anthropic \/ claude-sonnet-4/)).toBeInTheDocument());
-    fireEvent.click(screen.getByRole('button', { name: /Change/i }));
-    await waitFor(() => expect(screen.getByDisplayValue('claude-sonnet-4')).toBeInTheDocument());
-    fireEvent.change(screen.getByDisplayValue('claude-sonnet-4'), { target: { value: 'claude-opus-4' } });
-    fireEvent.click(screen.getByText('Save model'));
-
-    await waitFor(() =>
-      expect(rest.profileUpdateModel).toHaveBeenCalledWith('research', {
-        provider: 'anthropic',
-        model: 'claude-opus-4',
-        reasoning_effort: 'high',
-        show_reasoning: false,
-      }),
-    );
-    expect(rest.modelSet).not.toHaveBeenCalled();
-  });
-
-  it('switches provider and resets model', async () => {
-    const rest = makeRest();
-    render(<Settings rest={rest} onNavigate={vi.fn()} onLogout={vi.fn()} />);
-    await waitFor(() => expect(screen.getByRole('button', { name: /Change/i })).toBeInTheDocument());
-    fireEvent.click(screen.getByRole('button', { name: /Change/i }));
-    await waitFor(() => expect(screen.getByText('Save model')).toBeInTheDocument());
-    fireEvent.change(screen.getByDisplayValue('OpenAI Codex ✓'), { target: { value: 'anthropic' } });
-    await waitFor(() => expect(screen.getByDisplayValue('claude-opus-4')).toBeInTheDocument());
-  });
 
   it('navigates to command center from About', async () => {
     const onNavigate = vi.fn();
