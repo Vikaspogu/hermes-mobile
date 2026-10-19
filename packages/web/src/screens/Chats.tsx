@@ -16,6 +16,8 @@ interface ChatsProps {
   rpc: RpcClient;
   rest: RestClient;
   onNavigate: (screen: string) => void;
+  /** Desktop split sidebar: hides composer + approval banner, slim thread list. */
+  sidebar?: boolean;
 }
 
 function fmtAge(updatedAt: number): string {
@@ -61,7 +63,7 @@ export function groupThreads(sessions: Session[]): ThreadGroup[] {
   return groups.filter((g) => g.items.length > 0);
 }
 
-export function Chats({ rpc, rest, onNavigate }: ChatsProps) {
+export function Chats({ rpc, rest, onNavigate, sidebar }: ChatsProps) {
   const { sessions, load } = useSessionsStore();
   const activeName = useProfilesStore((s) => s.activeName);
   const { startNewSession, resumeSessionIntoChat, submit } = useChatStore();
@@ -101,7 +103,7 @@ export function Chats({ rpc, rest, onNavigate }: ChatsProps) {
 
   return (
     <div className="hm-chats">
-      {pendingApprovals > 0 && (
+      {!sidebar && pendingApprovals > 0 && (
         <button
           className="hm-home__approval-banner"
           onClick={() => onNavigate('approvals')}
@@ -122,6 +124,7 @@ export function Chats({ rpc, rest, onNavigate }: ChatsProps) {
         </button>
       )}
 
+      {!sidebar && (
       <form className="hm-chats__composer" onSubmit={handleSend}>
         <Icon name="plus" size={18} />
         <input

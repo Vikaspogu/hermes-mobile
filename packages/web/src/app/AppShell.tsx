@@ -579,7 +579,7 @@ export function AppShell({ connectionState, rpc, rest, onRetry, connectionError 
             {screen === 'chat'      && (
               <div className="hm-desktop-split">
                 <div className="hm-desktop-split__side" aria-hidden="false">
-                  <Sessions key={`side-${activeName ?? 'default'}`} rpc={rpc} rest={rest} onSessionOpen={() => navigate('chat')} />
+                  <Chats key={`side-${activeName ?? 'default'}`} rpc={rpc} rest={rest} onNavigate={() => {}} sidebar />
                 </div>
                 <Chat key={activeName ?? 'default'} rpc={rpc} rest={rest} onOpenVoice={() => startTransition(() => setVoiceOpen(true))} />
               </div>
