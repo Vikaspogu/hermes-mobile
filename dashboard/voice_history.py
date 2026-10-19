@@ -177,7 +177,7 @@ def save_call(body: dict) -> dict:
 
 
 if router is not None:
-    from plugin_api import _require_dashboard_auth  # noqa: E402
+    from push_common import _require_dashboard_auth  # noqa: E402
 
     @router.get("/threads")
     async def voice_threads(request: Request) -> dict:

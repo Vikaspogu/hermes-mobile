@@ -21,7 +21,18 @@ _PLUGIN_ROOT = Path(__file__).resolve().parent.parent
 if str(_PLUGIN_ROOT) not in sys.path:
     sys.path.insert(0, str(_PLUGIN_ROOT))
 
+# Hermes mounts this file via importlib without the plugin dirs on sys.path,
+# so sibling modules (push_common at the plugin root, voice_* here) need the
+# paths appended first — otherwise the whole plugin API fails to import and
+# every /api/plugins/hermes-pwa/* call 404s.
+_DASHBOARD_DIR = str(Path(__file__).resolve().parent)
+_PLUGIN_ROOT = str(Path(__file__).resolve().parent.parent)
+for _p in (_DASHBOARD_DIR, _PLUGIN_ROOT):
+    if _p not in sys.path:
+        sys.path.insert(0, _p)
+
 from push_common import (  # noqa: E402
+    _require_dashboard_auth,
     load_pending_approvals,
     load_push_subscriptions,
     push_sender_availability,
@@ -49,22 +60,6 @@ _INSTALL_MARKER_NAMES = (
 
 _BACKUP_ARCHIVE_SUFFIXES = (".zip", ".tgz", ".tar.gz")
 
-
-def _require_dashboard_auth(request: Request) -> None:
-    """Defense-in-depth auth check for sensitive plugin API routes.
-
-    Hermes' dashboard normally protects `/api/*` before plugin routes run. Keep
-    an explicit check here too so this plugin does not rely solely on mount-time
-    namespace policy for endpoints that expose local transcripts, backups, or
-    push subscription state.
-    """
-    try:
-        from hermes_cli.web_server import _require_token  # type: ignore
-    except Exception as exc:  # pragma: no cover - production Hermes provides it
-        if getattr(request.app.state, "auth_required", False) and getattr(request.state, "session", None) is not None:
-            return
-        raise HTTPException(status_code=401, detail="Unauthorized") from exc
-    _require_token(request)
 
 _MESSAGING_SOURCES = {
     "api_server",
