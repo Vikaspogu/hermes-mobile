@@ -1934,6 +1934,9 @@ select:focus-visible,
     background: var(--hm-color-surface);
   }
 
+  /* lock-class selector needed: App.css's html.hm-native-viewport-lock .hm-chat
+     sets max-width:100% at higher specificity than a bare .hm-chat */
+  html.hm-native-viewport-lock .hm-chat,
   .hm-chat {
     max-width: 760px;
     width: 100%;
