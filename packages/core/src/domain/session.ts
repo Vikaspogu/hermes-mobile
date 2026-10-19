@@ -26,6 +26,8 @@ export interface Session {
   title: string;
   updatedAt: number;
   messageCount: number | undefined;
+  /** Last-message snippet when the gateway exposes one (preview_text/last_message). */
+  previewText?: string | undefined;
   profile: string | undefined;
 
   /** PWA release-scope row source: local CLI/TUI/Desktop-style sessions only. */
@@ -153,6 +155,7 @@ export function toSession(raw: Record<string, unknown>): Session {
     title: typeof raw.title === 'string' && raw.title.trim() ? raw.title : 'Untitled',
     updatedAt: Number(raw.updated_at ?? raw.updatedAt ?? raw.last_active ?? raw.started_at ?? 0),
     messageCount: optionalNumber(raw.message_count ?? raw.messageCount),
+    previewText: optionalString(raw.preview_text ?? raw.previewText ?? raw.last_message),
     profile: optionalString(raw.profile),
     source,
     originSource,

@@ -18,6 +18,8 @@ interface ChatsProps {
   onNavigate: (screen: string) => void;
   /** Desktop split sidebar: hides composer + approval banner, slim thread list. */
   sidebar?: boolean;
+  /** Opens the voice overlay from the composer mic (main pane only). */
+  onOpenVoice?: () => void;
 }
 
 function fmtAge(updatedAt: number): string {
@@ -63,7 +65,7 @@ export function groupThreads(sessions: Session[]): ThreadGroup[] {
   return groups.filter((g) => g.items.length > 0);
 }
 
-export function Chats({ rpc, rest, onNavigate, sidebar }: ChatsProps) {
+export function Chats({ rpc, rest, onNavigate, onOpenVoice, sidebar }: ChatsProps) {
   const { sessions, load } = useSessionsStore();
   const activeName = useProfilesStore((s) => s.activeName);
   const { startNewSession, resumeSessionIntoChat, submit } = useChatStore();
@@ -135,6 +137,11 @@ export function Chats({ rpc, rest, onNavigate, sidebar }: ChatsProps) {
           aria-label="New chat message"
           data-testid="chats-composer"
         />
+        {!draft.trim() && onOpenVoice && (
+          <button type="button" className="hm-chats__composer-mic" aria-label="Voice chat" onClick={onOpenVoice}>
+            <Icon name="mic" size={17} />
+          </button>
+        )}
         {draft.trim() && (
           <button type="submit" className="hm-chats__composer-send" aria-label="Start chat">
             <Icon name="arrowUp" size={16} />
@@ -178,14 +185,13 @@ export function Chats({ rpc, rest, onNavigate, sidebar }: ChatsProps) {
                     {s.title?.trim() || 'Untitled'}
                   </span>
                   <span className="hm-thread-row__preview">
-                    {/* ponytail: no last-message text in the sessions API yet; metadata stands in.
-                        Swap for s.lastMessage when the gateway exposes it. */}
-                    {[
-                      sessionSourceLabel(sessionSourceId(s) ?? '') ?? undefined,
-                      s.messageCount ? `${s.messageCount} msgs` : undefined,
-                    ]
-                      .filter(Boolean)
-                      .join(' · ') || 'Session'}
+                    {s.previewText ??
+                      ([
+                        sessionSourceLabel(sessionSourceId(s) ?? '') ?? undefined,
+                        s.messageCount ? `${s.messageCount} msgs` : undefined,
+                      ]
+                        .filter(Boolean)
+                        .join(' · ') || 'Session')}
                   </span>
                 </span>
                 <span className="hm-thread-row__meta">{fmtAge(freshness(s))}</span>

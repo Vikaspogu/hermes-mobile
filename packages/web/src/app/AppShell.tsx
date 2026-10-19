@@ -9,6 +9,7 @@ import { LazyScreenErrorBoundary } from './LazyScreenErrorBoundary';
 import { usePresence } from '../hooks/usePresence';
 import { getInitialScreen, persistScreen, sessionFromLocationHash } from '../lib/screenStorage';
 import { dismissTopBackLayer, registerBackLayer } from '../lib/backLayers';
+import { HERMES_PWA_VERSION_LABEL } from './version';
 import { syncPushSubscription } from '../pwa/push';
 
 export type Screen =
@@ -110,8 +111,7 @@ const SCREEN_TITLES: Record<Screen, string> = {
   voice: 'Voice',
   sessions: 'Sessions',
   approvals: 'Inbox',
-  kanban: 'Kanban',
-  agents: 'Agents',
+  kanban: 'Work',  agents: 'Agents',
   profiles: 'Profiles',
   cron: 'Schedules',
   artifacts: 'Artifacts',
@@ -590,7 +590,7 @@ export function AppShell({ connectionState, rpc, rest, onRetry, connectionError 
             {screen === 'agents'    && <Agents key={activeName ?? 'default'} rpc={rpc} />}
             {screen === 'profiles'  && <Profiles key={activeName ?? 'default'} rest={rest} />}
             {screen === 'command'   && <CommandCenter key={activeName ?? 'default'} rest={rest} />}
-            {screen === 'home'      && <Chats key={activeName ?? 'default'} rpc={rpc} rest={rest} onNavigate={(s) => navigate(s as Screen)} />}
+            {screen === 'home'      && <Chats key={activeName ?? 'default'} rpc={rpc} rest={rest} onNavigate={(s) => navigate(s as Screen)} onOpenVoice={() => startTransition(() => setVoiceOpen(true))} />}
             {screen === 'cron'      && <Cron key={activeName ?? 'default'} rest={rest} />}
             {screen === 'artifacts' && <Artifacts key={activeName ?? 'default'} rest={rest} />}
             {screen === 'settings'  && (
@@ -670,6 +670,7 @@ export function AppShell({ connectionState, rpc, rest, onRetry, connectionError 
                 </button>
               ))}
             </div>
+            <div className="hm-more-sheet__version">Hermes PWA v{HERMES_PWA_VERSION_LABEL}</div>
           </div>
         </div>
       )}

@@ -61,7 +61,7 @@ describe('App Phase 3', () => {
     expect(nav).toBeInTheDocument();
     fireEvent.click(within(nav).getByRole('button', { name: 'Work' }));
     await waitFor(() =>
-      expect(screen.getByRole('heading', { name: 'Kanban' })).toBeInTheDocument(),
+      expect(screen.getByRole('heading', { name: 'Work' })).toBeInTheDocument(),
     );
   });
 
