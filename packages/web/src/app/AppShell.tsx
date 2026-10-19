@@ -617,6 +617,7 @@ export function AppShell({ connectionState, rpc, rest, onRetry, connectionError 
                 type="button"
                 className={`hm-tab${moreOpen ? ' hm-tab--active' : ''}`}
                 onClick={() => setMoreOpen(true)}
+                aria-label={tab.label}
                 aria-haspopup="dialog"
                 aria-expanded={moreOpen}
               >
@@ -632,6 +633,7 @@ export function AppShell({ connectionState, rpc, rest, onRetry, connectionError 
               type="button"
               className={`hm-tab${active ? ' hm-tab--active' : ''}`}
               onClick={() => navigate(tab.key as Screen)}
+              aria-label={tab.label}
               aria-current={active ? 'page' : undefined}
             >
               <span className="hm-tab__icon">
