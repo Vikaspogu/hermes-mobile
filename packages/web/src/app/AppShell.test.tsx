@@ -313,7 +313,7 @@ describe('AppShell', () => {
     render(<AppShell connectionState="connected" rpc={rpcMock} rest={restMock} />);
     fireEvent.click(screen.getByRole('button', { name: 'Work' }));
     await waitFor(() =>
-      expect(screen.getByRole('heading', { name: 'Kanban' })).toBeInTheDocument(),
+      expect(screen.getByRole('heading', { name: 'Work' })).toBeInTheDocument(),
     );
   });
 
@@ -366,14 +366,14 @@ describe('AppShell', () => {
   it('restores Kanban from localStorage instead of falling back to Home/New chat', async () => {
     localStorage.setItem('hermes-mobile-screen', 'kanban');
     render(<AppShell connectionState="connected" rpc={rpcMock} rest={restMock} />);
-    expect(screen.getByRole('heading', { name: 'Kanban' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Work' })).toBeInTheDocument();
     await waitFor(() => expect(localStorage.getItem('hermes-mobile-screen')).toBe('kanban'));
   });
 
   it('keeps the current screen persisted when the PWA is backgrounded or closed', async () => {
     render(<AppShell connectionState="connected" rpc={rpcMock} rest={restMock} />);
     fireEvent.click(screen.getByRole('button', { name: 'Work' }));
-    await waitFor(() => expect(screen.getByRole('heading', { name: 'Kanban' })).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByRole('heading', { name: 'Work' })).toBeInTheDocument());
     localStorage.removeItem('hermes-mobile-screen');
     window.dispatchEvent(new Event('pagehide'));
     expect(localStorage.getItem('hermes-mobile-screen')).toBe('kanban');
