@@ -2012,3 +2012,27 @@ select:focus-visible,
     min-width: 230px;
   }
 }
+
+/* Chats composer mic (G2, matches M1) */
+.hm-chats__composer-mic {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--hm-muted);
+  cursor: pointer;
+}
+.hm-chats__composer-mic:active { background: var(--hm-surface-2); }
+
+/* Thread title ellipsis: flex parents can't ellipsize bare text (W1 sidebar) */
+.hm-thread-row__title { display: block; }
+.hm-thread-row__title .hm-live-dot { margin-right: 7px; }
+
+/* Desktop chat: rail is the navigation, no back chevron (W1) */
+@media (min-width: 900px) {
+  .hm-header__back { display: none; }
+}
