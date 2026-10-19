@@ -574,7 +574,14 @@ export function AppShell({ connectionState, rpc, rest, onRetry, connectionError 
           </div>
         ) : (
           <>
-            {screen === 'chat'      && <Chat key={activeName ?? 'default'} rpc={rpc} rest={rest} onOpenVoice={() => startTransition(() => setVoiceOpen(true))} />}
+            {screen === 'chat'      && (
+              <div className="hm-desktop-split">
+                <div className="hm-desktop-split__side" aria-hidden="false">
+                  <Sessions key={`side-${activeName ?? 'default'}`} rpc={rpc} rest={rest} onSessionOpen={() => navigate('chat')} />
+                </div>
+                <Chat key={activeName ?? 'default'} rpc={rpc} rest={rest} onOpenVoice={() => startTransition(() => setVoiceOpen(true))} />
+              </div>
+            )}
             {screen === 'sessions'  && <Sessions key={activeName ?? 'default'} rpc={rpc} rest={rest} onSessionOpen={() => navigate('chat')} />}
             {screen === 'approvals' && <Activity key={activeName ?? 'default'} rpc={rpc} />}
             {screen === 'kanban'    && <Projects key={activeName ?? 'default'} rest={rest} />}
