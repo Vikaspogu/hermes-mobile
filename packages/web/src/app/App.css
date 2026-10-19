@@ -2019,7 +2019,7 @@ a {
   font-family: var(--hm-font-mono, ui-monospace, monospace);
   font-size: var(--hm-fs-small);
   color: var(--hm-color-text);
-  background: #f5f7fd;
+  background: var(--hm-color-surface-2);
   border: 1px solid var(--hm-color-border);
   border-radius: var(--hm-radius-md);
   padding: var(--hm-space-3);

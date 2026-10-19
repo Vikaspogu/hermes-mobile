@@ -334,6 +334,7 @@ export function AppPreview() {
           status: 'needs_you',
           title: 'shell.exec',
           summary: 'git commit -am "ws: heartbeat + ticket refresh"',
+          session: 'Refactor WS gateway reconnect',
           highImpact: false,
           visibility: 'private',
           createdAt: Date.now(),
@@ -344,9 +345,12 @@ export function AppPreview() {
           status: 'needs_you',
           title: 'fs.write',
           summary: '.hermes/.env · writes 3 secret keys',
+          session: 'Env secrets audit',
           highImpact: true,
           visibility: 'private',
-          createdAt: Date.now() - 120_000,
+          // ponytail: must stay fresh — mergeIncomingItems drops approvals older
+          // than the 5s realtime grace when a REST refresh lands without them.
+          createdAt: Date.now(),
         } as Approval,
       ],
       loading: false,
