@@ -3578,18 +3578,22 @@ a {
 .hm-cron-card {
   flex-shrink: 0;
   display: flex;
-  flex-direction: column;
+  align-items: center;
+  gap: var(--hm-space-2);
   background: var(--hm-color-surface);
   border: 1px solid var(--hm-color-border);
   border-radius: var(--hm-radius-card);
   overflow: hidden;
+  padding-right: var(--hm-space-3);
 }
 
 .hm-cron-card__main {
+  flex: 1;
   display: flex;
   flex-direction: column;
   gap: var(--hm-space-2);
   padding: var(--hm-space-4);
+  padding-right: 0;
   text-align: left;
   background: transparent;
   border: none;
@@ -3627,45 +3631,6 @@ a {
   font-size: 0.75rem;
   color: var(--hm-color-danger);
   margin: 0;
-}
-
-.hm-cron-card__actions {
-  display: flex;
-  align-items: center;
-  gap: var(--hm-space-1);
-  padding: var(--hm-space-2) var(--hm-space-4);
-  border-top: 1px solid var(--hm-color-border);
-  background: var(--hm-color-surface-2);
-}
-
-.hm-cron-card__action {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 34px;
-  height: 34px;
-  border: 1px solid var(--hm-color-border);
-  border-radius: var(--hm-radius-md);
-  background: var(--hm-color-surface);
-  color: var(--hm-color-text-2);
-  cursor: pointer;
-}
-
-.hm-cron-card__action:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.hm-cron-card__action--play {
-  color: var(--hm-color-success);
-}
-
-.hm-cron-card__action--pause {
-  color: var(--hm-color-warning);
-}
-
-.hm-cron-card__action--danger {
-  color: var(--hm-color-danger);
 }
 
 .hm-cron__runs {
@@ -4819,4 +4784,42 @@ a {
 .hm-message--actions-only + .hm-message--assistant .hm-message__actions {
   border-top-left-radius: 0;
   border-top-right-radius: 0;
+}
+
+.hm-cron-card__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--hm-color-text-faint);
+  flex-shrink: 0;
+}
+
+.hm-cron-card__dot--ok {
+  background: var(--hm-color-success);
+}
+
+.hm-cron-card__dot--error {
+  background: var(--hm-color-danger);
+}
+
+.hm-cron-card__schedule {
+  font-size: var(--hm-fs-small);
+  font-weight: var(--hm-fw-medium);
+  color: var(--hm-color-text);
+}
+
+.hm-cron-card__next {
+  font-weight: var(--hm-fw-semibold);
+}
+
+.hm-cron__detail-actions {
+  display: flex;
+  gap: var(--hm-space-3);
+  align-items: center;
+  width: 100%;
+}
+
+.hm-cron__detail-delete {
+  color: var(--hm-color-danger);
+  margin-right: auto;
 }

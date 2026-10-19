@@ -51,7 +51,7 @@ const restMock = {
   sessionArtifacts: vi.fn().mockResolvedValue([]),
   envList: vi.fn().mockResolvedValue([]),
   mcpServers: vi.fn().mockResolvedValue([]),
-  mcpToggle: vi.fn().mockResolvedValue(undefined),
+  mcpToggle: vi.fn().mockResolvedValue('submitted'),
   skillsList: vi.fn().mockResolvedValue([]),
 } as unknown as import('@hermes-pwa/core').RestClient;
 
@@ -212,7 +212,7 @@ describe('AppShell', () => {
   });
 
   it('starts a new chat from the home composer', async () => {
-    const submit = vi.spyOn(useChatStore.getState(), 'submit').mockResolvedValue(undefined);
+    const submit = vi.spyOn(useChatStore.getState(), 'submit').mockResolvedValue('submitted');
     render(<AppShell connectionState="connected" rpc={rpcMock} rest={restMock} />);
     expect(screen.getByRole('heading', { name: 'Chats' })).toBeInTheDocument();
 
@@ -284,8 +284,8 @@ describe('AppShell', () => {
     act(() => {
       useSessionsStore.setState({
         sessions: [
-          { id: 'cli-1', title: 'CLI case', messageCount: 3, updatedAt: Date.now() },
-          { id: 'tui-1', title: 'TUI case', messageCount: 2, updatedAt: Date.now() },
+          { id: 'cli-1', title: 'CLI case', messageCount: 3, updatedAt: Date.now(), profile: 'default' },
+          { id: 'tui-1', title: 'TUI case', messageCount: 2, updatedAt: Date.now(), profile: 'default' },
         ],
         loading: false,
         error: undefined,

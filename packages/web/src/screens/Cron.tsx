@@ -239,13 +239,13 @@ export function Cron({ rest }: CronProps) {
       </div>
 
       {error && <div className="hm-warning-banner hm-warning-banner--error">{error}</div>}
-      {loading && jobs.length === 0 && <p className="hm-muted hm-loading">Loading cron jobs…</p>}
+      {loading && jobs.length === 0 && <p className="hm-muted hm-loading">Loading schedules…</p>}
 
       <div className="hm-cron__list">
         {jobs.length === 0 && !loading && (
           <div className="hm-empty-state hm-empty-state--inline">
-            <p className="hm-body-semibold">No cron jobs</p>
-            <p className="hm-muted">Tap New to schedule one.</p>
+            <p className="hm-body-semibold">No schedules yet</p>
+            <p className="hm-muted">Tap New to schedule your first job.</p>
           </div>
         )}
 
@@ -274,54 +274,27 @@ export function Cron({ rest }: CronProps) {
                   <span className="hm-badge hm-badge--profile">{job.profile}</span>
                 </div>
                 <div className="hm-cron-card__meta">
-                  <span className="hm-mono hm-muted">{scheduleText}</span>
-                  <span className="hm-muted">next {formatTime(job.nextRun)}</span>
-                  <span className="hm-muted">last {formatTime(job.lastRun)}</span>
+                  <span
+                    className={`hm-cron-card__dot${job.lastError ? ' hm-cron-card__dot--error' : job.lastRun ? ' hm-cron-card__dot--ok' : ''}`}
+                    aria-hidden="true"
+                  />
+                  <span className="hm-cron-card__schedule">{scheduleText}</span>
+                  <span className="hm-cron-card__next">Next {formatTime(job.nextRun)}</span>
+                  <span className="hm-muted">Last {formatTime(job.lastRun)}</span>
                 </div>
                 {job.lastError && <p className="hm-cron-card__error">{job.lastError}</p>}
               </button>
 
-              <div className="hm-cron-card__actions">
-                <button
-                  type="button"
-                  className={`hm-cron-card__action ${paused ? 'hm-cron-card__action--play' : 'hm-cron-card__action--pause'}`}
-                  onClick={() => void handlePauseResume(job)}
+              <label className="hm-toggle" onClick={(e) => e.stopPropagation()}>
+                <input
+                  type="checkbox"
+                  checked={!paused}
                   disabled={actionLoading === `pause:${job.id}` || actionLoading === `resume:${job.id}`}
-                  aria-label={paused ? 'Resume' : 'Pause'}
-                  title={paused ? 'Resume' : 'Pause'}
-                >
-                  <Icon name={paused ? 'play' : 'pause'} size={14} />
-                </button>
-                <button
-                  type="button"
-                  className="hm-cron-card__action"
-                  onClick={() => void handleTrigger(job)}
-                  disabled={actionLoading === `trigger:${job.id}`}
-                  aria-label="Run now"
-                  title="Run now"
-                >
-                  <Icon name="bolt" size={14} />
-                </button>
-                <button
-                  type="button"
-                  className="hm-cron-card__action"
-                  onClick={() => openEdit(job)}
-                  aria-label="Edit"
-                  title="Edit"
-                >
-                  <Icon name="edit" size={14} />
-                </button>
-                <button
-                  type="button"
-                  className="hm-cron-card__action hm-cron-card__action--danger"
-                  onClick={() => void handleDelete(job)}
-                  disabled={actionLoading === `delete:${job.id}`}
-                  aria-label="Delete"
-                  title="Delete"
-                >
-                  <Icon name="trash" size={14} />
-                </button>
-              </div>
+                  onChange={() => void handlePauseResume(job)}
+                  aria-label={paused ? `Enable ${title}` : `Pause ${title}`}
+                />
+                <span className="hm-toggle__track" aria-hidden="true" />
+              </label>
             </div>
           );
         })}
@@ -329,7 +302,7 @@ export function Cron({ rest }: CronProps) {
 
       {sheet?.mode === 'create' && (
         <BottomSheet
-          title="New cron job"
+          title="New schedule"
           onClose={closeSheet}
           footer={
             <div className="hm-projects__inline-actions">
@@ -415,7 +388,7 @@ export function Cron({ rest }: CronProps) {
 
       {sheet?.mode === 'edit' && (
         <BottomSheet
-          title="Edit cron job"
+          title="Edit schedule"
           onClose={closeSheet}
           footer={
             <div className="hm-projects__inline-actions">
@@ -503,9 +476,34 @@ export function Cron({ rest }: CronProps) {
             </div>
           }
           footer={
-            <button className="hm-ghost hm-sheet__close" onClick={closeSheet}>
-              Close
-            </button>
+            <div className="hm-cron__detail-actions">
+              <button
+                type="button"
+                className="hm-ghost hm-cron__detail-delete"
+                disabled={actionLoading === `delete:${sheet.job.id}`}
+                onClick={() => {
+                  closeSheet();
+                  void handleDelete(sheet.job);
+                }}
+              >
+                Delete
+              </button>
+              <button
+                type="button"
+                className="hm-ghost"
+                disabled={actionLoading === `trigger:${sheet.job.id}`}
+                onClick={() => void handleTrigger(sheet.job)}
+              >
+                Run now
+              </button>
+              <button
+                type="button"
+                className="hm-primary"
+                onClick={() => openEdit(sheet.job)}
+              >
+                Edit
+              </button>
+            </div>
           }
         >
           {sheet.job.prompt && (

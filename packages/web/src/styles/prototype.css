@@ -1616,3 +1616,108 @@ select:focus-visible,
 .hm-composer textarea:focus-visible {
   outline: 0;
 }
+
+/* ── S4: stage pills, toggle, schedule rows ─────────────────────────── */
+.hm-projects__stage-pills {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding: 2px 16px 10px;
+  scrollbar-width: none;
+}
+
+.hm-projects__stage-pills::-webkit-scrollbar {
+  display: none;
+}
+
+.hm-projects__stage-pill {
+  appearance: none;
+  border: 1px solid var(--hm-color-border);
+  background: var(--hm-color-surface);
+  color: var(--hm-color-text-muted);
+  border-radius: 999px;
+  padding: 6px 12px;
+  font-size: 12.5px;
+  font-weight: var(--hm-fw-semibold);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.hm-projects__stage-pill--active {
+  background: var(--hm-color-primary);
+  border-color: var(--hm-color-primary);
+  color: var(--hm-color-on-accent);
+}
+
+.hm-projects__stage-count {
+  font-size: 11px;
+  opacity: 0.75;
+}
+
+.hm-projects__new-task {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12.5px;
+  padding: 7px 12px;
+}
+
+.hm-toggle {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  padding: 10px 4px;
+  flex-shrink: 0;
+}
+
+.hm-toggle input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  margin: 0;
+  cursor: pointer;
+}
+
+.hm-toggle__track {
+  width: 40px;
+  height: 24px;
+  border-radius: 999px;
+  background: var(--hm-color-border);
+  position: relative;
+  transition: background 0.15s ease;
+}
+
+.hm-toggle__track::after {
+  content: '';
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(15, 20, 40, 0.25);
+  transition: transform 0.15s ease;
+}
+
+.hm-toggle input:checked + .hm-toggle__track {
+  background: var(--hm-color-primary);
+}
+
+.hm-toggle input:checked + .hm-toggle__track::after {
+  transform: translateX(16px);
+}
+
+.hm-toggle input:disabled + .hm-toggle__track {
+  opacity: 0.5;
+}
+
+.hm-toggle input:focus-visible + .hm-toggle__track {
+  outline: 2px solid var(--hm-color-primary);
+  outline-offset: 2px;
+}
+

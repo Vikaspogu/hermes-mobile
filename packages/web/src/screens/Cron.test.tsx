@@ -109,14 +109,14 @@ describe('Cron', () => {
   it('shows empty state when no jobs', async () => {
     vi.mocked(restMock.cronJobs).mockResolvedValue([]);
     render(<Cron rest={restMock} />);
-    await waitFor(() => expect(screen.getByText(/No cron jobs/i)).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText(/No schedules yet/i)).toBeInTheDocument());
   });
 
   it('pauses an enabled job', async () => {
     vi.mocked(restMock.cronPauseJob).mockResolvedValue({ ...jobs[0]!, enabled: false });
     render(<Cron rest={restMock} />);
     await waitFor(() => expect(screen.getByText('Daily backup')).toBeInTheDocument());
-    fireEvent.click(screen.getByRole('button', { name: 'Pause' }));
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Pause Daily backup' }));
     await waitFor(() => expect(restMock.cronPauseJob).toHaveBeenCalledWith('job-1', 'default'));
   });
 
@@ -124,7 +124,7 @@ describe('Cron', () => {
     vi.mocked(restMock.cronResumeJob).mockResolvedValue({ ...jobs[1]!, enabled: true });
     render(<Cron rest={restMock} />);
     await waitFor(() => expect(screen.getByText('Health check')).toBeInTheDocument());
-    fireEvent.click(screen.getByRole('button', { name: 'Resume' }));
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Enable Health check' }));
     await waitFor(() => expect(restMock.cronResumeJob).toHaveBeenCalledWith('job-2', 'default'));
   });
 
@@ -132,7 +132,8 @@ describe('Cron', () => {
     vi.mocked(restMock.cronTriggerJob).mockResolvedValue(jobs[0]!);
     render(<Cron rest={restMock} />);
     await waitFor(() => expect(screen.getByText('Daily backup')).toBeInTheDocument());
-    fireEvent.click(screen.getAllByLabelText('Run now')[0]!);
+    fireEvent.click(screen.getByRole('button', { name: 'Open Daily backup' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Run now' }));
     await waitFor(() => expect(restMock.cronTriggerJob).toHaveBeenCalledWith('job-1', 'default'));
   });
 
@@ -142,7 +143,8 @@ describe('Cron', () => {
     render(<Cron rest={restMock} />);
     await waitFor(() => expect(screen.getByText('Daily backup')).toBeInTheDocument());
     vi.mocked(restMock.cronJobs).mockResolvedValue([jobs[1]!]);
-    fireEvent.click(screen.getAllByRole('button', { name: 'Delete' })[0]!);
+    fireEvent.click(screen.getByRole('button', { name: 'Open Daily backup' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Delete' }));
     await waitFor(() => expect(restMock.cronDeleteJob).toHaveBeenCalledWith('job-1', 'default'));
   });
 
@@ -179,7 +181,8 @@ describe('Cron', () => {
     vi.mocked(restMock.cronUpdateJob).mockResolvedValue(jobs[0]!);
     render(<Cron rest={restMock} />);
     await waitFor(() => expect(screen.getByText('Daily backup')).toBeInTheDocument());
-    fireEvent.click(screen.getAllByRole('button', { name: 'Edit' })[0]!);
+    fireEvent.click(screen.getByRole('button', { name: 'Open Daily backup' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Edit' }));
     fireEvent.change(screen.getByPlaceholderText(/What should the cron job do/i), { target: { value: 'Back up files' } });
     fireEvent.change(screen.getByDisplayValue('Daily backup'), { target: { value: 'Daily backup v2' } });
     fireEvent.change(screen.getByDisplayValue('0 3 * * *'), { target: { value: '0 4 * * *' } });

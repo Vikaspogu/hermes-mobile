@@ -118,7 +118,7 @@ describe('Projects', () => {
     vi.mocked(restMock.kanbanCreateTask).mockResolvedValue({ id: 't-3', title: 'New task', status: 'todo', createdAt: Date.now() });
     render(<Projects rest={restMock} />);
     await waitFor(() => expect(screen.getByText('Task 1')).toBeInTheDocument());
-    fireEvent.click(screen.getByLabelText('Add task to To do'));
+    fireEvent.click(screen.getByTestId('kanban-new-task'));
     fireEvent.change(screen.getByPlaceholderText(/What needs to be done/i), { target: { value: 'New task' } });
     fireEvent.change(screen.getByLabelText(/Assignee/i), { target: { value: 'dev' } });
     fireEvent.change(screen.getByPlaceholderText(/comma-separated/i), { target: { value: 'python, git' } });
@@ -139,7 +139,7 @@ describe('Projects', () => {
     vi.mocked(restMock.kanbanCreateTask).mockResolvedValue({ id: 't-3', title: 'Advanced', status: 'todo', createdAt: Date.now() });
     render(<Projects rest={restMock} />);
     await waitFor(() => expect(screen.getByText('Task 1')).toBeInTheDocument());
-    fireEvent.click(screen.getByLabelText('Add task to To do'));
+    fireEvent.click(screen.getByTestId('kanban-new-task'));
 
     fireEvent.change(screen.getByPlaceholderText(/What needs to be done/i), { target: { value: 'Advanced' } });
     fireEvent.change(screen.getByPlaceholderText(/Optional details/i), { target: { value: 'details' } });
@@ -149,7 +149,7 @@ describe('Projects', () => {
     fireEvent.change(priorityInput!, { target: { value: '4' } });
     fireEvent.change(screen.getByPlaceholderText(/comma-separated/i), { target: { value: 'python' } });
 
-    const [, workspaceSelect, parentSelect] = screen.getAllByRole('combobox');
+    const [, , workspaceSelect, parentSelect] = screen.getAllByRole('combobox');
     fireEvent.change(workspaceSelect!, { target: { value: 'dir' } });
     fireEvent.change(parentSelect!, { target: { value: 't-1' } });
 
