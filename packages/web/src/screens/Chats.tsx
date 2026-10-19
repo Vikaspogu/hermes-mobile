@@ -17,9 +17,9 @@ interface ChatsProps {
   rest: RestClient;
   onNavigate: (screen: string) => void;
   /** Desktop split sidebar: hides composer + approval banner, slim thread list. */
+  sidebar?: boolean;
   /** Opens the voice overlay from the composer mic (main pane only). */
   onOpenVoice?: () => void;
-  sidebar?: boolean;
 }
 
 function fmtAge(updatedAt: number): string {
