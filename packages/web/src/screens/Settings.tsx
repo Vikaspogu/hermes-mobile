@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { useConnectionStore, useProfilesStore, useModelStore, useConfigStore } from '@hermes-pwa/core';
+import { useConnectionStore, useProfilesStore, useModelStore, useConfigStore, useSessionsStore } from '@hermes-pwa/core';
 import type { RestClient, SystemStats, PushStatus } from '@hermes-pwa/core';
 import { Icon } from '../components/Icon';
 import { HERMES_PWA_VERSION_LABEL } from '../app/version';
@@ -56,6 +56,8 @@ export function Settings({ rest, onNavigate, onLogout }: SettingsProps) {
   const activeName = useProfilesStore((s) => s.activeName);
   const activeProfile = useProfilesStore((s) => s.profiles.find((p) => p.name === s.activeName));
   const { info, error: modelError, loadInfo } = useModelStore();
+  const showCronInAll = useSessionsStore((s) => s.showCronInAll);
+  const setShowCronInAll = useSessionsStore((s) => s.setShowCronInAll);
   const config = useConfigStore((s) => s.config);
   const configLoading = useConfigStore((s) => s.loading);
   const configSaving = useConfigStore((s) => s.saving);
@@ -331,6 +333,18 @@ export function Settings({ rest, onNavigate, onLogout }: SettingsProps) {
             </button>
           ))}
         </div>
+        <label className="hm-settings-row">
+          <span className="hm-settings-row__body">
+            <span className="hm-settings-row__label">Show cron results in All</span>
+            <span className="hm-muted">Cron runs always appear under the Cron chip in Sessions.</span>
+          </span>
+          <input
+            type="checkbox"
+            aria-label="Show cron results in All"
+            checked={showCronInAll}
+            onChange={(e) => setShowCronInAll(e.target.checked)}
+          />
+        </label>
       </Section>
 
       <Section title="About">

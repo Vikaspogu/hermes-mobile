@@ -76,6 +76,36 @@ function asArray<T>(value: unknown): T[] {
   return Array.isArray(value) ? (value as T[]) : [];
 }
 
+export interface PaperlessCandidate {
+  number: number;
+  title: string;
+  filename: string;
+  status: string;
+}
+
+export interface PaperlessPending {
+  runId: string;
+  expiresAt: string;
+  candidates: PaperlessCandidate[];
+}
+
+export interface CronRunsQuery {
+  /** Resume below this started_at (the previous page's nextCursor). */
+  before?: number;
+  includeSilent?: boolean;
+  jobId?: string;
+  limit?: number;
+}
+
+function cronRunToSession(profile: string) {
+  return (r: Record<string, unknown>): Session => ({
+    ...toSession({ id: r.session_id, title: r.title, started_at: r.started_at, source: 'cron', profile }),
+    ...(r.silent === true ? { silent: true } : {}),
+    ...(typeof r.job_id === 'string' && r.job_id ? { cronJobId: r.job_id } : {}),
+    ...(typeof r.job_name === 'string' && r.job_name ? { cronJobName: r.job_name } : {}),
+  });
+}
+
 function profileSessionsPath(profile: string, excludeSources: readonly string[], limit = 100): string {
   const params = new URLSearchParams({
     limit: String(limit),
@@ -276,6 +306,9 @@ export interface RestClient {
   cronDeliveryTargets(): Promise<CronDeliveryTarget[]>;
 
   profileSessions(): Promise<Session[]>;
+  cronRuns(params?: CronRunsQuery): Promise<{ runs: Session[]; nextCursor: number | null }>;
+  paperlessPending(): Promise<PaperlessPending | null>;
+  paperlessDecide(action: 'approve' | 'discard', runId: string, numbers?: number[]): Promise<{ titles?: string[] }>;
   sessionMessages(sessionId: string, profile?: string): Promise<unknown>;
   sessionArtifacts(sessionId: string): Promise<Artifact[]>;
   sessionUpdate(sessionId: string, updates: { title?: string | null; archived?: boolean; profile?: string }): Promise<unknown>;
@@ -631,6 +664,44 @@ export function makeRestClient(http: Http): RestClient {
       return asArray<Record<string, unknown>>(raw.targets).map(toCronDeliveryTarget);
     },
 
+    async cronRuns(params: CronRunsQuery = {}): Promise<{ runs: Session[]; nextCursor: number | null }> {
+      const profile = activeProfile || 'default';
+      const qs = new URLSearchParams({ profile, limit: String(params.limit ?? 50) });
+      if (params.before != null) qs.set('before', String(params.before));
+      if (params.includeSilent) qs.set('include_silent', '1');
+      if (params.jobId) qs.set('job_id', params.jobId);
+      const raw = await http<{ runs?: Record<string, unknown>[]; next_cursor?: unknown }>(
+        `/api/plugins/hermes-pwa/cron-runs?${qs.toString()}`,
+      );
+      return {
+        runs: asArray<Record<string, unknown>>(raw.runs).map(cronRunToSession(profile)),
+        nextCursor: typeof raw.next_cursor === 'number' ? raw.next_cursor : null,
+      };
+    },
+
+    async paperlessPending(): Promise<PaperlessPending | null> {
+      const raw = await http<{ pending?: Record<string, unknown> | null }>('/api/plugins/paperless-approval/pending');
+      const p = raw.pending;
+      if (!p || typeof p.run_id !== 'string') return null;
+      return {
+        runId: p.run_id,
+        expiresAt: String(p.expires_at ?? ''),
+        candidates: asArray<Record<string, unknown>>(p.candidates).map((c) => ({
+          number: Number(c.number),
+          title: String(c.title ?? ''),
+          filename: String(c.filename ?? ''),
+          status: String(c.status ?? 'needs_review'),
+        })),
+      };
+    },
+
+    async paperlessDecide(action, runId, numbers = []): Promise<{ titles?: string[] }> {
+      return await http<{ titles?: string[] }>(`/api/plugins/paperless-approval/${action}`, {
+        method: 'POST',
+        body: JSON.stringify({ run_id: runId, numbers }),
+      });
+    },
+
     async profileSessions(): Promise<Session[]> {
       // Current release-scope PWA shows local TUI/CLI/Desktop-style sessions only.
       // Messaging sources stay out of ordinary PWA session UX until a later product decision.
@@ -645,9 +716,7 @@ export function makeRestClient(http: Http): RestClient {
           `/api/plugins/hermes-pwa/cron-runs?profile=${encodeURIComponent(profile)}&limit=50`,
         ).catch(() => ({ runs: [] })),
       ]);
-      const cron = asArray<Record<string, unknown>>(cronRaw.runs).map((r) =>
-        toSession({ id: r.session_id, title: r.title, started_at: r.started_at, source: 'cron', profile }),
-      );
+      const cron = asArray<Record<string, unknown>>(cronRaw.runs).map(cronRunToSession(profile));
       return mergeSessionsByLineage(sessionsFromResult(localRaw), cron);
     },
 

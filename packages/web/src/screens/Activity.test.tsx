@@ -1,7 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { Activity } from './Activity';
-import { useActivityStore, useConnectionStore, makeRpcEvents } from '@hermes-pwa/core';
+import { useActivityStore, useConnectionStore, usePaperlessStore, makeRpcEvents } from '@hermes-pwa/core';
+import type { RestClient } from '@hermes-pwa/core';
 
 const rpcMock = {
   request: vi.fn(),
@@ -12,6 +13,7 @@ const rpcMock = {
 describe('Activity', () => {
   beforeEach(() => {
     useActivityStore.setState({ items: [], loading: false, error: undefined });
+    usePaperlessStore.setState({ pending: null, busy: false, error: undefined, result: undefined });
     useConnectionStore.setState({ state: 'connected', error: undefined } as ReturnType<typeof useConnectionStore.getState>);
     vi.clearAllMocks();
   });
@@ -59,5 +61,37 @@ describe('Activity', () => {
     render(<Activity rpc={rpcMock} />);
     rpcMock.events.dispatchEvent({ type: 'status.update', payload: {} });
     await waitFor(() => expect(screen.getByText(/All clear/i)).toBeInTheDocument());
+  });
+
+  it('lists a pending Paperless approval and imports only ready PDFs', async () => {
+    const rest = {
+      paperlessPending: vi.fn().mockResolvedValue({
+        runId: 'run-1',
+        expiresAt: '2026-10-18T00:00:00Z',
+        candidates: [
+          { number: 1, title: 'Invoice', filename: 'a.pdf', status: 'ready' },
+          { number: 2, title: 'Statement', filename: 'b.pdf', status: 'needs_retry' },
+        ],
+      }),
+      paperlessDecide: vi.fn().mockResolvedValue({ titles: ['Invoice'] }),
+    } as unknown as RestClient;
+    render(<Activity rpc={rpcMock} rest={rest} />);
+    await waitFor(() => expect(screen.getByTestId('paperless-card')).toBeInTheDocument());
+    expect(screen.queryByText(/All clear/i)).not.toBeInTheDocument();
+    const [ready, retry] = screen.getAllByRole('checkbox');
+    expect(retry).toBeDisabled();
+    const importBtn = screen.getByRole('button', { name: 'Import selected' });
+    expect(importBtn).toBeDisabled();
+    fireEvent.click(ready!);
+    fireEvent.click(importBtn);
+    await waitFor(() => expect(screen.getByText('Import queued: Invoice')).toBeInTheDocument());
+    expect(rest.paperlessDecide).toHaveBeenCalledWith('approve', 'run-1', [1]);
+  });
+
+  it('hides the Paperless card when the plugin route is missing', async () => {
+    const rest = { paperlessPending: vi.fn().mockRejectedValue(new Error('404')) } as unknown as RestClient;
+    render(<Activity rpc={rpcMock} rest={rest} />);
+    await waitFor(() => expect(screen.getByText(/All clear/i)).toBeInTheDocument());
+    expect(screen.queryByTestId('paperless-card')).not.toBeInTheDocument();
   });
 });
