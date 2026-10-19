@@ -109,7 +109,7 @@ const SCREEN_TITLES: Record<Screen, string> = {
   chat: 'Chat',
   voice: 'Voice',
   sessions: 'Sessions',
-  approvals: 'Approvals',
+  approvals: 'Inbox',
   kanban: 'Kanban',
   agents: 'Agents',
   profiles: 'Profiles',
@@ -475,7 +475,8 @@ export function AppShell({ connectionState, rpc, rest, onRetry, connectionError 
       s = 'home';
     }
     if (s !== navStackRef.current[navStackRef.current.length - 1]) {
-      const next = [...navStackRef.current, s];
+      // Tab roots (Chats/Inbox/Work) reset the stack so tabs never show a back button.
+      const next = s === 'home' || s === 'approvals' || s === 'kanban' ? [s] : [...navStackRef.current, s];
       navStackRef.current = next;
       setNavStack(next);
       window.history.pushState({ hmNav: next.length - 1 }, '');
@@ -502,7 +503,6 @@ export function AppShell({ connectionState, rpc, rest, onRetry, connectionError 
   const MORE_ITEMS: { key: Screen; label: string; icon: IconName; sub?: string }[] = [
     { key: 'profiles', label: 'Profiles', icon: 'profiles', sub: activeProfile ? `${activeProfileLabel} · ${activeModel}` : activeModel },
     { key: 'agents', label: 'Agents', icon: 'agents' },
-    { key: 'sessions', label: 'Sessions', icon: 'sessions', sub: `${sessions.length} total` },
     { key: 'cron', label: 'Schedules', icon: 'cron' },
     { key: 'artifacts', label: 'Artifacts', icon: 'file' },
     { key: 'command', label: 'System', icon: 'system', sub: gatewayLabel },
@@ -531,14 +531,16 @@ export function AppShell({ connectionState, rpc, rest, onRetry, connectionError 
           </button>
         )}
         <h1 className="hm-header__title">{screenTitle}</h1>
-        <button
-          type="button"
-          className="hm-header__status"
-          onClick={() => navigate('command')}
-          aria-label="Open system status"
-        >
-          <StatusChip state={connectionState} gatewayHealth={gatewayHealth} />
-        </button>
+        {(connectionState !== 'connected' || gatewayHealth !== 'running') && (
+          <button
+            type="button"
+            className="hm-header__status"
+            onClick={() => navigate('command')}
+            aria-label="Open system status"
+          >
+            <StatusChip state={connectionState} gatewayHealth={gatewayHealth} />
+          </button>
+        )}
       </header>
 
       {/* ── Connection banner ────────────────────────────────────── */}

@@ -305,7 +305,7 @@ describe('AppShell', () => {
     render(<AppShell connectionState="connected" rpc={rpcMock} rest={restMock} />);
     fireEvent.click(screen.getByRole('button', { name: 'Inbox' }));
     await waitFor(() =>
-      expect(screen.getByRole('heading', { name: 'Approvals' })).toBeInTheDocument(),
+      expect(screen.getByRole('heading', { name: 'Inbox' })).toBeInTheDocument(),
     );
   });
 
@@ -352,11 +352,9 @@ describe('AppShell', () => {
     await waitFor(() => expect(screen.getByRole('heading', { name: 'System' })).toBeInTheDocument());
   });
 
-  it('shows system health in the status chip for connected state', async () => {
+  it('hides the status chip when connected and the gateway is healthy', async () => {
     render(<AppShell connectionState="connected" rpc={rpcMock} rest={restMock} />);
-    const chip = screen.getByTestId('status-chip');
-    await waitFor(() => expect(within(chip).getByText(/System OK/i)).toBeInTheDocument());
-    expect(within(chip).queryByText(/gpt-5\.5/i)).not.toBeInTheDocument();
+    await waitFor(() => expect(screen.queryByTestId('status-chip')).not.toBeInTheDocument());
   });
 
   it('restores the last screen from localStorage', () => {
@@ -514,7 +512,7 @@ describe('AppShell', () => {
 
     render(<AppShell connectionState="connected" rpc={rpcMock} rest={restMock} />);
 
-    expect(screen.getByRole('heading', { name: 'Approvals' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Inbox' })).toBeInTheDocument();
     await waitFor(() => expect(restMock.pendingActions).toHaveBeenCalledWith('default'));
     expect(await screen.findByText(/rm -rf \/tmp\/from-push/)).toBeInTheDocument();
   });

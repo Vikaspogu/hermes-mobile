@@ -1,0 +1,2641 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Hermes Mobile — Redesign Mockups</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Bodoni+Moda:opsz,wght@6..96,600&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --bg: #f4f6fc;
+        --surface: #ffffff;
+        --surface2: #f5f7fd;
+        --border: #e7eaf3;
+        --text: #161a27;
+        --text2: #2b3346;
+        --muted: #6b7384;
+        --faint: #9aa2b4;
+        --primary: #2540ff;
+        --primary-tint: #eef1ff;
+        --success: #15a06a;
+        --warning: #d98a16;
+        --danger: #dc4b46;
+        --success-bg: #e3fbef;
+        --warning-bg: #fff7ed;
+        --danger-bg: #fdeaea;
+        --warning-strong: #92400e;
+        --danger-strong: #991b1b;
+        --success-strong: #065f46;
+        --sans: 'Hanken Grotesk', system-ui, -apple-system, sans-serif;
+        --mono: 'JetBrains Mono', ui-monospace, monospace;
+        --display: 'Bodoni Moda', Georgia, serif;
+      }
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      body {
+        font-family: var(--sans);
+        background: #e9edf7;
+        color: var(--text);
+        padding: 40px 24px 80px;
+      }
+      .page {
+        max-width: 1400px;
+        margin: 0 auto;
+      }
+      h1 {
+        font-size: 26px;
+        font-weight: 700;
+        letter-spacing: -0.01em;
+      }
+      .sub {
+        color: var(--muted);
+        font-size: 14px;
+        margin-top: 6px;
+        max-width: 760px;
+        line-height: 1.55;
+      }
+      .decisions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin: 20px 0 8px;
+      }
+      .dec {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 999px;
+        padding: 6px 12px;
+        font-size: 12.5px;
+        color: var(--text2);
+      }
+      .dec b {
+        color: var(--primary);
+        margin-right: 5px;
+      }
+      .section-title {
+        font-size: 13px;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--muted);
+        margin: 44px 0 16px;
+      }
+      .frames {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 36px;
+        align-items: flex-start;
+      }
+      .frame-wrap {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+      .frame-label {
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--text2);
+      }
+      .frame-label span {
+        display: block;
+        font-weight: 400;
+        font-size: 12px;
+        color: var(--muted);
+        margin-top: 2px;
+        max-width: 390px;
+        line-height: 1.45;
+      }
+
+      /* ── Phone frame ─────────────────────────── */
+      .phone {
+        width: 390px;
+        height: 844px;
+        background: var(--bg);
+        border-radius: 44px;
+        border: 1px solid #d4d9e8;
+        box-shadow: 0 20px 60px rgba(20, 30, 60, 0.14);
+        overflow: hidden;
+        position: relative;
+        display: flex;
+        flex-direction: column;
+      }
+      .statusbar {
+        height: 44px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 28px;
+        font-size: 13.5px;
+        font-weight: 600;
+        flex: none;
+      }
+      .statusbar .icons {
+        display: flex;
+        gap: 5px;
+        align-items: center;
+        color: var(--text);
+      }
+      .appbody {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        position: relative;
+      }
+
+      /* ── Shared app atoms ────────────────────── */
+      .app-header {
+        height: 56px;
+        flex: none;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 0 16px;
+        background: var(--surface);
+        border-bottom: 1px solid var(--border);
+      }
+      .wordmark {
+        font-family: var(--display);
+        font-size: 19px;
+        font-weight: 600;
+        letter-spacing: 0.01em;
+      }
+      .header-title {
+        font-size: 16px;
+        font-weight: 700;
+      }
+      .header-sub {
+        font-size: 12px;
+        color: var(--muted);
+      }
+      .iconbtn {
+        width: 36px;
+        height: 36px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--muted);
+        flex: none;
+      }
+      .dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: var(--success);
+        flex: none;
+      }
+      .scroll {
+        flex: 1;
+        overflow: hidden;
+        padding: 14px 16px;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+      .tabbar {
+        flex: none;
+        height: 78px;
+        background: var(--surface);
+        border-top: 1px solid var(--border);
+        display: flex;
+        padding: 6px 4px 22px;
+      }
+      .tab {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 3px;
+        font-size: 10.5px;
+        color: var(--faint);
+        padding-top: 7px;
+        position: relative;
+        font-weight: 500;
+      }
+      .tab.active {
+        color: var(--primary);
+      }
+      .tab .badge {
+        position: absolute;
+        top: 2px;
+        left: 50%;
+        margin-left: 6px;
+        background: var(--danger);
+        color: #fff;
+        font-size: 9.5px;
+        font-weight: 700;
+        min-width: 16px;
+        height: 16px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0 4px;
+      }
+      .search {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 10px 12px;
+        color: var(--faint);
+        font-size: 14px;
+        flex: none;
+      }
+      .group-label {
+        font-size: 11.5px;
+        font-weight: 700;
+        letter-spacing: 0.07em;
+        text-transform: uppercase;
+        color: var(--faint);
+        padding: 10px 4px 2px;
+      }
+      .thread {
+        display: flex;
+        gap: 11px;
+        padding: 11px 12px;
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        align-items: flex-start;
+      }
+      .thread .live {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: var(--primary);
+        margin-top: 7px;
+        flex: none;
+        box-shadow: 0 0 0 3px var(--primary-tint);
+      }
+      .thread .idle {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: #d3d9e6;
+        margin-top: 7px;
+        flex: none;
+      }
+      .thread .t-body {
+        flex: 1;
+        min-width: 0;
+      }
+      .thread .t-title {
+        font-size: 14.5px;
+        font-weight: 600;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .thread .t-preview {
+        font-size: 12.5px;
+        color: var(--muted);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        margin-top: 2px;
+      }
+      .thread .t-meta {
+        font-size: 11.5px;
+        color: var(--faint);
+        flex: none;
+        text-align: right;
+        line-height: 1.5;
+      }
+      .banner {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        background: var(--warning-bg);
+        border: 1px solid #f3dcb8;
+        border-radius: 14px;
+        padding: 11px 12px;
+      }
+      .banner .b-title {
+        font-size: 13.5px;
+        font-weight: 700;
+        color: var(--warning-strong);
+      }
+      .banner .b-sub {
+        font-size: 12px;
+        color: var(--warning-strong);
+        opacity: 0.85;
+      }
+      .composer {
+        flex: none;
+        display: flex;
+        align-items: flex-end;
+        gap: 8px;
+        padding: 10px 12px 12px;
+        background: var(--surface);
+        border-top: 1px solid var(--border);
+      }
+      .composer .field {
+        flex: 1;
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        border-radius: 20px;
+        padding: 11px 14px;
+        font-size: 14.5px;
+        color: var(--faint);
+        min-height: 44px;
+      }
+      .roundbtn {
+        width: 44px;
+        height: 44px;
+        border-radius: 50%;
+        background: var(--primary);
+        color: #fff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex: none;
+      }
+      .roundbtn.ghost {
+        background: var(--surface2);
+        color: var(--muted);
+        border: 1px solid var(--border);
+      }
+      .msg-user {
+        align-self: flex-end;
+        background: var(--primary);
+        color: #fff;
+        border-radius: 18px 18px 4px 18px;
+        padding: 11px 14px;
+        font-size: 14.5px;
+        line-height: 1.45;
+        max-width: 82%;
+      }
+      .msg-ai {
+        font-size: 14.5px;
+        line-height: 1.6;
+        color: var(--text);
+        padding: 2px 2px;
+      }
+      .msg-ai b {
+        font-weight: 700;
+      }
+      .steps {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 10px 12px;
+        font-size: 13px;
+        color: var(--muted);
+      }
+      .steps .ok {
+        color: var(--success);
+        font-weight: 600;
+      }
+      .steps-summary {
+        font-size: 13px;
+        color: var(--muted);
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        padding: 4px 2px;
+      }
+      .working {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 12.5px;
+        color: var(--primary);
+        padding: 6px 4px;
+        font-weight: 500;
+      }
+      .pulse {
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background: var(--primary);
+        animation: pu 1.2s infinite;
+      }
+      @keyframes pu {
+        50% {
+          opacity: 0.3;
+        }
+      }
+      .approval-dock {
+        flex: none;
+        background: var(--surface);
+        border-top: 1px solid var(--border);
+        padding: 12px 14px 10px;
+        box-shadow: 0 -8px 24px rgba(20, 30, 60, 0.08);
+      }
+      .dock-tag {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        font-size: 10.5px;
+        font-weight: 700;
+        letter-spacing: 0.05em;
+        padding: 3px 8px;
+        border-radius: 6px;
+      }
+      .tag-low {
+        background: var(--success-bg);
+        color: var(--success-strong);
+      }
+      .tag-high {
+        background: var(--danger-bg);
+        color: var(--danger-strong);
+      }
+      .dock-cmd {
+        font-family: var(--mono);
+        font-size: 12px;
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        border-radius: 9px;
+        padding: 8px 10px;
+        margin: 8px 0;
+        color: var(--text2);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .dock-row {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+      }
+      .btn {
+        flex: 1;
+        height: 44px;
+        border-radius: 12px;
+        font-size: 14.5px;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: none;
+      }
+      .btn-approve {
+        background: var(--primary);
+        color: #fff;
+      }
+      .btn-reject {
+        background: var(--surface);
+        color: var(--danger-strong);
+        border: 1px solid #eec8c6;
+      }
+      .btn-more {
+        width: 44px;
+        flex: none;
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        color: var(--muted);
+        border-radius: 12px;
+        height: 44px;
+        font-size: 16px;
+      }
+      .dock-meta {
+        font-size: 12px;
+        color: var(--muted);
+        margin-top: 2px;
+      }
+      .dock-title {
+        font-size: 13.5px;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+      }
+      .record {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 12.5px;
+        color: var(--muted);
+        padding: 6px 2px;
+      }
+      .record .r-ok {
+        color: var(--success);
+        font-weight: 700;
+      }
+      .slide-track {
+        flex: 1;
+        height: 48px;
+        border-radius: 24px;
+        background: var(--danger-bg);
+        border: 1px solid #f0c4c2;
+        position: relative;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 13px;
+        font-weight: 700;
+        color: var(--danger-strong);
+      }
+      .slide-knob {
+        position: absolute;
+        left: 4px;
+        top: 4px;
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: var(--danger);
+        color: #fff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 15px;
+      }
+      .slide-hint {
+        position: absolute;
+        left: 56px;
+        right: 12px;
+        height: 2px;
+        background: repeating-linear-gradient(90deg, #e2a3a0 0 6px, transparent 6px 12px);
+        opacity: 0.6;
+        top: 50%;
+      }
+      .card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        padding: 13px 14px;
+      }
+      .pillrow {
+        display: flex;
+        gap: 7px;
+        overflow: hidden;
+        flex: none;
+        padding: 2px 0;
+      }
+      .pill {
+        flex: none;
+        font-size: 12.5px;
+        font-weight: 600;
+        padding: 7px 13px;
+        border-radius: 999px;
+        background: var(--surface);
+        border: 1px solid var(--border);
+        color: var(--muted);
+      }
+      .pill.on {
+        background: var(--primary-tint);
+        border-color: #cdd6ff;
+        color: var(--primary);
+      }
+      .seg {
+        display: flex;
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 3px;
+        flex: none;
+      }
+      .seg div {
+        flex: 1;
+        text-align: center;
+        font-size: 13.5px;
+        font-weight: 600;
+        padding: 8px;
+        border-radius: 9px;
+        color: var(--muted);
+      }
+      .seg .on {
+        background: var(--surface);
+        color: var(--text);
+        box-shadow: 0 1px 3px rgba(20, 30, 60, 0.08);
+      }
+      .task-row {
+        display: flex;
+        gap: 10px;
+        align-items: flex-start;
+        padding: 11px 12px;
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 13px;
+      }
+      .prio {
+        font-size: 10.5px;
+        font-weight: 700;
+        padding: 2px 7px;
+        border-radius: 6px;
+        flex: none;
+        margin-top: 1px;
+      }
+      .p0 {
+        background: var(--danger-bg);
+        color: var(--danger-strong);
+      }
+      .p1 {
+        background: var(--warning-bg);
+        color: var(--warning-strong);
+      }
+      .p2 {
+        background: var(--surface2);
+        color: var(--muted);
+      }
+      .task-title {
+        font-size: 14px;
+        font-weight: 600;
+      }
+      .task-meta {
+        font-size: 12px;
+        color: var(--muted);
+        margin-top: 2px;
+        display: flex;
+        gap: 6px;
+        align-items: center;
+        flex-wrap: wrap;
+      }
+      .fab {
+        position: absolute;
+        right: 18px;
+        bottom: 96px;
+        width: 54px;
+        height: 54px;
+        border-radius: 50%;
+        background: var(--primary);
+        color: #fff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 24px;
+        box-shadow: 0 8px 20px rgba(37, 64, 255, 0.35);
+      }
+      .switch {
+        width: 42px;
+        height: 25px;
+        border-radius: 13px;
+        background: var(--primary);
+        position: relative;
+        flex: none;
+      }
+      .switch::after {
+        content: '';
+        position: absolute;
+        right: 3px;
+        top: 3px;
+        width: 19px;
+        height: 19px;
+        border-radius: 50%;
+        background: #fff;
+      }
+      .switch.off {
+        background: #cfd6e4;
+      }
+      .switch.off::after {
+        right: auto;
+        left: 3px;
+      }
+      .listrow {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 13px 14px;
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 14px;
+      }
+      .listrow .lr-icon {
+        width: 38px;
+        height: 38px;
+        border-radius: 11px;
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex: none;
+        font-size: 16px;
+        color: var(--text2);
+      }
+      .listrow .lr-title {
+        font-size: 14.5px;
+        font-weight: 600;
+      }
+      .listrow .lr-sub {
+        font-size: 12px;
+        color: var(--muted);
+        margin-top: 1px;
+      }
+      .listrow .lr-right {
+        margin-left: auto;
+        color: var(--faint);
+        font-size: 12.5px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .metricbar {
+        height: 6px;
+        border-radius: 3px;
+        background: var(--surface2);
+        overflow: hidden;
+        border: 1px solid var(--border);
+      }
+      .metricbar div {
+        height: 100%;
+        border-radius: 3px;
+        background: var(--primary);
+      }
+      .orb {
+        width: 150px;
+        height: 150px;
+        border-radius: 50%;
+        background: radial-gradient(circle at 35% 35%, #7c93ff, #2540ff 65%, #16289e);
+        box-shadow: 0 12px 44px rgba(37, 64, 255, 0.4);
+        margin: 0 auto;
+      }
+      .wave {
+        display: flex;
+        gap: 3.5px;
+        align-items: center;
+        justify-content: center;
+        height: 34px;
+      }
+      .wave i {
+        width: 3.5px;
+        border-radius: 2px;
+        background: var(--primary);
+      }
+      .empty-note {
+        text-align: center;
+        color: var(--muted);
+        font-size: 13.5px;
+        padding: 26px 30px;
+        line-height: 1.6;
+      }
+
+      /* ── Desktop frame ───────────────────────── */
+      .desktop {
+        width: 1152px;
+        height: 720px;
+        background: var(--bg);
+        border-radius: 18px;
+        border: 1px solid #d4d9e8;
+        box-shadow: 0 20px 60px rgba(20, 30, 60, 0.14);
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+      }
+      .chromebar {
+        height: 34px;
+        background: var(--surface);
+        border-bottom: 1px solid var(--border);
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        padding: 0 14px;
+        flex: none;
+      }
+      .chromebar i {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+      }
+      .d-body {
+        flex: 1;
+        display: flex;
+        overflow: hidden;
+      }
+      .rail {
+        width: 64px;
+        background: var(--surface);
+        border-right: 1px solid var(--border);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 12px 0;
+        gap: 6px;
+        flex: none;
+      }
+      .rail .r-item {
+        width: 44px;
+        height: 44px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--faint);
+        position: relative;
+      }
+      .rail .r-item.on {
+        background: var(--primary-tint);
+        color: var(--primary);
+      }
+      .rail .badge {
+        position: absolute;
+        top: 4px;
+        right: 4px;
+        background: var(--danger);
+        color: #fff;
+        font-size: 9px;
+        font-weight: 700;
+        min-width: 15px;
+        height: 15px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .threadlist {
+        width: 296px;
+        background: var(--surface);
+        border-right: 1px solid var(--border);
+        display: flex;
+        flex-direction: column;
+        flex: none;
+        overflow: hidden;
+      }
+      .threadlist .scroll {
+        padding: 10px;
+      }
+      .chatpane {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        position: relative;
+      }
+      .chat-col {
+        max-width: 720px;
+        width: 100%;
+        margin: 0 auto;
+        display: flex;
+        flex-direction: column;
+        flex: 1;
+        overflow: hidden;
+      }
+      .queue {
+        width: 352px;
+        background: var(--surface);
+        border-right: 1px solid var(--border);
+        flex: none;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+      }
+      .detail {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+      }
+      .kb-board {
+        flex: 1;
+        display: flex;
+        gap: 12px;
+        padding: 16px;
+        overflow: hidden;
+      }
+      .kb-col {
+        flex: 1;
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        display: flex;
+        flex-direction: column;
+        min-width: 0;
+      }
+      .kb-head {
+        padding: 11px 12px;
+        font-size: 13px;
+        font-weight: 700;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+      .kb-cards {
+        padding: 0 10px 10px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+      .kbd {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        font-size: 11px;
+        color: var(--faint);
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        border-radius: 7px;
+        padding: 3px 8px;
+        font-family: var(--mono);
+      }
+    </style>
+    <meta name="artifact-kind" content="html" />
+    <meta name="artifact-generated" content="1792360808524" />
+    <meta name="artifact-project" content="/home/agent/git-repos/hermes-mobile" />
+  </head>
+  <body>
+    <div class="page">
+      <h1>Hermes Mobile — Redesign Mockups</h1>
+      <p class="sub">
+        Synthesis of 3 independent UX reviews (Claude Opus 5.5, Gemini 4 Argon, GPT-6.1-Sol) of the
+        current app, screenshot-by-screenshot. One job drives everything:
+        <b>give the agent work, follow progress, unblock it safely — from a phone.</b> Same design
+        tokens as production (<code>tokens.css</code>).
+      </p>
+      <div class="decisions">
+        <div class="dec"><b>D1</b>Chats = home</div>
+        <div class="dec"><b>D2</b>4 bottom tabs, no drawer</div>
+        <div class="dec"><b>D3</b>Sticky approval dock + risk tiers</div>
+        <div class="dec"><b>D4</b>Plan before approval, collapsed tool steps</div>
+        <div class="dec"><b>D5</b>Thread rows w/ preview + date groups</div>
+        <div class="dec"><b>D6</b>Empty kanban stages collapse</div>
+        <div class="dec"><b>D7</b>Cron → human "Schedules"</div>
+        <div class="dec"><b>D8</b>Voice from composer, not a tab</div>
+        <div class="dec"><b>D9</b>Desktop: rail + list + capped chat</div>
+        <div class="dec"><b>D10</b>Errors keep nav, show cause</div>
+      </div>
+
+      <!-- ══════════ MOBILE ══════════ -->
+      <div class="section-title">Mobile — 390 × 844</div>
+      <div class="frames">
+        <!-- M1: Chats home -->
+        <div class="frame-wrap">
+          <div class="phone">
+            <div class="statusbar"><span>9:41</span><span class="icons">●●●</span></div>
+            <div class="appbody">
+              <div class="app-header">
+                <span class="wordmark">Hermes</span>
+                <span style="margin-left: auto" class="dot"></span>
+                <span style="font-size: 12px; color: var(--muted)">default</span>
+                <div class="iconbtn">⚙</div>
+              </div>
+              <div class="scroll">
+                <div class="banner">
+                  <span style="font-size: 16px">⚠️</span>
+                  <div>
+                    <div class="b-title">1 approval waiting</div>
+                    <div class="b-sub">Refactor WS gateway reconnect</div>
+                  </div>
+                  <span style="margin-left: auto; color: var(--warning-strong)">›</span>
+                </div>
+                <div
+                  class="card"
+                  style="padding: 6px 6px 6px 14px; display: flex; align-items: center; gap: 8px"
+                >
+                  <span style="font-size: 14.5px; color: var(--faint); flex: 1"
+                    >Message Hermes…</span
+                  >
+                  <div class="roundbtn" style="width: 38px; height: 38px">↑</div>
+                </div>
+                <div class="search">🔍 <span>Search chats</span></div>
+                <div class="group-label">Today</div>
+                <div class="thread">
+                  <span class="live"></span>
+                  <div class="t-body">
+                    <div class="t-title">Refactor WS gateway reconnect</div>
+                    <div class="t-preview">
+                      Plan: 20s heartbeat ping, refresh ticket before expiry…
+                    </div>
+                  </div>
+                  <div class="t-meta">
+                    12:04<br /><span style="color: var(--primary); font-weight: 700">● live</span>
+                  </div>
+                </div>
+                <div class="thread">
+                  <span class="idle"></span>
+                  <div class="t-body">
+                    <div class="t-title">Investigate web_server traceback</div>
+                    <div class="t-preview">Fixed — missing await on ticket refresh</div>
+                  </div>
+                  <div class="t-meta">10:32</div>
+                </div>
+                <div class="thread">
+                  <span class="idle"></span>
+                  <div class="t-body">
+                    <div class="t-title">OpenAPI → TypeScript pipeline</div>
+                    <div class="t-preview">Generated 142 types from gateway spec</div>
+                  </div>
+                  <div class="t-meta">08:15</div>
+                </div>
+                <div class="group-label">Yesterday</div>
+                <div class="thread">
+                  <span class="idle"></span>
+                  <div class="t-body">
+                    <div class="t-title">Kanban dispatch flakiness</div>
+                    <div class="t-preview">Retry logic behind flag, tests green</div>
+                  </div>
+                  <div class="t-meta">1d</div>
+                </div>
+                <div class="thread">
+                  <span class="idle"></span>
+                  <div class="t-body">
+                    <div class="t-title">Env secrets audit</div>
+                    <div class="t-preview">3 keys rotated, report in artifacts</div>
+                  </div>
+                  <div class="t-meta">1d</div>
+                </div>
+              </div>
+              <div class="tabbar">
+                <div class="tab active">▣<br />Chats</div>
+                <div class="tab">🛡<br />Inbox<span class="badge">1</span></div>
+                <div class="tab">☷<br />Work</div>
+                <div class="tab">⋯<br />More</div>
+              </div>
+            </div>
+          </div>
+          <div class="frame-label">
+            M1 · Chats (home)
+            <span
+              >D1, D2, D5 — threads are the app. New chat = one tap. Approval banner only when
+              something waits. No hero, no tile launcher, no drawer.</span
+            >
+          </div>
+        </div>
+
+        <!-- M2: Chat + approval dock -->
+        <div class="frame-wrap">
+          <div class="phone">
+            <div class="statusbar"><span>9:41</span><span class="icons">●●●</span></div>
+            <div class="appbody">
+              <div class="app-header">
+                <div class="iconbtn">‹</div>
+                <div style="flex: 1; min-width: 0">
+                  <div
+                    class="header-title"
+                    style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis"
+                  >
+                    Refactor WS gateway reconnect
+                  </div>
+                  <div class="header-sub">GPT-5.5 · default · CLI</div>
+                </div>
+                <div class="iconbtn">⋯</div>
+              </div>
+              <div class="scroll">
+                <div class="msg-user">
+                  WS gateway drops connections after ~30s idle. The ticket TTL is 30s — fix
+                  reconnect so mobile stays live. Keep it reversible.
+                </div>
+                <div class="msg-ai">
+                  <b>Found it.</b> The WS ticket TTL is 30s and the client never refreshes it, so
+                  the socket dies on the first idle gap.<br /><br /><b>Plan:</b> add a 20s heartbeat
+                  ping, silently refresh the ws-ticket before expiry, give the server a 10s grace
+                  window. Behind a
+                  <code style="font-family: var(--mono); font-size: 13px">ws.reconnect</code> flag —
+                  fully reversible.
+                </div>
+                <div class="steps">
+                  <span style="color: var(--muted)">▸</span
+                  ><span
+                    >4 steps · Read 2 files, ran
+                    <span style="font-family: var(--mono); font-size: 12px"
+                      >pytest -k reconnect</span
+                    ></span
+                  ><span class="ok">✓</span>
+                </div>
+                <div class="working"><span class="pulse"></span>Working… step 4 · git commit</div>
+                <div class="record">
+                  <span class="r-ok">✓</span> Approved
+                  <span style="font-family: var(--mono); font-size: 12px">read_file</span> · 12:02
+                </div>
+              </div>
+              <div class="approval-dock">
+                <div class="dock-title">
+                  <span>🛡 shell.exec · waiting for you</span
+                  ><span class="dock-tag tag-low">LOW RISK</span>
+                </div>
+                <div class="dock-meta">Refactor WS gateway reconnect · ~/PWAHermesprototype</div>
+                <div class="dock-cmd">git commit -am "ws: heartbeat + ticket refresh"</div>
+                <div class="dock-row">
+                  <div class="btn btn-reject">Reject</div>
+                  <div class="btn btn-approve">Approve once</div>
+                  <div class="btn-more">⋯</div>
+                </div>
+              </div>
+              <div class="composer">
+                <div class="roundbtn ghost">+</div>
+                <div class="field">Reply or steer the agent…</div>
+                <div class="roundbtn ghost">🎙</div>
+                <div class="roundbtn">↑</div>
+              </div>
+            </div>
+          </div>
+          <div class="frame-label">
+            M2 · Chat + approval dock
+            <span
+              >D3, D4 — plan reads before the ask. Approval is pinned above the composer, can't
+              scroll away. Steps collapse to one line. Session/Always hidden in ⋯.</span
+            >
+          </div>
+        </div>
+
+        <!-- M3: High-risk approval -->
+        <div class="frame-wrap">
+          <div class="phone">
+            <div class="statusbar"><span>9:41</span><span class="icons">●●●</span></div>
+            <div class="appbody">
+              <div class="app-header">
+                <div class="iconbtn">‹</div>
+                <div style="flex: 1; min-width: 0">
+                  <div class="header-title">Env secrets audit</div>
+                  <div class="header-sub">GPT-5.5 · default · CLI</div>
+                </div>
+                <div class="iconbtn">⋯</div>
+              </div>
+              <div class="scroll">
+                <div class="msg-user">
+                  Rotate the leaked keys and write the new ones into .hermes/.env
+                </div>
+                <div class="msg-ai">
+                  <b>3 keys rotated.</b> Writing them to
+                  <code style="font-family: var(--mono); font-size: 13px">.hermes/.env</code> needs
+                  your explicit approval — this modifies secret material on disk.
+                </div>
+                <div class="steps">
+                  <span style="color: var(--muted)">▸</span
+                  ><span>6 steps · Scanned 4 config files, rotated 3 keys</span
+                  ><span class="ok">✓</span>
+                </div>
+              </div>
+              <div class="approval-dock" style="border-top: 2px solid var(--danger)">
+                <div class="dock-title">
+                  <span style="color: var(--danger-strong)">🛡 fs.write · waiting for you</span
+                  ><span class="dock-tag tag-high">HIGH RISK</span>
+                </div>
+                <div class="dock-meta">Env secrets audit · ~/PWAHermesprototype</div>
+                <div class="dock-cmd">.hermes/.env · writes 3 secret keys</div>
+                <div class="dock-row">
+                  <div class="btn btn-reject" style="flex: none; width: 110px">Reject</div>
+                  <div class="slide-track">
+                    <span class="slide-hint"></span>
+                    <div class="slide-knob">→</div>
+                    <span style="margin-left: 34px">Slide to approve</span>
+                  </div>
+                </div>
+              </div>
+              <div class="composer">
+                <div class="roundbtn ghost">+</div>
+                <div class="field">Reply or steer the agent…</div>
+                <div class="roundbtn ghost">🎙</div>
+                <div class="roundbtn">↑</div>
+              </div>
+            </div>
+          </div>
+          <div class="frame-label">
+            M3 · High-risk approval
+            <span
+              >D3 — destructive actions get no tap button. Slide-to-approve so a stray thumb can't
+              authorize. Red border signals the tier.</span
+            >
+          </div>
+        </div>
+
+        <!-- M4: Inbox -->
+        <div class="frame-wrap">
+          <div class="phone">
+            <div class="statusbar"><span>9:41</span><span class="icons">●●●</span></div>
+            <div class="appbody">
+              <div class="app-header">
+                <span class="header-title" style="font-size: 19px">Inbox</span>
+              </div>
+              <div class="scroll">
+                <div class="group-label" style="padding-top: 0">Needs you · 2</div>
+                <div class="card">
+                  <div class="dock-title">
+                    <span>🛡 shell.exec</span><span class="dock-tag tag-low">LOW RISK</span>
+                  </div>
+                  <div class="dock-meta">Refactor WS gateway reconnect · 2m ago</div>
+                  <div class="dock-cmd">git commit -am "ws: heartbeat + tic…"</div>
+                  <div class="dock-row">
+                    <div class="btn btn-reject" style="height: 40px">Reject</div>
+                    <div class="btn btn-approve" style="height: 40px">Approve once</div>
+                  </div>
+                </div>
+                <div class="card" style="border-left: 3px solid var(--danger)">
+                  <div class="dock-title">
+                    <span>🛡 fs.write</span><span class="dock-tag tag-high">HIGH RISK</span>
+                  </div>
+                  <div class="dock-meta">Env secrets audit · 5m ago</div>
+                  <div class="dock-cmd">.hermes/.env · writes 3 secret keys</div>
+                  <div
+                    style="
+                      font-size: 12.5px;
+                      color: var(--primary);
+                      font-weight: 600;
+                      margin-top: 4px;
+                    "
+                  >
+                    Open chat to review →
+                  </div>
+                </div>
+                <div class="group-label">Notices</div>
+                <div class="listrow">
+                  <div class="lr-icon" style="color: var(--danger)">✕</div>
+                  <div>
+                    <div class="lr-title">Backup to S3 failed</div>
+                    <div class="lr-sub">missing AWS creds · task blocked</div>
+                  </div>
+                  <span class="lr-right">1h</span>
+                </div>
+                <div class="listrow">
+                  <div class="lr-icon" style="color: var(--success)">✓</div>
+                  <div>
+                    <div class="lr-title">Security audit passed</div>
+                    <div class="lr-sub">scheduled run · no findings</div>
+                  </div>
+                  <span class="lr-right">3h</span>
+                </div>
+              </div>
+              <div class="tabbar">
+                <div class="tab">▣<br />Chats</div>
+                <div class="tab active">🛡<br />Inbox<span class="badge">2</span></div>
+                <div class="tab">☷<br />Work</div>
+                <div class="tab">⋯<br />More</div>
+              </div>
+            </div>
+          </div>
+          <div class="frame-label">
+            M4 · Inbox
+            <span
+              >D3 — every pending action across all sessions, with session name + context. High-risk
+              opens its chat for slide-to-approve. Failures and notices land here too.</span
+            >
+          </div>
+        </div>
+
+        <!-- M5: Work / Tasks -->
+        <div class="frame-wrap">
+          <div class="phone">
+            <div class="statusbar"><span>9:41</span><span class="icons">●●●</span></div>
+            <div class="appbody">
+              <div class="app-header">
+                <span class="header-title" style="font-size: 19px">Work</span>
+              </div>
+              <div class="scroll">
+                <div class="seg">
+                  <div class="on">Tasks</div>
+                  <div>Schedules</div>
+                </div>
+                <div class="pillrow">
+                  <div class="pill on">Active · 3</div>
+                  <div class="pill">Blocked · 1</div>
+                  <div class="pill">Done · 2</div>
+                  <div class="pill">All</div>
+                </div>
+                <div class="task-row">
+                  <span class="prio p0">P0</span>
+                  <div style="flex: 1">
+                    <div class="task-title">Soul rewrite</div>
+                    <div class="task-meta">
+                      <span class="pulse"></span> run-7e1 live · @career-content
+                    </div>
+                  </div>
+                </div>
+                <div class="task-row">
+                  <span class="prio p1">P1</span>
+                  <div style="flex: 1">
+                    <div class="task-title">Refactor WS reconnect</div>
+                    <div class="task-meta"><span class="pulse"></span> run-7f3 live · @default</div>
+                  </div>
+                </div>
+                <div class="task-row">
+                  <span class="prio p1">P1</span>
+                  <div style="flex: 1">
+                    <div class="task-title">Type WS JSON-RPC contract</div>
+                    <div class="task-meta">backlog · @default</div>
+                  </div>
+                </div>
+                <div class="task-row">
+                  <span class="prio p1">P1</span>
+                  <div style="flex: 1">
+                    <div class="task-title">Backup to S3</div>
+                    <div class="task-meta" style="color: var(--warning-strong)">
+                      ⚠ blocked · missing AWS creds
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="fab">+</div>
+              <div class="tabbar">
+                <div class="tab">▣<br />Chats</div>
+                <div class="tab">🛡<br />Inbox<span class="badge">2</span></div>
+                <div class="tab active">☷<br />Work</div>
+                <div class="tab">⋯<br />More</div>
+              </div>
+            </div>
+          </div>
+          <div class="frame-label">
+            M5 · Work → Tasks
+            <span
+              >D6 — non-empty stages become filter pills; the 9 stacked empty lanes are gone. Tasks
+              + Schedules share one tab. One FAB adds a task.</span
+            >
+          </div>
+        </div>
+
+        <!-- M6: Schedules -->
+        <div class="frame-wrap">
+          <div class="phone">
+            <div class="statusbar"><span>9:41</span><span class="icons">●●●</span></div>
+            <div class="appbody">
+              <div class="app-header">
+                <span class="header-title" style="font-size: 19px">Work</span>
+              </div>
+              <div class="scroll">
+                <div class="seg">
+                  <div>Tasks</div>
+                  <div class="on">Schedules</div>
+                </div>
+                <div class="listrow">
+                  <div class="lr-icon">🌙</div>
+                  <div style="flex: 1">
+                    <div class="lr-title">Nightly backup</div>
+                    <div class="lr-sub">
+                      Daily at 3:00 AM · next in 6h ·
+                      <span style="color: var(--success-strong)">last ✓</span>
+                    </div>
+                  </div>
+                  <div class="switch"></div>
+                </div>
+                <div class="listrow">
+                  <div class="lr-icon">🛡</div>
+                  <div style="flex: 1">
+                    <div class="lr-title">Security audit</div>
+                    <div class="lr-sub">
+                      Every 6 hours · next in 5h ·
+                      <span style="color: var(--success-strong)">last ✓</span>
+                    </div>
+                  </div>
+                  <div class="switch"></div>
+                </div>
+                <div class="listrow">
+                  <div class="lr-icon">🩺</div>
+                  <div style="flex: 1">
+                    <div class="lr-title">Doctor health check</div>
+                    <div class="lr-sub">
+                      Every 15 min ·
+                      <span style="color: var(--warning-strong)">last ⚠ warning</span>
+                    </div>
+                  </div>
+                  <div class="switch"></div>
+                </div>
+                <div class="listrow" style="opacity: 0.62">
+                  <div class="lr-icon">🧹</div>
+                  <div style="flex: 1">
+                    <div class="lr-title">Session prune</div>
+                    <div class="lr-sub">Sundays at 4:00 AM · paused</div>
+                  </div>
+                  <div class="switch off"></div>
+                </div>
+                <div class="empty-note">
+                  Cron expressions live in the edit sheet —<br />you read plain English here.
+                </div>
+              </div>
+              <div class="fab">+</div>
+              <div class="tabbar">
+                <div class="tab">▣<br />Chats</div>
+                <div class="tab">🛡<br />Inbox<span class="badge">2</span></div>
+                <div class="tab active">☷<br />Work</div>
+                <div class="tab">⋯<br />More</div>
+              </div>
+            </div>
+          </div>
+          <div class="frame-label">
+            M6 · Work → Schedules
+            <span
+              >D7 — "Daily at 3:00 AM", not <code>0 3 * * *</code>. Enable toggle on the row; Run
+              now / Edit / Delete move into a bottom sheet.</span
+            >
+          </div>
+        </div>
+
+        <!-- M7: More -->
+        <div class="frame-wrap">
+          <div class="phone">
+            <div class="statusbar"><span>9:41</span><span class="icons">●●●</span></div>
+            <div class="appbody">
+              <div class="app-header">
+                <span class="header-title" style="font-size: 19px">More</span>
+              </div>
+              <div class="scroll">
+                <div class="card">
+                  <div class="dock-title" style="margin-bottom: 8px">
+                    <span><span style="color: var(--success)">●</span> Gateway running</span
+                    ><span style="font-size: 12px; color: var(--muted); font-weight: 400"
+                      >up 6h 12m</span
+                    >
+                  </div>
+                  <div style="font-size: 12px; color: var(--muted); margin-bottom: 4px">
+                    CPU 18%
+                  </div>
+                  <div class="metricbar" style="margin-bottom: 8px">
+                    <div style="width: 18%"></div>
+                  </div>
+                  <div style="font-size: 12px; color: var(--muted); margin-bottom: 4px">
+                    RAM 2.1 / 8.0 GB
+                  </div>
+                  <div class="metricbar" style="margin-bottom: 8px">
+                    <div style="width: 26%"></div>
+                  </div>
+                  <div style="font-size: 12px; color: var(--muted); margin-bottom: 4px">
+                    Disk 58 / 100 GB
+                  </div>
+                  <div class="metricbar">
+                    <div style="width: 58%; background: var(--warning)"></div>
+                  </div>
+                </div>
+                <div class="listrow">
+                  <div class="lr-icon">👤</div>
+                  <div>
+                    <div class="lr-title">Profiles</div>
+                    <div class="lr-sub">active: default · GPT-5.5</div>
+                  </div>
+                  <span class="lr-right">›</span>
+                </div>
+                <div class="listrow">
+                  <div class="lr-icon">✦</div>
+                  <div>
+                    <div class="lr-title">Agents</div>
+                    <div class="lr-sub">1 active subagent</div>
+                  </div>
+                  <span class="lr-right">›</span>
+                </div>
+                <div class="listrow">
+                  <div class="lr-icon">🗂</div>
+                  <div>
+                    <div class="lr-title">Artifacts</div>
+                    <div class="lr-sub">3 files this session</div>
+                  </div>
+                  <span class="lr-right">›</span>
+                </div>
+                <div class="listrow">
+                  <div class="lr-icon">🖥</div>
+                  <div>
+                    <div class="lr-title">System</div>
+                    <div class="lr-sub">gateway, backups, doctor</div>
+                  </div>
+                  <span class="lr-right">›</span>
+                </div>
+                <div class="listrow">
+                  <div class="lr-icon">⚙</div>
+                  <div>
+                    <div class="lr-title">Settings</div>
+                    <div class="lr-sub">connection, notifications</div>
+                  </div>
+                  <span class="lr-right">›</span>
+                </div>
+              </div>
+              <div class="tabbar">
+                <div class="tab">▣<br />Chats</div>
+                <div class="tab">🛡<br />Inbox<span class="badge">2</span></div>
+                <div class="tab">☷<br />Work</div>
+                <div class="tab active">⋯<br />More</div>
+              </div>
+            </div>
+          </div>
+          <div class="frame-label">
+            M7 · More
+            <span
+              >D8, D9 — health summary lives here (no "System OK" pill on every screen). Progress
+              bars replace serif % numbers. Admin surfaces stay one tap down.</span
+            >
+          </div>
+        </div>
+
+        <!-- M8: Voice -->
+        <div class="frame-wrap">
+          <div class="phone" style="background: #101527">
+            <div class="statusbar" style="color: #fff">
+              <span>9:41</span><span class="icons">●●●</span>
+            </div>
+            <div class="appbody">
+              <div class="app-header" style="background: transparent; border: none; color: #fff">
+                <div class="iconbtn" style="color: #fff">‹</div>
+                <div style="flex: 1">
+                  <div class="header-title" style="color: #fff">Voice · Refactor WS gateway</div>
+                  <div class="header-sub" style="color: #8b93b8">
+                    Codex engine · transcript saves to this chat
+                  </div>
+                </div>
+              </div>
+              <div class="scroll" style="justify-content: center; gap: 26px">
+                <div class="orb"></div>
+                <div class="wave">
+                  <i style="height: 10px"></i><i style="height: 22px"></i
+                  ><i style="height: 32px"></i><i style="height: 18px"></i
+                  ><i style="height: 28px"></i><i style="height: 12px"></i
+                  ><i style="height: 24px"></i><i style="height: 30px"></i
+                  ><i style="height: 14px"></i><i style="height: 20px"></i>
+                </div>
+                <div
+                  style="
+                    text-align: center;
+                    color: #c6cbe6;
+                    font-size: 14px;
+                    line-height: 1.6;
+                    padding: 0 12px;
+                  "
+                >
+                  "…the socket dies on the first idle gap, so I'm adding a heartbeat and a ticket
+                  refresh behind a flag…"
+                </div>
+              </div>
+              <div
+                style="
+                  flex: none;
+                  display: flex;
+                  justify-content: center;
+                  gap: 18px;
+                  padding: 0 0 44px;
+                "
+              >
+                <div
+                  class="roundbtn ghost"
+                  style="background: #1d2440; border-color: #2a3358; color: #c6cbe6"
+                >
+                  🔇
+                </div>
+                <div class="roundbtn" style="width: 60px; height: 60px; background: var(--danger)">
+                  ✕
+                </div>
+                <div
+                  class="roundbtn ghost"
+                  style="background: #1d2440; border-color: #2a3358; color: #c6cbe6"
+                >
+                  ⌨
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="frame-label">
+            M8 · Voice mode
+            <span
+              >D8 — launched from the composer, full-screen, one orb + live transcript. End returns
+              to the same thread. No longer a navigation destination.</span
+            >
+          </div>
+        </div>
+
+        <!-- M9: Offline -->
+        <div class="frame-wrap">
+          <div class="phone">
+            <div class="statusbar"><span>9:41</span><span class="icons">●●●</span></div>
+            <div class="appbody">
+              <div class="app-header"><span class="wordmark">Hermes</span></div>
+              <div class="scroll" style="justify-content: center; text-align: center; gap: 14px">
+                <div style="font-size: 40px">📡</div>
+                <div style="font-size: 17px; font-weight: 700">Can't reach the gateway</div>
+                <div style="font-size: 13.5px; color: var(--muted); line-height: 1.6">
+                  Connection refused at<br /><span
+                    style="font-family: var(--mono); font-size: 12.5px"
+                    >http://127.0.0.1:9119</span
+                  >
+                </div>
+                <div class="btn btn-approve" style="width: 100%; flex: none">Retry</div>
+                <div
+                  class="btn"
+                  style="
+                    width: 100%;
+                    flex: none;
+                    background: var(--surface);
+                    border: 1px solid var(--border);
+                    color: var(--text2);
+                  "
+                >
+                  Change gateway URL
+                </div>
+                <div style="font-size: 12px; color: var(--faint)">
+                  Check that Hermes is running, or switch to your Tailscale address.
+                </div>
+              </div>
+              <div class="tabbar">
+                <div class="tab">▣<br />Chats</div>
+                <div class="tab">🛡<br />Inbox<span class="badge">2</span></div>
+                <div class="tab">☷<br />Work</div>
+                <div class="tab">⋯<br />More</div>
+              </div>
+            </div>
+          </div>
+          <div class="frame-label">
+            M9 · Offline / error
+            <span
+              >D10 — today this shows a bare "Internal Server Error" and traps you. Now: real cause,
+              gateway URL, and a path to Settings.</span
+            >
+          </div>
+        </div>
+
+        <!-- M10: Profiles -->
+        <div class="frame-wrap">
+          <div class="phone">
+            <div class="statusbar"><span>9:41</span><span class="icons">●●●</span></div>
+            <div class="appbody">
+              <div class="app-header">
+                <div class="iconbtn">‹</div>
+                <span class="header-title" style="font-size: 17px">Profiles</span>
+                <div
+                  class="iconbtn"
+                  style="margin-left: auto; color: var(--primary); font-weight: 700"
+                >
+                  ＋
+                </div>
+              </div>
+              <div class="scroll">
+                <div class="card" style="border-color: #cdd6ff; background: var(--primary-tint)">
+                  <div class="dock-title">
+                    <span>default</span
+                    ><span class="dock-tag" style="background: #dfe6ff; color: var(--primary)"
+                      >ACTIVE</span
+                    >
+                  </div>
+                  <div class="dock-meta">GPT-5.5 (Med) · Reversible-first · CLI</div>
+                </div>
+                <div class="card">
+                  <div class="dock-title"><span>fast</span></div>
+                  <div class="dock-meta">GPT-5 mini (Low) · YOLO · quick questions</div>
+                </div>
+                <div class="card">
+                  <div class="dock-title"><span>deep</span></div>
+                  <div class="dock-meta">Opus 5.5 (High) · Careful-first · refactors</div>
+                </div>
+                <div class="empty-note">
+                  Model settings live here only —<br />Settings deep-links to this screen.
+                </div>
+              </div>
+              <div class="tabbar">
+                <div class="tab">▣<br />Chats</div>
+                <div class="tab">🛡<br />Inbox<span class="badge">2</span></div>
+                <div class="tab">☷<br />Work</div>
+                <div class="tab active">⋯<br />More</div>
+              </div>
+            </div>
+          </div>
+          <div class="frame-label">
+            M10 · Profiles
+            <span
+              >D13, D14 — 2-line cards instead of the 2×2 metadata grid. Defaults hidden until edit.
+              One home for model state; Settings points here.</span
+            >
+          </div>
+        </div>
+
+        <!-- M11: Agents -->
+        <div class="frame-wrap">
+          <div class="phone">
+            <div class="statusbar"><span>9:41</span><span class="icons">●●●</span></div>
+            <div class="appbody">
+              <div class="app-header">
+                <div class="iconbtn">‹</div>
+                <span class="header-title" style="font-size: 17px">Agents</span>
+              </div>
+              <div class="scroll">
+                <div class="seg">
+                  <div class="on">Active · 1</div>
+                  <div>Recent · 3</div>
+                </div>
+                <div class="card">
+                  <div class="dock-title">
+                    <span
+                      ><span class="pulse" style="display: inline-block; margin-right: 6px"></span
+                      >run-7f3 · Refactor WS reconnect</span
+                    >
+                  </div>
+                  <div class="dock-meta">@default · running 12m · step 4 of 5</div>
+                  <div
+                    style="
+                      font-size: 12.5px;
+                      color: var(--primary);
+                      font-weight: 600;
+                      margin-top: 6px;
+                    "
+                  >
+                    Open chat →
+                  </div>
+                </div>
+                <div class="group-label">Recent</div>
+                <div class="listrow">
+                  <div class="lr-icon" style="color: var(--success)">✓</div>
+                  <div style="flex: 1">
+                    <div class="lr-title">run-7e1 · Soul rewrite</div>
+                    <div class="lr-sub">@career-content · finished in 8m</div>
+                  </div>
+                  <span class="lr-right">log</span>
+                </div>
+                <div class="listrow">
+                  <div class="lr-icon" style="color: var(--danger)">✕</div>
+                  <div style="flex: 1">
+                    <div class="lr-title">run-7d9 · Backup to S3</div>
+                    <div class="lr-sub">@ops · failed · missing AWS creds</div>
+                  </div>
+                  <span class="lr-right">log</span>
+                </div>
+              </div>
+              <div class="tabbar">
+                <div class="tab">▣<br />Chats</div>
+                <div class="tab">🛡<br />Inbox<span class="badge">2</span></div>
+                <div class="tab">☷<br />Work</div>
+                <div class="tab active">⋯<br />More</div>
+              </div>
+            </div>
+          </div>
+          <div class="frame-label">
+            M11 · Agents
+            <span
+              >D7 (Gemini) — Active | Recent segments replace the blank "No active agents" dead-end.
+              Finished runs keep their logs and link back to the chat.</span
+            >
+          </div>
+        </div>
+
+        <!-- M12: Artifacts -->
+        <div class="frame-wrap">
+          <div class="phone">
+            <div class="statusbar"><span>9:41</span><span class="icons">●●●</span></div>
+            <div class="appbody">
+              <div class="app-header">
+                <div class="iconbtn">‹</div>
+                <span class="header-title" style="font-size: 17px">Artifacts</span>
+              </div>
+              <div class="scroll">
+                <div class="listrow">
+                  <div
+                    class="lr-icon"
+                    style="background: linear-gradient(135deg, #dbe4ff, #b7c6ff); border: none"
+                  >
+                    🖼
+                  </div>
+                  <div style="flex: 1">
+                    <div class="lr-title">architecture.png</div>
+                    <div class="lr-sub">240 KB · OpenAPI → TS pipeline · 2h</div>
+                  </div>
+                  <span class="lr-right">›</span>
+                </div>
+                <div class="listrow">
+                  <div class="lr-icon">📄</div>
+                  <div style="flex: 1">
+                    <div class="lr-title">output.txt</div>
+                    <div class="lr-sub">12 KB · Kanban dispatch flakiness · 1d</div>
+                  </div>
+                  <span class="lr-right">›</span>
+                </div>
+                <div class="listrow">
+                  <div class="lr-icon">📊</div>
+                  <div style="flex: 1">
+                    <div class="lr-title">secrets-audit.md</div>
+                    <div class="lr-sub">4 KB · Env secrets audit · 1d</div>
+                  </div>
+                  <span class="lr-right">›</span>
+                </div>
+                <div class="empty-note">
+                  Tap a row for full-screen preview.<br />Desktop shows the preview beside the list.
+                </div>
+              </div>
+              <div class="tabbar">
+                <div class="tab">▣<br />Chats</div>
+                <div class="tab">🛡<br />Inbox<span class="badge">2</span></div>
+                <div class="tab">☷<br />Work</div>
+                <div class="tab active">⋯<br />More</div>
+              </div>
+            </div>
+          </div>
+          <div class="frame-label">
+            M12 · Artifacts
+            <span
+              >D12 — thumbnails, file size, and the session that produced each file. No more bare
+              MIME rows.</span
+            >
+          </div>
+        </div>
+
+        <!-- M13: System -->
+        <div class="frame-wrap">
+          <div class="phone">
+            <div class="statusbar"><span>9:41</span><span class="icons">●●●</span></div>
+            <div class="appbody">
+              <div class="app-header">
+                <div class="iconbtn">‹</div>
+                <span class="header-title" style="font-size: 17px">System</span>
+              </div>
+              <div class="scroll">
+                <div class="card">
+                  <div class="dock-title">
+                    <span><span style="color: var(--success)">●</span> Gateway running</span
+                    ><span style="font-size: 12px; color: var(--muted); font-weight: 400"
+                      >up 6h 12m</span
+                    >
+                  </div>
+                  <div class="dock-row" style="margin-top: 10px">
+                    <div
+                      class="btn"
+                      style="
+                        height: 38px;
+                        background: var(--surface2);
+                        border: 1px solid var(--border);
+                        color: var(--text2);
+                        font-size: 13px;
+                      "
+                    >
+                      Restart…
+                    </div>
+                    <div
+                      class="btn"
+                      style="
+                        height: 38px;
+                        background: var(--surface);
+                        border: 1px solid #eec8c6;
+                        color: var(--danger-strong);
+                        font-size: 13px;
+                      "
+                    >
+                      Stop…
+                    </div>
+                  </div>
+                </div>
+                <div class="card">
+                  <div style="font-size: 12px; color: var(--muted); margin-bottom: 4px">
+                    CPU 18%
+                  </div>
+                  <div class="metricbar" style="margin-bottom: 10px">
+                    <div style="width: 18%"></div>
+                  </div>
+                  <div style="font-size: 12px; color: var(--muted); margin-bottom: 4px">
+                    RAM 2.1 / 8.0 GB
+                  </div>
+                  <div class="metricbar" style="margin-bottom: 10px">
+                    <div style="width: 26%"></div>
+                  </div>
+                  <div style="font-size: 12px; color: var(--muted); margin-bottom: 4px">
+                    Disk 58 / 100 GB
+                  </div>
+                  <div class="metricbar">
+                    <div style="width: 58%; background: var(--warning)"></div>
+                  </div>
+                </div>
+                <div class="group-label">Health checks</div>
+                <div class="listrow">
+                  <div class="lr-icon" style="color: var(--success)">✓</div>
+                  <div style="flex: 1">
+                    <div class="lr-title">Security audit</div>
+                    <div class="lr-sub">passed · 3h ago</div>
+                  </div>
+                </div>
+                <div class="listrow">
+                  <div class="lr-icon" style="color: var(--success)">✓</div>
+                  <div style="flex: 1">
+                    <div class="lr-title">Doctor</div>
+                    <div class="lr-sub">12/12 checks · 15m ago</div>
+                  </div>
+                </div>
+                <div class="listrow">
+                  <div class="lr-icon" style="color: var(--warning-strong)">⚠</div>
+                  <div style="flex: 1">
+                    <div class="lr-title">Backups</div>
+                    <div class="lr-sub">last run failed · missing AWS creds</div>
+                  </div>
+                  <span class="lr-right" style="color: var(--primary); font-weight: 600">fix</span>
+                </div>
+              </div>
+              <div class="tabbar">
+                <div class="tab">▣<br />Chats</div>
+                <div class="tab">🛡<br />Inbox<span class="badge">2</span></div>
+                <div class="tab">☷<br />Work</div>
+                <div class="tab active">⋯<br />More</div>
+              </div>
+            </div>
+          </div>
+          <div class="frame-label">
+            M13 · System
+            <span
+              >D15 — Restart/Stop lose the hero treatment and sit behind "…" confirmation sheets.
+              Progress bars replace serif numbers. Amber only when a check actually failed.</span
+            >
+          </div>
+        </div>
+
+        <!-- M14: Settings -->
+        <div class="frame-wrap">
+          <div class="phone">
+            <div class="statusbar"><span>9:41</span><span class="icons">●●●</span></div>
+            <div class="appbody">
+              <div class="app-header">
+                <div class="iconbtn">‹</div>
+                <span class="header-title" style="font-size: 17px">Settings</span>
+              </div>
+              <div class="scroll">
+                <div class="group-label" style="padding-top: 0">Connection</div>
+                <div class="listrow">
+                  <div style="flex: 1">
+                    <div class="lr-title">Gateway URL</div>
+                    <div class="lr-sub" style="font-family: var(--mono)">http://127.0.0.1:9119</div>
+                  </div>
+                  <span class="lr-right">›</span>
+                </div>
+                <div class="listrow">
+                  <div style="flex: 1">
+                    <div class="lr-title">Model</div>
+                    <div class="lr-sub">GPT-5.5 · managed in Profiles</div>
+                  </div>
+                  <span class="lr-right" style="color: var(--primary); font-weight: 600"
+                    >Profiles ›</span
+                  >
+                </div>
+                <div class="group-label">Notifications</div>
+                <div class="listrow">
+                  <div style="flex: 1"><div class="lr-title">Enable on this device</div></div>
+                  <div class="switch"></div>
+                </div>
+                <div class="listrow">
+                  <div style="flex: 1"><div class="lr-title">Approval requests</div></div>
+                  <div class="switch"></div>
+                </div>
+                <div class="listrow">
+                  <div style="flex: 1"><div class="lr-title">Runs completed</div></div>
+                  <div class="switch off"></div>
+                </div>
+                <div class="group-label">Appearance</div>
+                <div class="listrow">
+                  <div style="flex: 1">
+                    <div class="lr-title">Theme</div>
+                    <div class="lr-sub">System</div>
+                  </div>
+                  <span class="lr-right">›</span>
+                </div>
+                <div class="group-label">About</div>
+                <div class="listrow">
+                  <div style="flex: 1">
+                    <div class="lr-title">Hermes PWA v0.3.0</div>
+                    <div class="lr-sub">Gateway v0.13.3 · plugin hermes-pwa</div>
+                  </div>
+                </div>
+                <div class="listrow" style="justify-content: center; border-color: #eec8c6">
+                  <div class="lr-title" style="color: var(--danger-strong)">Log out</div>
+                </div>
+              </div>
+              <div class="tabbar">
+                <div class="tab">▣<br />Chats</div>
+                <div class="tab">🛡<br />Inbox<span class="badge">2</span></div>
+                <div class="tab">☷<br />Work</div>
+                <div class="tab active">⋯<br />More</div>
+              </div>
+            </div>
+          </div>
+          <div class="frame-label">
+            M14 · Settings
+            <span
+              >D14, D16 — Model deep-links to Profiles (one home). "Enable on this device" moves
+              inside Notifications. Log out drops to the bottom in red.</span
+            >
+          </div>
+        </div>
+      </div>
+      <!-- ══════════ DESKTOP ══════════ -->
+      <div class="section-title">Desktop — 1280 × 800</div>
+      <div class="frames">
+        <!-- W1: 3-pane chat -->
+        <div class="frame-wrap">
+          <div class="desktop">
+            <div class="chromebar">
+              <i style="background: #f0968f"></i><i style="background: #f2d48b"></i
+              ><i style="background: #a5d6a7"></i>
+            </div>
+            <div class="d-body">
+              <div class="rail">
+                <div class="r-item on">▣</div>
+                <div class="r-item">🛡<span class="badge">2</span></div>
+                <div class="r-item">☷</div>
+                <div class="r-item">⋯</div>
+                <div style="flex: 1"></div>
+                <div class="r-item">⚙</div>
+              </div>
+              <div class="threadlist">
+                <div
+                  style="padding: 12px 12px 6px; display: flex; flex-direction: column; gap: 8px"
+                >
+                  <div class="search" style="padding: 8px 11px">🔍 <span>Search chats</span></div>
+                  <div
+                    class="card"
+                    style="padding: 5px 5px 5px 12px; display: flex; align-items: center; gap: 8px"
+                  >
+                    <span style="font-size: 13.5px; color: var(--faint); flex: 1">New chat…</span>
+                    <div class="roundbtn" style="width: 32px; height: 32px; font-size: 13px">↑</div>
+                  </div>
+                </div>
+                <div class="scroll">
+                  <div class="group-label">Today</div>
+                  <div
+                    class="thread"
+                    style="background: var(--primary-tint); border-color: #cdd6ff"
+                  >
+                    <span class="live"></span>
+                    <div class="t-body">
+                      <div class="t-title">Refactor WS gateway reconnect</div>
+                      <div class="t-preview">Plan: 20s heartbeat ping…</div>
+                    </div>
+                    <div class="t-meta">12:04</div>
+                  </div>
+                  <div class="thread">
+                    <span class="idle"></span>
+                    <div class="t-body">
+                      <div class="t-title">web_server traceback</div>
+                      <div class="t-preview">Fixed — missing await…</div>
+                    </div>
+                    <div class="t-meta">10:32</div>
+                  </div>
+                  <div class="thread">
+                    <span class="idle"></span>
+                    <div class="t-body">
+                      <div class="t-title">OpenAPI → TS pipeline</div>
+                      <div class="t-preview">Generated 142 types…</div>
+                    </div>
+                    <div class="t-meta">08:15</div>
+                  </div>
+                  <div class="group-label">Yesterday</div>
+                  <div class="thread">
+                    <span class="idle"></span>
+                    <div class="t-body">
+                      <div class="t-title">Kanban dispatch flakiness</div>
+                      <div class="t-preview">Retry logic behind flag…</div>
+                    </div>
+                    <div class="t-meta">1d</div>
+                  </div>
+                  <div class="thread">
+                    <span class="idle"></span>
+                    <div class="t-body">
+                      <div class="t-title">Env secrets audit</div>
+                      <div class="t-preview">3 keys rotated…</div>
+                    </div>
+                    <div class="t-meta">1d</div>
+                  </div>
+                </div>
+              </div>
+              <div class="chatpane">
+                <div class="app-header" style="height: 52px">
+                  <div style="flex: 1; min-width: 0">
+                    <div class="header-title" style="font-size: 14.5px">
+                      Refactor WS gateway reconnect
+                    </div>
+                    <div class="header-sub">GPT-5.5 · default · CLI</div>
+                  </div>
+                  <div class="iconbtn">⤢</div>
+                  <div class="iconbtn">⋯</div>
+                </div>
+                <div style="flex: 1; overflow: hidden; display: flex">
+                  <div class="chat-col">
+                    <div class="scroll" style="padding: 16px 20px">
+                      <div class="msg-user" style="max-width: 70%">
+                        WS gateway drops connections after ~30s idle. Fix reconnect so mobile stays
+                        live. Keep it reversible.
+                      </div>
+                      <div class="msg-ai">
+                        <b>Found it.</b> The WS ticket TTL is 30s and the client never refreshes
+                        it.<br /><br /><b>Plan:</b> 20s heartbeat ping, silent ticket refresh, 10s
+                        grace window. Behind a
+                        <code style="font-family: var(--mono); font-size: 12.5px"
+                          >ws.reconnect</code
+                        >
+                        flag.
+                      </div>
+                      <div class="steps">
+                        <span>▸</span
+                        ><span
+                          >4 steps · Read 2 files, ran
+                          <span style="font-family: var(--mono); font-size: 12px"
+                            >pytest -k reconnect</span
+                          ></span
+                        ><span class="ok">✓</span>
+                      </div>
+                      <div class="working">
+                        <span class="pulse"></span>Working… step 4 · git commit
+                      </div>
+                    </div>
+                    <div class="approval-dock">
+                      <div class="dock-title">
+                        <span>🛡 shell.exec · waiting for you</span
+                        ><span class="dock-tag tag-low">LOW RISK</span>
+                      </div>
+                      <div class="dock-cmd">git commit -am "ws: heartbeat + ticket refresh"</div>
+                      <div class="dock-row" style="justify-content: flex-end">
+                        <span class="kbd" style="margin-right: auto">⌘↵ approve · esc reject</span>
+                        <div class="btn btn-reject" style="flex: none; width: 120px; height: 40px">
+                          Reject
+                        </div>
+                        <div class="btn btn-approve" style="flex: none; width: 140px; height: 40px">
+                          Approve once
+                        </div>
+                      </div>
+                    </div>
+                    <div class="composer">
+                      <div class="roundbtn ghost">+</div>
+                      <div class="field">Reply or steer the agent…</div>
+                      <div class="roundbtn ghost">🎙</div>
+                      <div class="roundbtn">↑</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="frame-label" style="max-width: 1152px">
+            W1 · Chat — 3 panes
+            <span
+              >D9 — 64px rail + 296px thread list + conversation capped at 720px. Buttons keep
+              natural width. Keyboard shortcuts shown. Nothing stretches edge-to-edge anymore.</span
+            >
+          </div>
+        </div>
+
+        <!-- W2: Approvals master-detail -->
+        <div class="frame-wrap">
+          <div class="desktop">
+            <div class="chromebar">
+              <i style="background: #f0968f"></i><i style="background: #f2d48b"></i
+              ><i style="background: #a5d6a7"></i>
+            </div>
+            <div class="d-body">
+              <div class="rail">
+                <div class="r-item">▣</div>
+                <div class="r-item on">🛡<span class="badge">2</span></div>
+                <div class="r-item">☷</div>
+                <div class="r-item">⋯</div>
+                <div style="flex: 1"></div>
+                <div class="r-item">⚙</div>
+              </div>
+              <div class="queue">
+                <div style="padding: 14px 14px 8px; font-size: 16px; font-weight: 700">
+                  Inbox
+                  <span style="font-size: 12px; color: var(--muted); font-weight: 400"
+                    >· 2 waiting</span
+                  >
+                </div>
+                <div class="scroll" style="padding: 10px">
+                  <div class="card" style="background: var(--primary-tint); border-color: #cdd6ff">
+                    <div class="dock-title">
+                      <span>🛡 shell.exec</span><span class="dock-tag tag-low">LOW</span>
+                    </div>
+                    <div class="dock-meta">Refactor WS gateway reconnect · 2m</div>
+                    <div class="dock-cmd">git commit -am "ws: heartbeat…"</div>
+                  </div>
+                  <div class="card" style="border-left: 3px solid var(--danger)">
+                    <div class="dock-title">
+                      <span>🛡 fs.write</span><span class="dock-tag tag-high">HIGH</span>
+                    </div>
+                    <div class="dock-meta">Env secrets audit · 5m</div>
+                    <div class="dock-cmd">.hermes/.env · 3 secret keys</div>
+                  </div>
+                  <div class="group-label">Notices</div>
+                  <div class="listrow">
+                    <div class="lr-icon" style="color: var(--danger)">✕</div>
+                    <div>
+                      <div class="lr-title">Backup to S3 failed</div>
+                      <div class="lr-sub">missing AWS creds</div>
+                    </div>
+                    <span class="lr-right">1h</span>
+                  </div>
+                </div>
+              </div>
+              <div class="detail">
+                <div class="app-header" style="height: 52px">
+                  <div class="header-title" style="font-size: 14.5px">
+                    shell.exec · Refactor WS gateway reconnect
+                  </div>
+                </div>
+                <div class="scroll" style="padding: 20px 24px; gap: 14px">
+                  <div style="display: flex; gap: 8px; flex-wrap: wrap">
+                    <span class="dock-tag tag-low">LOW RISK</span>
+                    <span class="kbd">session: Refactor WS gateway reconnect</span>
+                    <span class="kbd">cwd: ~/PWAHermesprototype</span>
+                    <span class="kbd">profile: default</span>
+                  </div>
+                  <div class="card">
+                    <div
+                      style="
+                        font-size: 12px;
+                        font-weight: 700;
+                        color: var(--muted);
+                        letter-spacing: 0.06em;
+                        margin-bottom: 8px;
+                      "
+                    >
+                      COMMAND
+                    </div>
+                    <div style="font-family: var(--mono); font-size: 13px; line-height: 1.7">
+                      git commit -am "ws: heartbeat + ticket refresh"
+                    </div>
+                  </div>
+                  <div class="card">
+                    <div
+                      style="
+                        font-size: 12px;
+                        font-weight: 700;
+                        color: var(--muted);
+                        letter-spacing: 0.06em;
+                        margin-bottom: 8px;
+                      "
+                    >
+                      CONTEXT FROM THE AGENT
+                    </div>
+                    <div style="font-size: 14px; line-height: 1.65">
+                      Heartbeat + ticket refresh are implemented and tests pass. This commit
+                      snapshots the change behind the
+                      <code style="font-family: var(--mono); font-size: 12.5px">ws.reconnect</code>
+                      flag so it stays reversible.
+                    </div>
+                  </div>
+                  <div style="flex: 1"></div>
+                  <div class="dock-row" style="justify-content: flex-end">
+                    <div class="btn btn-more" style="width: auto; padding: 0 16px">
+                      Allow for session…
+                    </div>
+                    <div class="btn btn-reject" style="flex: none; width: 130px">Reject</div>
+                    <div class="btn btn-approve" style="flex: none; width: 150px">Approve once</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="frame-label" style="max-width: 1152px">
+            W2 · Inbox — master/detail
+            <span
+              >D3, D9 — queue on the left, full decision context on the right: session, cwd,
+              profile, the agent's own explanation. Session/Always becomes an explicit secondary
+              action.</span
+            >
+          </div>
+        </div>
+
+        <!-- W3: Tasks board -->
+        <div class="frame-wrap">
+          <div class="desktop">
+            <div class="chromebar">
+              <i style="background: #f0968f"></i><i style="background: #f2d48b"></i
+              ><i style="background: #a5d6a7"></i>
+            </div>
+            <div class="d-body">
+              <div class="rail">
+                <div class="r-item">▣</div>
+                <div class="r-item">🛡<span class="badge">2</span></div>
+                <div class="r-item on">☷</div>
+                <div class="r-item">⋯</div>
+                <div style="flex: 1"></div>
+                <div class="r-item">⚙</div>
+              </div>
+              <div style="flex: 1; display: flex; flex-direction: column; overflow: hidden">
+                <div class="app-header" style="height: 52px; gap: 14px">
+                  <span class="header-title" style="font-size: 15px">Sprint 2026-06</span>
+                  <div class="seg" style="width: 220px">
+                    <div class="on">Board</div>
+                    <div>List</div>
+                    <div>Schedules</div>
+                  </div>
+                  <span style="margin-left: auto"></span>
+                  <div class="search" style="width: 220px; padding: 8px 11px">
+                    🔍 <span>Filter tasks</span>
+                  </div>
+                </div>
+                <div class="kb-board">
+                  <div class="kb-col">
+                    <div class="kb-head">🔵 Running <span style="color: var(--faint)">2</span></div>
+                    <div class="kb-cards">
+                      <div class="card" style="padding: 11px 12px">
+                        <div class="task-title">Refactor WS reconnect</div>
+                        <div class="task-meta">
+                          <span class="pulse"></span> run-7f3 · @default · P1
+                        </div>
+                      </div>
+                      <div class="card" style="padding: 11px 12px">
+                        <div class="task-title">Soul rewrite</div>
+                        <div class="task-meta">
+                          <span class="pulse"></span> run-7e1 · @career-content · P0
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="kb-col">
+                    <div class="kb-head">Backlog <span style="color: var(--faint)">3</span></div>
+                    <div class="kb-cards">
+                      <div class="card" style="padding: 11px 12px">
+                        <div class="task-title">Type WS JSON-RPC contract</div>
+                        <div class="task-meta">@default · P1</div>
+                      </div>
+                      <div class="card" style="padding: 11px 12px">
+                        <div class="task-title">Map Projects → Kanban</div>
+                        <div class="task-meta">unassigned · P2</div>
+                      </div>
+                      <div class="card" style="padding: 11px 12px">
+                        <div class="task-title">openapi-typescript in CI</div>
+                        <div class="task-meta">@ops · P2</div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="kb-col">
+                    <div class="kb-head">🔴 Blocked <span style="color: var(--faint)">1</span></div>
+                    <div class="kb-cards">
+                      <div
+                        class="card"
+                        style="padding: 11px 12px; border-left: 3px solid var(--warning)"
+                      >
+                        <div class="task-title">Backup to S3</div>
+                        <div class="task-meta" style="color: var(--warning-strong)">
+                          ⚠ missing AWS creds · @ops
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="kb-col">
+                    <div class="kb-head">🟢 Done <span style="color: var(--faint)">2</span></div>
+                    <div class="kb-cards">
+                      <div class="card" style="padding: 11px 12px; opacity: 0.7">
+                        <div class="task-title">Status endpoint shape</div>
+                        <div class="task-meta">@default</div>
+                      </div>
+                      <div class="card" style="padding: 11px 12px; opacity: 0.7">
+                        <div class="task-title">WS ticket TTL audit</div>
+                        <div class="task-meta">@default</div>
+                      </div>
+                    </div>
+                  </div>
+                  <div
+                    style="width: 44px; flex: none; display: flex; flex-direction: column; gap: 8px"
+                  >
+                    <div
+                      style="
+                        background: var(--surface2);
+                        border: 1px dashed var(--border);
+                        border-radius: 14px;
+                        flex: 1;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        writing-mode: vertical-rl;
+                        font-size: 11.5px;
+                        color: var(--faint);
+                        font-weight: 600;
+                      "
+                    >
+                      5 empty stages
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="frame-label" style="max-width: 1152px">
+            W3 · Work — board
+            <span
+              >D6, D9 — a real horizontal board at 1280px. Empty stages collapse to a 44px rail.
+              Drag to reassign; dispatch opens a run sheet.</span
+            >
+          </div>
+        </div>
+
+        <!-- W4: System desktop -->
+        <div class="frame-wrap">
+          <div class="desktop">
+            <div class="chromebar">
+              <i style="background: #f0968f"></i><i style="background: #f2d48b"></i
+              ><i style="background: #a5d6a7"></i>
+            </div>
+            <div class="d-body">
+              <div class="rail">
+                <div class="r-item">▣</div>
+                <div class="r-item">🛡<span class="badge">2</span></div>
+                <div class="r-item">☷</div>
+                <div class="r-item on">⋯</div>
+                <div style="flex: 1"></div>
+                <div class="r-item">⚙</div>
+              </div>
+              <div style="flex: 1; overflow: hidden">
+                <div
+                  style="
+                    max-width: 840px;
+                    margin: 0 auto;
+                    padding: 24px;
+                    display: flex;
+                    flex-direction: column;
+                    gap: 14px;
+                  "
+                >
+                  <div style="font-size: 19px; font-weight: 700">System</div>
+                  <div class="card">
+                    <div class="dock-title">
+                      <span
+                        ><span style="color: var(--success)">●</span> Gateway running · up 6h
+                        12m</span
+                      >
+                      <span style="display: flex; gap: 8px">
+                        <span
+                          class="btn"
+                          style="
+                            height: 34px;
+                            padding: 0 16px;
+                            flex: none;
+                            background: var(--surface2);
+                            border: 1px solid var(--border);
+                            color: var(--text2);
+                            font-size: 12.5px;
+                          "
+                          >Restart…</span
+                        >
+                        <span
+                          class="btn"
+                          style="
+                            height: 34px;
+                            padding: 0 16px;
+                            flex: none;
+                            background: var(--surface);
+                            border: 1px solid #eec8c6;
+                            color: var(--danger-strong);
+                            font-size: 12.5px;
+                          "
+                          >Stop…</span
+                        >
+                      </span>
+                    </div>
+                  </div>
+                  <div style="display: flex; gap: 14px">
+                    <div class="card" style="flex: 1">
+                      <div style="font-size: 12px; color: var(--muted); margin-bottom: 4px">
+                        CPU 18%
+                      </div>
+                      <div class="metricbar"><div style="width: 18%"></div></div>
+                    </div>
+                    <div class="card" style="flex: 1">
+                      <div style="font-size: 12px; color: var(--muted); margin-bottom: 4px">
+                        RAM 2.1 / 8.0 GB
+                      </div>
+                      <div class="metricbar"><div style="width: 26%"></div></div>
+                    </div>
+                    <div class="card" style="flex: 1">
+                      <div style="font-size: 12px; color: var(--muted); margin-bottom: 4px">
+                        Disk 58 / 100 GB
+                      </div>
+                      <div class="metricbar">
+                        <div style="width: 58%; background: var(--warning)"></div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="card" style="padding: 4px 14px">
+                    <div class="listrow" style="border: none; padding: 11px 0">
+                      <div class="lr-icon" style="color: var(--success)">✓</div>
+                      <div style="flex: 1">
+                        <div class="lr-title">Security audit</div>
+                        <div class="lr-sub">passed · 3h ago</div>
+                      </div>
+                    </div>
+                    <div class="listrow" style="border: none; padding: 11px 0">
+                      <div class="lr-icon" style="color: var(--success)">✓</div>
+                      <div style="flex: 1">
+                        <div class="lr-title">Doctor</div>
+                        <div class="lr-sub">12/12 checks · 15m ago</div>
+                      </div>
+                    </div>
+                    <div class="listrow" style="border: none; padding: 11px 0">
+                      <div class="lr-icon" style="color: var(--warning-strong)">⚠</div>
+                      <div style="flex: 1">
+                        <div class="lr-title">Backups</div>
+                        <div class="lr-sub">last run failed · missing AWS creds</div>
+                      </div>
+                      <span class="lr-right" style="color: var(--primary); font-weight: 600"
+                        >fix</span
+                      >
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="frame-label" style="max-width: 1152px">
+            W4 · System
+            <span
+              >D9, D15 — content capped at 840px, metrics as a 3-card bar row, destructive actions
+              neutral and confirmed. Profiles / Agents / Artifacts reuse the W2 master-detail
+              pattern, so no separate frames.</span
+            >
+          </div>
+        </div>
+
+        <!-- W5: Settings desktop -->
+        <div class="frame-wrap">
+          <div class="desktop">
+            <div class="chromebar">
+              <i style="background: #f0968f"></i><i style="background: #f2d48b"></i
+              ><i style="background: #a5d6a7"></i>
+            </div>
+            <div class="d-body">
+              <div class="rail">
+                <div class="r-item">▣</div>
+                <div class="r-item">🛡<span class="badge">2</span></div>
+                <div class="r-item">☷</div>
+                <div class="r-item">⋯</div>
+                <div style="flex: 1"></div>
+                <div class="r-item on">⚙</div>
+              </div>
+              <div style="flex: 1; overflow: hidden">
+                <div
+                  style="
+                    max-width: 720px;
+                    margin: 0 auto;
+                    padding: 24px;
+                    display: flex;
+                    flex-direction: column;
+                    gap: 10px;
+                  "
+                >
+                  <div style="font-size: 19px; font-weight: 700; margin-bottom: 4px">Settings</div>
+                  <div class="group-label" style="padding-left: 0">Connection</div>
+                  <div class="listrow">
+                    <div style="flex: 1">
+                      <div class="lr-title">Gateway URL</div>
+                      <div class="lr-sub" style="font-family: var(--mono)">
+                        http://127.0.0.1:9119
+                      </div>
+                    </div>
+                    <span class="lr-right">›</span>
+                  </div>
+                  <div class="listrow">
+                    <div style="flex: 1">
+                      <div class="lr-title">Model</div>
+                      <div class="lr-sub">GPT-5.5 · managed in Profiles</div>
+                    </div>
+                    <span class="lr-right" style="color: var(--primary); font-weight: 600"
+                      >Profiles ›</span
+                    >
+                  </div>
+                  <div class="group-label" style="padding-left: 0">Notifications</div>
+                  <div class="listrow">
+                    <div style="flex: 1"><div class="lr-title">Enable on this device</div></div>
+                    <div class="switch"></div>
+                  </div>
+                  <div class="listrow">
+                    <div style="flex: 1"><div class="lr-title">Approval requests</div></div>
+                    <div class="switch"></div>
+                  </div>
+                  <div class="listrow">
+                    <div style="flex: 1"><div class="lr-title">Runs completed</div></div>
+                    <div class="switch off"></div>
+                  </div>
+                  <div class="group-label" style="padding-left: 0">Appearance</div>
+                  <div class="listrow">
+                    <div style="flex: 1">
+                      <div class="lr-title">Theme</div>
+                      <div class="lr-sub">System</div>
+                    </div>
+                    <span class="lr-right">›</span>
+                  </div>
+                  <div class="group-label" style="padding-left: 0">About</div>
+                  <div class="listrow">
+                    <div style="flex: 1">
+                      <div class="lr-title">Hermes PWA v0.3.0</div>
+                      <div class="lr-sub">Gateway v0.13.3 · plugin hermes-pwa</div>
+                    </div>
+                  </div>
+                  <div class="listrow" style="justify-content: center; border-color: #eec8c6">
+                    <div class="lr-title" style="color: var(--danger-strong)">Log out</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="frame-label" style="max-width: 1152px">
+            W5 · Settings
+            <span
+              >D9, D14, D16 — single capped column at 720px. Same information architecture as
+              mobile, no stretched cards.</span
+            >
+          </div>
+        </div>
+      </div>
+
+      <div
+        style="
+          margin-top: 56px;
+          padding-top: 20px;
+          border-top: 1px solid var(--border);
+          font-size: 12.5px;
+          color: var(--muted);
+          line-height: 1.7;
+          max-width: 760px;
+        "
+      >
+        Mockups only — no production code changed. Data is the real preview-seed data used by the
+        app's own screenshot harness. Reviewed against the live app at 390×844 and 1280×800.
+        Synthesis of 3 independent reviews (Claude Opus 5.5, Gemini 4 Argon, GPT-6.1-Sol).
+      </div>
+    </div>
+
+    <script>
+      (function () {
+        var slug = 'hermes-mobile-redesign-mockups';
+        var es = new EventSource('/events');
+        es.addEventListener('reload', function (e) {
+          try {
+            if (e.data === slug || e.data === '*') location.reload();
+          } catch (_) {}
+        });
+      })();
+    </script>
+  </body>
+</html>

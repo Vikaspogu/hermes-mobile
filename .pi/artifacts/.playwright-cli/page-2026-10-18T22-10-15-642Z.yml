@@ -1,0 +1,991 @@
+- generic [ref=e2]:
+  - heading "Hermes Mobile — Redesign Mockups" [level=1] [ref=e3]
+  - paragraph [ref=e4]:
+    - text: "Synthesis of 3 independent UX reviews (Claude Opus 5.5, Gemini 4 Argon, GPT-6.1-Sol) of the current app, screenshot-by-screenshot. One job drives everything: give the agent work, follow progress, unblock it safely — from a phone. Same design tokens as production ("
+    - code [ref=e5]: tokens.css
+    - text: ).
+  - generic [ref=e6]:
+    - generic [ref=e7]: D1Chats = home
+    - generic [ref=e8]: D24 bottom tabs, no drawer
+    - generic [ref=e9]: D3Sticky approval dock + risk tiers
+    - generic [ref=e10]: D4Plan before approval, collapsed tool steps
+    - generic [ref=e11]: D5Thread rows w/ preview + date groups
+    - generic [ref=e12]: D6Empty kanban stages collapse
+    - generic [ref=e13]: D7Cron → human "Schedules"
+    - generic [ref=e14]: D8Voice from composer, not a tab
+    - generic [ref=e15]: "D9Desktop: rail + list + capped chat"
+    - generic [ref=e16]: D10Errors keep nav, show cause
+  - generic [ref=e17]: Mobile — 390 × 844
+  - generic [ref=e18]:
+    - generic [ref=e19]:
+      - generic [ref=e20]:
+        - generic [ref=e21]:
+          - generic [ref=e22]: 9:41
+          - generic [ref=e23]: ●●●
+        - generic [ref=e24]:
+          - generic [ref=e25]:
+            - generic [ref=e26]: Hermes
+            - generic [ref=e28]: default
+            - generic [ref=e29]: ⚙
+          - generic [ref=e30]:
+            - generic [ref=e31]:
+              - generic [ref=e32]: ⚠️
+              - generic [ref=e33]:
+                - generic [ref=e34]: 1 approval waiting
+                - generic [ref=e35]: Refactor WS gateway reconnect
+              - generic [ref=e36]: ›
+            - generic [ref=e37]:
+              - generic [ref=e38]: Message Hermes…
+              - generic [ref=e39]: ↑
+            - generic [ref=e40]:
+              - text: 🔍
+              - generic [ref=e41]: Search chats
+            - generic [ref=e42]: Today
+            - generic [ref=e43]:
+              - generic [ref=e45]:
+                - generic [ref=e46]: Refactor WS gateway reconnect
+                - generic [ref=e47]: "Plan: 20s heartbeat ping, refresh ticket before expiry…"
+              - generic [ref=e48]:
+                - text: 12:04
+                - text: ● live
+            - generic [ref=e49]:
+              - generic [ref=e51]:
+                - generic [ref=e52]: Investigate web_server traceback
+                - generic [ref=e53]: Fixed — missing await on ticket refresh
+              - generic [ref=e54]: 10:32
+            - generic [ref=e55]:
+              - generic [ref=e57]:
+                - generic [ref=e58]: OpenAPI → TypeScript pipeline
+                - generic [ref=e59]: Generated 142 types from gateway spec
+              - generic [ref=e60]: 08:15
+            - generic [ref=e61]: Yesterday
+            - generic [ref=e62]:
+              - generic [ref=e64]:
+                - generic [ref=e65]: Kanban dispatch flakiness
+                - generic [ref=e66]: Retry logic behind flag, tests green
+              - generic [ref=e67]: 1d
+            - generic [ref=e68]:
+              - generic [ref=e70]:
+                - generic [ref=e71]: Env secrets audit
+                - generic [ref=e72]: 3 keys rotated, report in artifacts
+              - generic [ref=e73]: 1d
+          - generic [ref=e74]:
+            - generic [ref=e75]:
+              - text: ▣
+              - text: Chats
+            - generic [ref=e76]:
+              - text: 🛡
+              - text: Inbox
+              - generic [ref=e77]: "1"
+            - generic [ref=e78]:
+              - text: ☷
+              - text: Work
+            - generic [ref=e79]:
+              - text: ⋯
+              - text: More
+      - generic [ref=e80]:
+        - text: M1 · Chats (home)
+        - generic [ref=e81]: D1, D2, D5 — threads are the app. New chat = one tap. Approval banner only when something waits. No hero, no tile launcher, no drawer.
+    - generic [ref=e82]:
+      - generic [ref=e83]:
+        - generic [ref=e84]:
+          - generic [ref=e85]: 9:41
+          - generic [ref=e86]: ●●●
+        - generic [ref=e87]:
+          - generic [ref=e88]:
+            - generic [ref=e89]: ‹
+            - generic [ref=e90]:
+              - generic [ref=e91]: Refactor WS gateway reconnect
+              - generic [ref=e92]: GPT-5.5 · default · CLI
+            - generic [ref=e93]: ⋯
+          - generic [ref=e94]:
+            - generic [ref=e95]: WS gateway drops connections after ~30s idle. The ticket TTL is 30s — fix reconnect so mobile stays live. Keep it reversible.
+            - generic [ref=e96]:
+              - text: Found it. The WS ticket TTL is 30s and the client never refreshes it, so the socket dies on the first idle gap.
+              - text: "Plan: add a 20s heartbeat ping, silently refresh the ws-ticket before expiry, give the server a 10s grace window. Behind a"
+              - code [ref=e97]: ws.reconnect
+              - text: flag — fully reversible.
+            - generic [ref=e98]:
+              - generic [ref=e99]: ▸
+              - generic [ref=e100]: 4 steps · Read 2 files, ran pytest -k reconnect
+              - generic [ref=e101]: ✓
+            - generic [ref=e102]: Working… step 4 · git commit
+            - generic [ref=e104]:
+              - generic [ref=e105]: ✓
+              - text: Approved
+              - generic [ref=e106]: read_file
+              - text: · 12:02
+          - generic [ref=e107]:
+            - generic [ref=e108]:
+              - generic [ref=e109]: 🛡 shell.exec · waiting for you
+              - generic [ref=e110]: LOW RISK
+            - generic [ref=e111]: Refactor WS gateway reconnect · ~/PWAHermesprototype
+            - generic [ref=e112]: "git commit -am \"ws: heartbeat + ticket refresh\""
+            - generic [ref=e113]:
+              - generic [ref=e114]: Reject
+              - generic [ref=e115]: Approve once
+              - generic [ref=e116]: ⋯
+          - generic [ref=e117]:
+            - generic [ref=e118]: +
+            - generic [ref=e119]: Reply or steer the agent…
+            - generic [ref=e120]: 🎙
+            - generic [ref=e121]: ↑
+      - generic [ref=e122]:
+        - text: M2 · Chat + approval dock
+        - generic [ref=e123]: D3, D4 — plan reads before the ask. Approval is pinned above the composer, can't scroll away. Steps collapse to one line. Session/Always hidden in ⋯.
+    - generic [ref=e124]:
+      - generic [ref=e125]:
+        - generic [ref=e126]:
+          - generic [ref=e127]: 9:41
+          - generic [ref=e128]: ●●●
+        - generic [ref=e129]:
+          - generic [ref=e130]:
+            - generic [ref=e131]: ‹
+            - generic [ref=e132]:
+              - generic [ref=e133]: Env secrets audit
+              - generic [ref=e134]: GPT-5.5 · default · CLI
+            - generic [ref=e135]: ⋯
+          - generic [ref=e136]:
+            - generic [ref=e137]: Rotate the leaked keys and write the new ones into .hermes/.env
+            - generic [ref=e138]:
+              - text: 3 keys rotated. Writing them to
+              - code [ref=e139]: .hermes/.env
+              - text: needs your explicit approval — this modifies secret material on disk.
+            - generic [ref=e140]:
+              - generic [ref=e141]: ▸
+              - generic [ref=e142]: 6 steps · Scanned 4 config files, rotated 3 keys
+              - generic [ref=e143]: ✓
+          - generic [ref=e144]:
+            - generic [ref=e145]:
+              - generic [ref=e146]: 🛡 fs.write · waiting for you
+              - generic [ref=e147]: HIGH RISK
+            - generic [ref=e148]: Env secrets audit · ~/PWAHermesprototype
+            - generic [ref=e149]: .hermes/.env · writes 3 secret keys
+            - generic [ref=e150]:
+              - generic [ref=e151]: Reject
+              - generic [ref=e152]:
+                - generic [ref=e154]: →
+                - generic [ref=e155]: Slide to approve
+          - generic [ref=e156]:
+            - generic [ref=e157]: +
+            - generic [ref=e158]: Reply or steer the agent…
+            - generic [ref=e159]: 🎙
+            - generic [ref=e160]: ↑
+      - generic [ref=e161]:
+        - text: M3 · High-risk approval
+        - generic [ref=e162]: D3 — destructive actions get no tap button. Slide-to-approve so a stray thumb can't authorize. Red border signals the tier.
+    - generic [ref=e163]:
+      - generic [ref=e164]:
+        - generic [ref=e165]:
+          - generic [ref=e166]: 9:41
+          - generic [ref=e167]: ●●●
+        - generic [ref=e168]:
+          - generic [ref=e170]: Inbox
+          - generic [ref=e171]:
+            - generic [ref=e172]: Needs you · 2
+            - generic [ref=e173]:
+              - generic [ref=e174]:
+                - generic [ref=e175]: 🛡 shell.exec
+                - generic [ref=e176]: LOW RISK
+              - generic [ref=e177]: Refactor WS gateway reconnect · 2m ago
+              - generic [ref=e178]: "git commit -am \"ws: heartbeat + tic…\""
+              - generic [ref=e179]:
+                - generic [ref=e180]: Reject
+                - generic [ref=e181]: Approve once
+            - generic [ref=e182]:
+              - generic [ref=e183]:
+                - generic [ref=e184]: 🛡 fs.write
+                - generic [ref=e185]: HIGH RISK
+              - generic [ref=e186]: Env secrets audit · 5m ago
+              - generic [ref=e187]: .hermes/.env · writes 3 secret keys
+              - generic [ref=e188]: Open chat to review →
+            - generic [ref=e189]: Notices
+            - generic [ref=e190]:
+              - generic [ref=e191]: ✕
+              - generic [ref=e192]:
+                - generic [ref=e193]: Backup to S3 failed
+                - generic [ref=e194]: missing AWS creds · task blocked
+              - generic [ref=e195]: 1h
+            - generic [ref=e196]:
+              - generic [ref=e197]: ✓
+              - generic [ref=e198]:
+                - generic [ref=e199]: Security audit passed
+                - generic [ref=e200]: scheduled run · no findings
+              - generic [ref=e201]: 3h
+          - generic [ref=e202]:
+            - generic [ref=e203]:
+              - text: ▣
+              - text: Chats
+            - generic [ref=e204]:
+              - text: 🛡
+              - text: Inbox
+              - generic [ref=e205]: "2"
+            - generic [ref=e206]:
+              - text: ☷
+              - text: Work
+            - generic [ref=e207]:
+              - text: ⋯
+              - text: More
+      - generic [ref=e208]:
+        - text: M4 · Inbox
+        - generic [ref=e209]: D3 — every pending action across all sessions, with session name + context. High-risk opens its chat for slide-to-approve. Failures and notices land here too.
+    - generic [ref=e210]:
+      - generic [ref=e211]:
+        - generic [ref=e212]:
+          - generic [ref=e213]: 9:41
+          - generic [ref=e214]: ●●●
+        - generic [ref=e215]:
+          - generic [ref=e217]: Work
+          - generic [ref=e218]:
+            - generic [ref=e219]:
+              - generic [ref=e220]: Tasks
+              - generic [ref=e221]: Schedules
+            - generic [ref=e222]:
+              - generic [ref=e223]: Active · 3
+              - generic [ref=e224]: Blocked · 1
+              - generic [ref=e225]: Done · 2
+              - generic [ref=e226]: All
+            - generic [ref=e227]:
+              - generic [ref=e228]: P0
+              - generic [ref=e229]:
+                - generic [ref=e230]: Soul rewrite
+                - generic [ref=e231]: run-7e1 live · @career-content
+            - generic [ref=e233]:
+              - generic [ref=e234]: P1
+              - generic [ref=e235]:
+                - generic [ref=e236]: Refactor WS reconnect
+                - generic [ref=e237]: run-7f3 live · @default
+            - generic [ref=e239]:
+              - generic [ref=e240]: P1
+              - generic [ref=e241]:
+                - generic [ref=e242]: Type WS JSON-RPC contract
+                - generic [ref=e243]: backlog · @default
+            - generic [ref=e244]:
+              - generic [ref=e245]: P1
+              - generic [ref=e246]:
+                - generic [ref=e247]: Backup to S3
+                - generic [ref=e248]: ⚠ blocked · missing AWS creds
+          - generic [ref=e249]: +
+          - generic [ref=e250]:
+            - generic [ref=e251]:
+              - text: ▣
+              - text: Chats
+            - generic [ref=e252]:
+              - text: 🛡
+              - text: Inbox
+              - generic [ref=e253]: "2"
+            - generic [ref=e254]:
+              - text: ☷
+              - text: Work
+            - generic [ref=e255]:
+              - text: ⋯
+              - text: More
+      - generic [ref=e256]:
+        - text: M5 · Work → Tasks
+        - generic [ref=e257]: D6 — non-empty stages become filter pills; the 9 stacked empty lanes are gone. Tasks + Schedules share one tab. One FAB adds a task.
+    - generic [ref=e258]:
+      - generic [ref=e259]:
+        - generic [ref=e260]:
+          - generic [ref=e261]: 9:41
+          - generic [ref=e262]: ●●●
+        - generic [ref=e263]:
+          - generic [ref=e265]: Work
+          - generic [ref=e266]:
+            - generic [ref=e267]:
+              - generic [ref=e268]: Tasks
+              - generic [ref=e269]: Schedules
+            - generic [ref=e270]:
+              - generic [ref=e271]: 🌙
+              - generic [ref=e272]:
+                - generic [ref=e273]: Nightly backup
+                - generic [ref=e274]: Daily at 3:00 AM · next in 6h · last ✓
+            - generic [ref=e276]:
+              - generic [ref=e277]: 🛡
+              - generic [ref=e278]:
+                - generic [ref=e279]: Security audit
+                - generic [ref=e280]: Every 6 hours · next in 5h · last ✓
+            - generic [ref=e282]:
+              - generic [ref=e283]: 🩺
+              - generic [ref=e284]:
+                - generic [ref=e285]: Doctor health check
+                - generic [ref=e286]: Every 15 min · last ⚠ warning
+            - generic [ref=e288]:
+              - generic [ref=e289]: 🧹
+              - generic [ref=e290]:
+                - generic [ref=e291]: Session prune
+                - generic [ref=e292]: Sundays at 4:00 AM · paused
+            - generic [ref=e294]:
+              - text: Cron expressions live in the edit sheet —
+              - text: you read plain English here.
+          - generic [ref=e295]: +
+          - generic [ref=e296]:
+            - generic [ref=e297]:
+              - text: ▣
+              - text: Chats
+            - generic [ref=e298]:
+              - text: 🛡
+              - text: Inbox
+              - generic [ref=e299]: "2"
+            - generic [ref=e300]:
+              - text: ☷
+              - text: Work
+            - generic [ref=e301]:
+              - text: ⋯
+              - text: More
+      - generic [ref=e302]:
+        - text: M6 · Work → Schedules
+        - generic [ref=e303]:
+          - text: D7 — "Daily at 3:00 AM", not
+          - code [ref=e304]: 0 3 * * *
+          - text: . Enable toggle on the row; Run now / Edit / Delete move into a bottom sheet.
+    - generic [ref=e305]:
+      - generic [ref=e306]:
+        - generic [ref=e307]:
+          - generic [ref=e308]: 9:41
+          - generic [ref=e309]: ●●●
+        - generic [ref=e310]:
+          - generic [ref=e312]: More
+          - generic [ref=e313]:
+            - generic [ref=e314]:
+              - generic [ref=e315]:
+                - generic [ref=e316]: ● Gateway running
+                - generic [ref=e317]: up 6h 12m
+              - generic [ref=e318]: CPU 18%
+              - generic [ref=e321]: RAM 2.1 / 8.0 GB
+              - generic [ref=e324]: Disk 58 / 100 GB
+            - generic [ref=e327]:
+              - generic [ref=e328]: 👤
+              - generic [ref=e329]:
+                - generic [ref=e330]: Profiles
+                - generic [ref=e331]: "active: default · GPT-5.5"
+              - generic [ref=e332]: ›
+            - generic [ref=e333]:
+              - generic [ref=e334]: ✦
+              - generic [ref=e335]:
+                - generic [ref=e336]: Agents
+                - generic [ref=e337]: 1 active subagent
+              - generic [ref=e338]: ›
+            - generic [ref=e339]:
+              - generic [ref=e340]: 🗂
+              - generic [ref=e341]:
+                - generic [ref=e342]: Artifacts
+                - generic [ref=e343]: 3 files this session
+              - generic [ref=e344]: ›
+            - generic [ref=e345]:
+              - generic [ref=e346]: 🖥
+              - generic [ref=e347]:
+                - generic [ref=e348]: System
+                - generic [ref=e349]: gateway, backups, doctor
+              - generic [ref=e350]: ›
+            - generic [ref=e351]:
+              - generic [ref=e352]: ⚙
+              - generic [ref=e353]:
+                - generic [ref=e354]: Settings
+                - generic [ref=e355]: connection, notifications
+              - generic [ref=e356]: ›
+          - generic [ref=e357]:
+            - generic [ref=e358]:
+              - text: ▣
+              - text: Chats
+            - generic [ref=e359]:
+              - text: 🛡
+              - text: Inbox
+              - generic [ref=e360]: "2"
+            - generic [ref=e361]:
+              - text: ☷
+              - text: Work
+            - generic [ref=e362]:
+              - text: ⋯
+              - text: More
+      - generic [ref=e363]:
+        - text: M7 · More
+        - generic [ref=e364]: D8, D9 — health summary lives here (no "System OK" pill on every screen). Progress bars replace serif % numbers. Admin surfaces stay one tap down.
+    - generic [ref=e365]:
+      - generic [ref=e366]:
+        - generic [ref=e367]:
+          - generic [ref=e368]: 9:41
+          - generic [ref=e369]: ●●●
+        - generic [ref=e370]:
+          - generic [ref=e371]:
+            - generic [ref=e372]: ‹
+            - generic [ref=e373]:
+              - generic [ref=e374]: Voice · Refactor WS gateway
+              - generic [ref=e375]: Codex engine · transcript saves to this chat
+          - generic [ref=e389]: "\"…the socket dies on the first idle gap, so I'm adding a heartbeat and a ticket refresh behind a flag…\""
+          - generic [ref=e390]:
+            - generic [ref=e391]: 🔇
+            - generic [ref=e392]: ✕
+            - generic [ref=e393]: ⌨
+      - generic [ref=e394]:
+        - text: M8 · Voice mode
+        - generic [ref=e395]: D8 — launched from the composer, full-screen, one orb + live transcript. End returns to the same thread. No longer a navigation destination.
+    - generic [ref=e396]:
+      - generic [ref=e397]:
+        - generic [ref=e398]:
+          - generic [ref=e399]: 9:41
+          - generic [ref=e400]: ●●●
+        - generic [ref=e401]:
+          - generic [ref=e403]: Hermes
+          - generic [ref=e404]:
+            - generic [ref=e405]: 📡
+            - generic [ref=e406]: Can't reach the gateway
+            - generic [ref=e407]:
+              - text: Connection refused at
+              - text: http://127.0.0.1:9119
+            - generic [ref=e408]: Retry
+            - generic [ref=e409]: Change gateway URL
+            - generic [ref=e410]: Check that Hermes is running, or switch to your Tailscale address.
+          - generic [ref=e411]:
+            - generic [ref=e412]:
+              - text: ▣
+              - text: Chats
+            - generic [ref=e413]:
+              - text: 🛡
+              - text: Inbox
+              - generic [ref=e414]: "2"
+            - generic [ref=e415]:
+              - text: ☷
+              - text: Work
+            - generic [ref=e416]:
+              - text: ⋯
+              - text: More
+      - generic [ref=e417]:
+        - text: M9 · Offline / error
+        - generic [ref=e418]: "D10 — today this shows a bare \"Internal Server Error\" and traps you. Now: real cause, gateway URL, and a path to Settings."
+    - generic [ref=e419]:
+      - generic [ref=e420]:
+        - generic [ref=e421]:
+          - generic [ref=e422]: 9:41
+          - generic [ref=e423]: ●●●
+        - generic [ref=e424]:
+          - generic [ref=e425]:
+            - generic [ref=e426]: ‹
+            - generic [ref=e427]: Profiles
+            - generic [ref=e428]: ＋
+          - generic [ref=e429]:
+            - generic [ref=e430]:
+              - generic [ref=e431]:
+                - generic [ref=e432]: default
+                - generic [ref=e433]: ACTIVE
+              - generic [ref=e434]: GPT-5.5 (Med) · Reversible-first · CLI
+            - generic [ref=e435]:
+              - generic [ref=e437]: fast
+              - generic [ref=e438]: GPT-5 mini (Low) · YOLO · quick questions
+            - generic [ref=e439]:
+              - generic [ref=e441]: deep
+              - generic [ref=e442]: Opus 5.5 (High) · Careful-first · refactors
+            - generic [ref=e443]:
+              - text: Model settings live here only —
+              - text: Settings deep-links to this screen.
+          - generic [ref=e444]:
+            - generic [ref=e445]:
+              - text: ▣
+              - text: Chats
+            - generic [ref=e446]:
+              - text: 🛡
+              - text: Inbox
+              - generic [ref=e447]: "2"
+            - generic [ref=e448]:
+              - text: ☷
+              - text: Work
+            - generic [ref=e449]:
+              - text: ⋯
+              - text: More
+      - generic [ref=e450]:
+        - text: M10 · Profiles
+        - generic [ref=e451]: D13, D14 — 2-line cards instead of the 2×2 metadata grid. Defaults hidden until edit. One home for model state; Settings points here.
+    - generic [ref=e452]:
+      - generic [ref=e453]:
+        - generic [ref=e454]:
+          - generic [ref=e455]: 9:41
+          - generic [ref=e456]: ●●●
+        - generic [ref=e457]:
+          - generic [ref=e458]:
+            - generic [ref=e459]: ‹
+            - generic [ref=e460]: Agents
+          - generic [ref=e461]:
+            - generic [ref=e462]:
+              - generic [ref=e463]: Active · 1
+              - generic [ref=e464]: Recent · 3
+            - generic [ref=e465]:
+              - generic [ref=e467]: run-7f3 · Refactor WS reconnect
+              - generic [ref=e469]: "@default · running 12m · step 4 of 5"
+              - generic [ref=e470]: Open chat →
+            - generic [ref=e471]: Recent
+            - generic [ref=e472]:
+              - generic [ref=e473]: ✓
+              - generic [ref=e474]:
+                - generic [ref=e475]: run-7e1 · Soul rewrite
+                - generic [ref=e476]: "@career-content · finished in 8m"
+              - generic [ref=e477]: log
+            - generic [ref=e478]:
+              - generic [ref=e479]: ✕
+              - generic [ref=e480]:
+                - generic [ref=e481]: run-7d9 · Backup to S3
+                - generic [ref=e482]: "@ops · failed · missing AWS creds"
+              - generic [ref=e483]: log
+          - generic [ref=e484]:
+            - generic [ref=e485]:
+              - text: ▣
+              - text: Chats
+            - generic [ref=e486]:
+              - text: 🛡
+              - text: Inbox
+              - generic [ref=e487]: "2"
+            - generic [ref=e488]:
+              - text: ☷
+              - text: Work
+            - generic [ref=e489]:
+              - text: ⋯
+              - text: More
+      - generic [ref=e490]:
+        - text: M11 · Agents
+        - generic [ref=e491]: D7 (Gemini) — Active | Recent segments replace the blank "No active agents" dead-end. Finished runs keep their logs and link back to the chat.
+    - generic [ref=e492]:
+      - generic [ref=e493]:
+        - generic [ref=e494]:
+          - generic [ref=e495]: 9:41
+          - generic [ref=e496]: ●●●
+        - generic [ref=e497]:
+          - generic [ref=e498]:
+            - generic [ref=e499]: ‹
+            - generic [ref=e500]: Artifacts
+          - generic [ref=e501]:
+            - generic [ref=e502]:
+              - generic [ref=e503]: 🖼
+              - generic [ref=e504]:
+                - generic [ref=e505]: architecture.png
+                - generic [ref=e506]: 240 KB · OpenAPI → TS pipeline · 2h
+              - generic [ref=e507]: ›
+            - generic [ref=e508]:
+              - generic [ref=e509]: 📄
+              - generic [ref=e510]:
+                - generic [ref=e511]: output.txt
+                - generic [ref=e512]: 12 KB · Kanban dispatch flakiness · 1d
+              - generic [ref=e513]: ›
+            - generic [ref=e514]:
+              - generic [ref=e515]: 📊
+              - generic [ref=e516]:
+                - generic [ref=e517]: secrets-audit.md
+                - generic [ref=e518]: 4 KB · Env secrets audit · 1d
+              - generic [ref=e519]: ›
+            - generic [ref=e520]:
+              - text: Tap a row for full-screen preview.
+              - text: Desktop shows the preview beside the list.
+          - generic [ref=e521]:
+            - generic [ref=e522]:
+              - text: ▣
+              - text: Chats
+            - generic [ref=e523]:
+              - text: 🛡
+              - text: Inbox
+              - generic [ref=e524]: "2"
+            - generic [ref=e525]:
+              - text: ☷
+              - text: Work
+            - generic [ref=e526]:
+              - text: ⋯
+              - text: More
+      - generic [ref=e527]:
+        - text: M12 · Artifacts
+        - generic [ref=e528]: D12 — thumbnails, file size, and the session that produced each file. No more bare MIME rows.
+    - generic [ref=e529]:
+      - generic [ref=e530]:
+        - generic [ref=e531]:
+          - generic [ref=e532]: 9:41
+          - generic [ref=e533]: ●●●
+        - generic [ref=e534]:
+          - generic [ref=e535]:
+            - generic [ref=e536]: ‹
+            - generic [ref=e537]: System
+          - generic [ref=e538]:
+            - generic [ref=e539]:
+              - generic [ref=e540]:
+                - generic [ref=e541]: ● Gateway running
+                - generic [ref=e542]: up 6h 12m
+              - generic [ref=e543]:
+                - generic [ref=e544]: Restart…
+                - generic [ref=e545]: Stop…
+            - generic [ref=e546]:
+              - generic [ref=e547]: CPU 18%
+              - generic [ref=e550]: RAM 2.1 / 8.0 GB
+              - generic [ref=e553]: Disk 58 / 100 GB
+            - generic [ref=e556]: Health checks
+            - generic [ref=e557]:
+              - generic [ref=e558]: ✓
+              - generic [ref=e559]:
+                - generic [ref=e560]: Security audit
+                - generic [ref=e561]: passed · 3h ago
+            - generic [ref=e562]:
+              - generic [ref=e563]: ✓
+              - generic [ref=e564]:
+                - generic [ref=e565]: Doctor
+                - generic [ref=e566]: 12/12 checks · 15m ago
+            - generic [ref=e567]:
+              - generic [ref=e568]: ⚠
+              - generic [ref=e569]:
+                - generic [ref=e570]: Backups
+                - generic [ref=e571]: last run failed · missing AWS creds
+              - generic [ref=e572]: fix
+          - generic [ref=e573]:
+            - generic [ref=e574]:
+              - text: ▣
+              - text: Chats
+            - generic [ref=e575]:
+              - text: 🛡
+              - text: Inbox
+              - generic [ref=e576]: "2"
+            - generic [ref=e577]:
+              - text: ☷
+              - text: Work
+            - generic [ref=e578]:
+              - text: ⋯
+              - text: More
+      - generic [ref=e579]:
+        - text: M13 · System
+        - generic [ref=e580]: D15 — Restart/Stop lose the hero treatment and sit behind "…" confirmation sheets. Progress bars replace serif numbers. Amber only when a check actually failed.
+    - generic [ref=e581]:
+      - generic [ref=e582]:
+        - generic [ref=e583]:
+          - generic [ref=e584]: 9:41
+          - generic [ref=e585]: ●●●
+        - generic [ref=e586]:
+          - generic [ref=e587]:
+            - generic [ref=e588]: ‹
+            - generic [ref=e589]: Settings
+          - generic [ref=e590]:
+            - generic [ref=e591]: Connection
+            - generic [ref=e592]:
+              - generic [ref=e593]:
+                - generic [ref=e594]: Gateway URL
+                - generic [ref=e595]: http://127.0.0.1:9119
+              - generic [ref=e596]: ›
+            - generic [ref=e597]:
+              - generic [ref=e598]:
+                - generic [ref=e599]: Model
+                - generic [ref=e600]: GPT-5.5 · managed in Profiles
+              - generic [ref=e601]: Profiles ›
+            - generic [ref=e602]: Notifications
+            - generic [ref=e605]: Enable on this device
+            - generic [ref=e609]: Approval requests
+            - generic [ref=e613]: Runs completed
+            - generic [ref=e615]: Appearance
+            - generic [ref=e616]:
+              - generic [ref=e617]:
+                - generic [ref=e618]: Theme
+                - generic [ref=e619]: System
+              - generic [ref=e620]: ›
+            - generic [ref=e621]: About
+            - generic [ref=e623]:
+              - generic [ref=e624]: Hermes PWA v0.3.0
+              - generic [ref=e625]: Gateway v0.13.3 · plugin hermes-pwa
+            - generic [ref=e627]: Log out
+          - generic [ref=e628]:
+            - generic [ref=e629]:
+              - text: ▣
+              - text: Chats
+            - generic [ref=e630]:
+              - text: 🛡
+              - text: Inbox
+              - generic [ref=e631]: "2"
+            - generic [ref=e632]:
+              - text: ☷
+              - text: Work
+            - generic [ref=e633]:
+              - text: ⋯
+              - text: More
+      - generic [ref=e634]:
+        - text: M14 · Settings
+        - generic [ref=e635]: D14, D16 — Model deep-links to Profiles (one home). "Enable on this device" moves inside Notifications. Log out drops to the bottom in red.
+  - generic [ref=e636]: Desktop — 1280 × 800
+  - generic [ref=e637]:
+    - generic [ref=e638]:
+      - generic [ref=e644]:
+        - generic [ref=e645]:
+          - generic [ref=e646]: ▣
+          - generic [ref=e647]:
+            - text: 🛡
+            - generic [ref=e648]: "2"
+          - generic [ref=e649]: ☷
+          - generic [ref=e650]: ⋯
+          - generic [ref=e651]: ⚙
+        - generic [ref=e652]:
+          - generic [ref=e653]:
+            - generic [ref=e654]:
+              - text: 🔍
+              - generic [ref=e655]: Search chats
+            - generic [ref=e656]:
+              - generic [ref=e657]: New chat…
+              - generic [ref=e658]: ↑
+          - generic [ref=e659]:
+            - generic [ref=e660]: Today
+            - generic [ref=e661]:
+              - generic [ref=e663]:
+                - generic [ref=e664]: Refactor WS gateway reconnect
+                - generic [ref=e665]: "Plan: 20s heartbeat ping…"
+              - generic [ref=e666]: 12:04
+            - generic [ref=e667]:
+              - generic [ref=e669]:
+                - generic [ref=e670]: web_server traceback
+                - generic [ref=e671]: Fixed — missing await…
+              - generic [ref=e672]: 10:32
+            - generic [ref=e673]:
+              - generic [ref=e675]:
+                - generic [ref=e676]: OpenAPI → TS pipeline
+                - generic [ref=e677]: Generated 142 types…
+              - generic [ref=e678]: 08:15
+            - generic [ref=e679]: Yesterday
+            - generic [ref=e680]:
+              - generic [ref=e682]:
+                - generic [ref=e683]: Kanban dispatch flakiness
+                - generic [ref=e684]: Retry logic behind flag…
+              - generic [ref=e685]: 1d
+            - generic [ref=e686]:
+              - generic [ref=e688]:
+                - generic [ref=e689]: Env secrets audit
+                - generic [ref=e690]: 3 keys rotated…
+              - generic [ref=e691]: 1d
+        - generic [ref=e692]:
+          - generic [ref=e693]:
+            - generic [ref=e694]:
+              - generic [ref=e695]: Refactor WS gateway reconnect
+              - generic [ref=e696]: GPT-5.5 · default · CLI
+            - generic [ref=e697]: ⤢
+            - generic [ref=e698]: ⋯
+          - generic [ref=e700]:
+            - generic [ref=e701]:
+              - generic [ref=e702]: WS gateway drops connections after ~30s idle. Fix reconnect so mobile stays live. Keep it reversible.
+              - generic [ref=e703]:
+                - text: Found it. The WS ticket TTL is 30s and the client never refreshes it.
+                - text: "Plan: 20s heartbeat ping, silent ticket refresh, 10s grace window. Behind a"
+                - code [ref=e704]: ws.reconnect
+                - text: flag.
+              - generic [ref=e705]:
+                - generic [ref=e706]: ▸
+                - generic [ref=e707]: 4 steps · Read 2 files, ran pytest -k reconnect
+                - generic [ref=e708]: ✓
+              - generic [ref=e709]: Working… step 4 · git commit
+            - generic [ref=e711]:
+              - generic [ref=e712]:
+                - generic [ref=e713]: 🛡 shell.exec · waiting for you
+                - generic [ref=e714]: LOW RISK
+              - generic [ref=e715]: "git commit -am \"ws: heartbeat + ticket refresh\""
+              - generic [ref=e716]:
+                - generic [ref=e717]: ⌘↵ approve · esc reject
+                - generic [ref=e718]: Reject
+                - generic [ref=e719]: Approve once
+            - generic [ref=e720]:
+              - generic [ref=e721]: +
+              - generic [ref=e722]: Reply or steer the agent…
+              - generic [ref=e723]: 🎙
+              - generic [ref=e724]: ↑
+      - generic [ref=e725]:
+        - text: W1 · Chat — 3 panes
+        - generic [ref=e726]: D9 — 64px rail + 296px thread list + conversation capped at 720px. Buttons keep natural width. Keyboard shortcuts shown. Nothing stretches edge-to-edge anymore.
+    - generic [ref=e727]:
+      - generic [ref=e733]:
+        - generic [ref=e734]:
+          - generic [ref=e735]: ▣
+          - generic [ref=e736]:
+            - text: 🛡
+            - generic [ref=e737]: "2"
+          - generic [ref=e738]: ☷
+          - generic [ref=e739]: ⋯
+          - generic [ref=e740]: ⚙
+        - generic [ref=e741]:
+          - generic [ref=e742]: Inbox · 2 waiting
+          - generic [ref=e743]:
+            - generic [ref=e744]:
+              - generic [ref=e745]:
+                - generic [ref=e746]: 🛡 shell.exec
+                - generic [ref=e747]: LOW
+              - generic [ref=e748]: Refactor WS gateway reconnect · 2m
+              - generic [ref=e749]: "git commit -am \"ws: heartbeat…\""
+            - generic [ref=e750]:
+              - generic [ref=e751]:
+                - generic [ref=e752]: 🛡 fs.write
+                - generic [ref=e753]: HIGH
+              - generic [ref=e754]: Env secrets audit · 5m
+              - generic [ref=e755]: .hermes/.env · 3 secret keys
+            - generic [ref=e756]: Notices
+            - generic [ref=e757]:
+              - generic [ref=e758]: ✕
+              - generic [ref=e759]:
+                - generic [ref=e760]: Backup to S3 failed
+                - generic [ref=e761]: missing AWS creds
+              - generic [ref=e762]: 1h
+        - generic [ref=e763]:
+          - generic [ref=e765]: shell.exec · Refactor WS gateway reconnect
+          - generic [ref=e766]:
+            - generic [ref=e767]:
+              - generic [ref=e768]: LOW RISK
+              - generic [ref=e769]: "session: Refactor WS gateway reconnect"
+              - generic [ref=e770]: "cwd: ~/PWAHermesprototype"
+              - generic [ref=e771]: "profile: default"
+            - generic [ref=e772]:
+              - generic [ref=e773]: COMMAND
+              - generic [ref=e774]: "git commit -am \"ws: heartbeat + ticket refresh\""
+            - generic [ref=e775]:
+              - generic [ref=e776]: CONTEXT FROM THE AGENT
+              - generic [ref=e777]:
+                - text: Heartbeat + ticket refresh are implemented and tests pass. This commit snapshots the change behind the
+                - code [ref=e778]: ws.reconnect
+                - text: flag so it stays reversible.
+            - generic [ref=e780]:
+              - generic [ref=e781]: Allow for session…
+              - generic [ref=e782]: Reject
+              - generic [ref=e783]: Approve once
+      - generic [ref=e784]:
+        - text: W2 · Inbox — master/detail
+        - generic [ref=e785]: "D3, D9 — queue on the left, full decision context on the right: session, cwd, profile, the agent's own explanation. Session/Always becomes an explicit secondary action."
+    - generic [ref=e786]:
+      - generic [ref=e792]:
+        - generic [ref=e793]:
+          - generic [ref=e794]: ▣
+          - generic [ref=e795]:
+            - text: 🛡
+            - generic [ref=e796]: "2"
+          - generic [ref=e797]: ☷
+          - generic [ref=e798]: ⋯
+          - generic [ref=e799]: ⚙
+        - generic [ref=e800]:
+          - generic [ref=e801]:
+            - generic [ref=e802]: Sprint 2026-06
+            - generic [ref=e803]:
+              - generic [ref=e804]: Board
+              - generic [ref=e805]: List
+              - generic [ref=e806]: Schedules
+            - generic [ref=e807]:
+              - text: 🔍
+              - generic [ref=e808]: Filter tasks
+          - generic [ref=e809]:
+            - generic [ref=e810]:
+              - generic [ref=e811]:
+                - text: 🔵 Running
+                - generic [ref=e812]: "2"
+              - generic [ref=e813]:
+                - generic [ref=e814]:
+                  - generic [ref=e815]: Refactor WS reconnect
+                  - generic [ref=e816]: run-7f3 · @default · P1
+                - generic [ref=e818]:
+                  - generic [ref=e819]: Soul rewrite
+                  - generic [ref=e820]: run-7e1 · @career-content · P0
+            - generic [ref=e822]:
+              - generic [ref=e823]:
+                - text: Backlog
+                - generic [ref=e824]: "3"
+              - generic [ref=e825]:
+                - generic [ref=e826]:
+                  - generic [ref=e827]: Type WS JSON-RPC contract
+                  - generic [ref=e828]: "@default · P1"
+                - generic [ref=e829]:
+                  - generic [ref=e830]: Map Projects → Kanban
+                  - generic [ref=e831]: unassigned · P2
+                - generic [ref=e832]:
+                  - generic [ref=e833]: openapi-typescript in CI
+                  - generic [ref=e834]: "@ops · P2"
+            - generic [ref=e835]:
+              - generic [ref=e836]:
+                - text: 🔴 Blocked
+                - generic [ref=e837]: "1"
+              - generic [ref=e839]:
+                - generic [ref=e840]: Backup to S3
+                - generic [ref=e841]: ⚠ missing AWS creds · @ops
+            - generic [ref=e842]:
+              - generic [ref=e843]:
+                - text: 🟢 Done
+                - generic [ref=e844]: "2"
+              - generic [ref=e845]:
+                - generic [ref=e846]:
+                  - generic [ref=e847]: Status endpoint shape
+                  - generic [ref=e848]: "@default"
+                - generic [ref=e849]:
+                  - generic [ref=e850]: WS ticket TTL audit
+                  - generic [ref=e851]: "@default"
+            - generic [ref=e853]: 5 empty stages
+      - generic [ref=e854]:
+        - text: W3 · Work — board
+        - generic [ref=e855]: D6, D9 — a real horizontal board at 1280px. Empty stages collapse to a 44px rail. Drag to reassign; dispatch opens a run sheet.
+    - generic [ref=e856]:
+      - generic [ref=e862]:
+        - generic [ref=e863]:
+          - generic [ref=e864]: ▣
+          - generic [ref=e865]:
+            - text: 🛡
+            - generic [ref=e866]: "2"
+          - generic [ref=e867]: ☷
+          - generic [ref=e868]: ⋯
+          - generic [ref=e869]: ⚙
+        - generic [ref=e871]:
+          - generic [ref=e872]: System
+          - generic [ref=e874]:
+            - generic [ref=e875]: ● Gateway running · up 6h 12m
+            - generic [ref=e876]:
+              - generic [ref=e877]: Restart…
+              - generic [ref=e878]: Stop…
+          - generic [ref=e879]:
+            - generic [ref=e881]: CPU 18%
+            - generic [ref=e885]: RAM 2.1 / 8.0 GB
+            - generic [ref=e889]: Disk 58 / 100 GB
+          - generic [ref=e892]:
+            - generic [ref=e893]:
+              - generic [ref=e894]: ✓
+              - generic [ref=e895]:
+                - generic [ref=e896]: Security audit
+                - generic [ref=e897]: passed · 3h ago
+            - generic [ref=e898]:
+              - generic [ref=e899]: ✓
+              - generic [ref=e900]:
+                - generic [ref=e901]: Doctor
+                - generic [ref=e902]: 12/12 checks · 15m ago
+            - generic [ref=e903]:
+              - generic [ref=e904]: ⚠
+              - generic [ref=e905]:
+                - generic [ref=e906]: Backups
+                - generic [ref=e907]: last run failed · missing AWS creds
+              - generic [ref=e908]: fix
+      - generic [ref=e909]:
+        - text: W4 · System
+        - generic [ref=e910]: D9, D15 — content capped at 840px, metrics as a 3-card bar row, destructive actions neutral and confirmed. Profiles / Agents / Artifacts reuse the W2 master-detail pattern, so no separate frames.
+    - generic [ref=e911]:
+      - generic [ref=e917]:
+        - generic [ref=e918]:
+          - generic [ref=e919]: ▣
+          - generic [ref=e920]:
+            - text: 🛡
+            - generic [ref=e921]: "2"
+          - generic [ref=e922]: ☷
+          - generic [ref=e923]: ⋯
+          - generic [ref=e924]: ⚙
+        - generic [ref=e926]:
+          - generic [ref=e927]: Settings
+          - generic [ref=e928]: Connection
+          - generic [ref=e929]:
+            - generic [ref=e930]:
+              - generic [ref=e931]: Gateway URL
+              - generic [ref=e932]: http://127.0.0.1:9119
+            - generic [ref=e933]: ›
+          - generic [ref=e934]:
+            - generic [ref=e935]:
+              - generic [ref=e936]: Model
+              - generic [ref=e937]: GPT-5.5 · managed in Profiles
+            - generic [ref=e938]: Profiles ›
+          - generic [ref=e939]: Notifications
+          - generic [ref=e942]: Enable on this device
+          - generic [ref=e946]: Approval requests
+          - generic [ref=e950]: Runs completed
+          - generic [ref=e952]: Appearance
+          - generic [ref=e953]:
+            - generic [ref=e954]:
+              - generic [ref=e955]: Theme
+              - generic [ref=e956]: System
+            - generic [ref=e957]: ›
+          - generic [ref=e958]: About
+          - generic [ref=e960]:
+            - generic [ref=e961]: Hermes PWA v0.3.0
+            - generic [ref=e962]: Gateway v0.13.3 · plugin hermes-pwa
+          - generic [ref=e964]: Log out
+      - generic [ref=e965]:
+        - text: W5 · Settings
+        - generic [ref=e966]: D9, D14, D16 — single capped column at 720px. Same information architecture as mobile, no stretched cards.
+  - generic [ref=e967]: Mockups only — no production code changed. Data is the real preview-seed data used by the app's own screenshot harness. Reviewed against the live app at 390×844 and 1280×800. Synthesis of 3 independent reviews (Claude Opus 5.5, Gemini 4 Argon, GPT-6.1-Sol).

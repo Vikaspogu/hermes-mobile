@@ -122,8 +122,9 @@ export function Activity({ rpc, rest }: ActivityProps) {
               {isApproval(item) && (
                 <ApprovalCard
                   item={item}
-                  onApprove={(id) => void respondApproval(rpc, id, 'approve', item.sessionId)}
-                  onReject={(id) => void respondApproval(rpc, id, 'reject', item.sessionId)}
+                  onRespond={(id, choice) =>
+                    void respondApproval(rpc, id, choice === 'deny' ? 'reject' : 'approve', item.sessionId, choice)
+                  }
                 />
               )}
               {isClarify(item) && (

@@ -15,11 +15,9 @@ const tabs = [
 const moreItems = [
   { key: 'profiles', row: 'Profiles' },
   { key: 'agents', row: 'Agents' },
-  { key: 'sessions', row: 'Sessions' },
   { key: 'cron', row: 'Schedules' },
   { key: 'artifacts', row: 'Artifacts' },
-  { key: 'system', row: 'System' },
-  { key: 'voice', row: 'Voice' },
+  { key: 'command', row: 'System' },
   { key: 'settings', row: 'Settings' },
 ];
 
