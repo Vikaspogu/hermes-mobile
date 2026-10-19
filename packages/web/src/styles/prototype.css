@@ -295,6 +295,38 @@
   padding-top: 10px;
 }
 
+.hm-more-health {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 10px 14px;
+  margin-bottom: 8px;
+  border: 1px solid var(--hm-color-border);
+  border-radius: var(--hm-radius-md);
+  background: var(--hm-color-surface);
+}
+
+.hm-more-health__line {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--hm-color-text);
+}
+
+.hm-more-health__line--muted {
+  font-size: 12px;
+  color: var(--hm-color-text-muted);
+}
+
+.hm-more-health__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--hm-color-success);
+  flex-shrink: 0;
+}
+
 /* ── Chats home ─────────────────────────────────────────────────────── */
 .hm-chats {
   flex: 1;

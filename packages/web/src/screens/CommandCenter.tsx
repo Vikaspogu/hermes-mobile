@@ -9,6 +9,7 @@ import type {
 import { Icon } from '../components/Icon';
 import { BottomSheet } from '../components/BottomSheet';
 import { HERMES_PWA_VERSION_LABEL } from '../app/version';
+import { fmtGb, fmtPercent, fmtUptime } from '../lib/formatStats';
 
 interface SystemScreenProps {
   rest: RestClient;
@@ -53,28 +54,10 @@ type TerminalState = {
   error?: string | undefined;
 };
 
-function fmtUptime(s: number | undefined): string {
-  if (!s) return '—';
-  const d = Math.floor(s / 86400);
-  const h = Math.floor((s % 86400) / 3600);
-  const m = Math.floor((s % 3600) / 60);
-  if (d > 0) return `${d}d ${h}h`;
-  return h > 0 ? `${h}h ${m}m` : `${m}m`;
-}
-
-function fmtGb(mb: number | undefined): string {
-  if (mb == null) return '—';
-  return `${(mb / 1024).toFixed(1)} GB`;
-}
-
 function fmtMb(mb: number | undefined): string {
   if (mb == null) return '—';
   if (mb >= 1024) return fmtGb(mb);
   return `${mb.toFixed(1)} MB`;
-}
-
-function fmtPercent(value: number | undefined): string {
-  return value == null ? '—' : `${value.toFixed(1)}%`;
 }
 
 function fmtDate(ts: number | undefined): string {

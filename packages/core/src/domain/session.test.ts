@@ -83,3 +83,9 @@ describe('session domain source helpers', () => {
     expect(sessionCurrentSourceId(merged!)).toBe('tui');
   });
 });
+
+describe('toSession preview mapping', () => {
+  it("maps the dashboard's `preview` field to previewText", () => {
+    expect(toSession({ id: 's-1', preview: '/ivan' }).previewText).toBe('/ivan');
+  });
+});
