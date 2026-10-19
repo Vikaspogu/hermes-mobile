@@ -158,6 +158,8 @@ export function Agents({ rpc }: AgentsProps) {
   }, [hasActive]);
 
   const active = agents.filter((a) => a.status === 'running' || a.status === 'queued').length;
+  const activeNodes = tree.filter((n) => n.status === 'running' || n.status === 'queued');
+  const recentNodes = tree.filter((n) => n.status !== 'running' && n.status !== 'queued');
   const failed = agents.filter((a) => a.status === 'failed' || a.status === 'interrupted').length;
   const totalTokens = agents.reduce((s, a) => s + (a.inputTokens ?? 0) + (a.outputTokens ?? 0), 0);
   const totalCost = agents.reduce((s, a) => s + (a.costUsd ?? 0), 0);
@@ -175,8 +177,8 @@ export function Agents({ rpc }: AgentsProps) {
         <span style={{ fontSize: 36 }} aria-hidden="true">
           ✦
         </span>
-        <p className="hm-body-semibold">No active agents</p>
-        <p className="hm-muted">Subagents will appear here when the session is running.</p>
+        <p className="hm-body-semibold">No agents yet</p>
+        <p className="hm-muted">Subagents appear here while a session delegates work.</p>
       </div>
     );
   }
@@ -185,7 +187,12 @@ export function Agents({ rpc }: AgentsProps) {
     <div className="hm-spawn-tree">
       {summary.length > 0 && <p className="hm-spawn-tree__summary">{summary.join(' · ')}</p>}
       <div className="hm-spawn-tree__list">
-        {tree.map((node) => (
+        {activeNodes.length > 0 && <p className="hm-thread-group__label">Active</p>}
+        {activeNodes.map((node) => (
+          <SpawnRow key={node.id} node={node} depth={0} nowMs={nowMs} />
+        ))}
+        {recentNodes.length > 0 && <p className="hm-thread-group__label">Recent</p>}
+        {recentNodes.map((node) => (
           <SpawnRow key={node.id} node={node} depth={0} nowMs={nowMs} />
         ))}
       </div>

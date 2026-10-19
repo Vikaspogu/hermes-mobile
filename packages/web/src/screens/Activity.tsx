@@ -30,10 +30,7 @@ export function Activity({ rpc }: ActivityProps) {
 
   return (
     <div className="hm-activity">
-      <p className="hm-activity__lead">
-        Actions the agent paused on. Respond here or from the live chat —{' '}
-        <span className="hm-activity__code">approval.respond</span> over WS.
-      </p>
+
 
       {error && <div className="hm-warning-banner hm-warning-banner--error">{error}</div>}
 

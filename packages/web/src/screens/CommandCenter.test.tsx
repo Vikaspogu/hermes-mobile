@@ -132,8 +132,9 @@ describe('CommandCenter', () => {
       }),
     });
     render(<CommandCenter rest={rest} />);
-    await waitFor(() => expect(screen.getByRole('button', { name: /Restart gateway/i })).toBeInTheDocument());
-    fireEvent.click(screen.getByRole('button', { name: /Restart gateway/i }));
+    await waitFor(() => expect(screen.getByRole('button', { name: /Manage gateway/i })).toBeInTheDocument());
+    fireEvent.click(screen.getByRole('button', { name: /Manage gateway/i }));
+    fireEvent.click(await screen.findByRole('button', { name: /Restart gateway/i }));
     await waitFor(() => expect(screen.getByRole('dialog', { name: /Restart gateway terminal/i })).toBeInTheDocument());
     await waitFor(() => expect(screen.getByTestId('terminal-output')).toHaveTextContent('gateway restart ok'));
     expect(confirm).toHaveBeenCalled();
