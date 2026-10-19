@@ -9,6 +9,8 @@ from pathlib import Path
 from typing import Any
 from urllib.parse import quote
 
+from fastapi import Request
+
 _CONTROL_CHARS = re.compile(r"[\x00-\x1f\x7f]+")
 _SECRET_LIKE = re.compile(
     r"(?i)(api[_-]?key|token|secret|password|passwd|authorization|bearer)\s*[:=]\s*\S+"
@@ -475,7 +477,7 @@ def send_web_push_to_enabled(payload: dict[str, Any], *, profile: str | None = N
     return sent
 
 
-def _require_dashboard_auth(request) -> None:
+def _require_dashboard_auth(request: Request) -> None:
     """Defense-in-depth auth check for sensitive plugin API routes.
 
     Hermes' dashboard normally protects `/api/*` before plugin routes run. Keep
