@@ -1838,3 +1838,51 @@ select:focus-visible,
   font-size: 15px;
   cursor: pointer;
 }
+
+/* ── Offline card ───────────────────────────────────────────────────── */
+.hm-offline-card {
+  margin: 48px 20px;
+  padding: 28px 20px;
+  background: var(--hm-color-surface);
+  border: 1px solid var(--hm-color-border);
+  border-radius: var(--hm-radius-card);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 8px;
+}
+
+.hm-offline-card__icon {
+  color: var(--hm-color-warning);
+  display: inline-flex;
+  margin-bottom: 4px;
+}
+
+.hm-offline-card__title {
+  margin: 0;
+  font-size: 18px;
+}
+
+.hm-offline-card__url {
+  margin: 0;
+  font-size: 12.5px;
+  color: var(--hm-color-text-muted);
+  background: var(--hm-color-surface-2);
+  border-radius: 8px;
+  padding: 4px 10px;
+}
+
+.hm-offline-card__actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+  margin-top: 10px;
+}
+
+.hm-offline-card__actions .hm-primary,
+.hm-offline-card__actions .hm-ghost {
+  width: 100%;
+  padding: 12px;
+}

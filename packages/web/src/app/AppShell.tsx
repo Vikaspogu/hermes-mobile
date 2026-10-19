@@ -31,6 +31,7 @@ interface AppShellProps {
   rpc: RpcClient;
   rest: RestClient;
   onRetry?: () => void;
+  connectionError?: string | undefined;
 }
 
 const UPDATE_DISMISSED_STORAGE_KEY = 'hermes-pwa:update-dismissed-version';
@@ -159,7 +160,7 @@ function gatewayStatusLabel(state: ConnectionState, gatewayHealth: GatewayHealth
 
 
 
-export function AppShell({ connectionState, rpc, rest, onRetry }: AppShellProps) {
+export function AppShell({ connectionState, rpc, rest, onRetry, connectionError }: AppShellProps) {
   const [navStack, setNavStack] = useState<Screen[]>(() => {
     const initial = getInitialScreen();
     return initial === 'home' ? ['home'] : ['home', initial];
@@ -541,7 +542,9 @@ export function AppShell({ connectionState, rpc, rest, onRetry }: AppShellProps)
       </header>
 
       {/* ── Connection banner ────────────────────────────────────── */}
-      <ConnectionBanner state={connectionState} error={undefined} onRetry={onRetry} />
+      {connectionState !== 'offline' && (
+        <ConnectionBanner state={connectionState} error={connectionError} onRetry={onRetry} />
+      )}
       {showUpdateNotification && updateCheck ? (
         <UpdateNotification update={updateCheck} onDismiss={dismissUpdateNotification} />
       ) : null}
@@ -550,6 +553,27 @@ export function AppShell({ connectionState, rpc, rest, onRetry }: AppShellProps)
       <main className="hm-screen">
         <LazyScreenErrorBoundary key={screen}>
           <Suspense fallback={<p className="hm-muted hm-loading">Loading…</p>}>
+        {connectionState === 'offline' ? (
+          <div className="hm-offline-card" data-testid="offline-card">
+            <span className="hm-offline-card__icon" aria-hidden="true">
+              <Icon name="alert" size={28} />
+            </span>
+            <h2 className="hm-offline-card__title">Can&rsquo;t reach the gateway</h2>
+            <p className="hm-offline-card__url hm-mono">{typeof window !== 'undefined' ? window.location.host : ''}</p>
+            <p className="hm-muted">{connectionError ?? 'Connection failed.'}</p>
+            <div className="hm-offline-card__actions">
+              {onRetry && (
+                <button type="button" className="hm-primary" onClick={onRetry}>
+                  Retry
+                </button>
+              )}
+              <button type="button" className="hm-ghost" onClick={() => navigate('settings')}>
+                Connection settings
+              </button>
+            </div>
+          </div>
+        ) : (
+          <>
             {screen === 'chat'      && <Chat key={activeName ?? 'default'} rpc={rpc} rest={rest} onOpenVoice={() => startTransition(() => setVoiceOpen(true))} />}
             {screen === 'sessions'  && <Sessions key={activeName ?? 'default'} rpc={rpc} rest={rest} onSessionOpen={() => navigate('chat')} />}
             {screen === 'approvals' && <Activity key={activeName ?? 'default'} rpc={rpc} />}
@@ -568,6 +592,8 @@ export function AppShell({ connectionState, rpc, rest, onRetry }: AppShellProps)
                 onLogout={() => void useConnectionStore.getState().logout()}
               />
             )}
+          </>
+        )}
           </Suspense>
         </LazyScreenErrorBoundary>
       </main>

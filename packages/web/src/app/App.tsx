@@ -61,8 +61,23 @@ export function App() {
     );
   }
 
-  if (connection.state === 'offline' || connection.state === 'unsupported' || connection.state === 'incompatible-transport') {
-    const canRetry = connection.state === 'offline';
+  if (connection.state === 'offline') {
+    return (
+      <AppShell
+        connectionState={connection.state}
+        rpc={rpc}
+        rest={rest}
+        connectionError={connection.error}
+        onRetry={() => {
+          connection.bindTransport(rest, ws, rpc);
+          void connection.init();
+        }}
+      />
+    );
+  }
+
+  if (connection.state === 'unsupported' || connection.state === 'incompatible-transport') {
+    const canRetry = false;
     const fallback = connection.state === 'unsupported'
       ? 'Unsupported Hermes server'
       : connection.state === 'incompatible-transport'
