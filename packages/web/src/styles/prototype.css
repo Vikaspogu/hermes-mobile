@@ -2039,3 +2039,21 @@ select:focus-visible,
 @media (min-width: 900px) {
   .hm-header__back { display: none; }
 }
+
+/* Schedules: quiet "+ New" like kanban (G3/M6) */
+.hm-cron__create {
+  appearance: none;
+  border: 0;
+  border-radius: 11px;
+  background: var(--hm-color-tint);
+  color: var(--hm-color-primary);
+  box-shadow: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12.5px;
+  font-weight: var(--hm-fw-semibold);
+  padding: 7px 12px;
+  cursor: pointer;
+  flex: 0 0 auto;
+}

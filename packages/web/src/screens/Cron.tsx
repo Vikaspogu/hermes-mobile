@@ -233,7 +233,7 @@ export function Cron({ rest }: CronProps) {
             </option>
           ))}
         </select>
-        <button type="button" className="hm-primary hm-cron__create" onClick={openCreate} data-testid="cron-new">
+        <button type="button" className="hm-cron__create" onClick={openCreate} data-testid="cron-new">
           <Icon name="plus" size={14} /> New
         </button>
       </div>
@@ -271,7 +271,7 @@ export function Cron({ rest }: CronProps) {
                   <span className={`hm-badge ${paused ? 'hm-badge--pending' : 'hm-badge--pass'}`}>
                     {paused ? 'paused' : job.state ?? 'scheduled'}
                   </span>
-                  <span className="hm-badge hm-badge--profile">{job.profile}</span>
+                  {job.profile && <span className="hm-badge hm-badge--profile">{job.profile}</span>}
                 </div>
                 <div className="hm-cron-card__meta">
                   <span
