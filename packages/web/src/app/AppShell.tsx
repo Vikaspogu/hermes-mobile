@@ -110,7 +110,7 @@ const SCREEN_TITLES: Record<Screen, string> = {
   voice: 'Voice',
   sessions: 'Sessions',
   approvals: 'Inbox',
-  kanban: 'Kanban',
+  kanban: 'Work',
   agents: 'Agents',
   profiles: 'Profiles',
   cron: 'Schedules',
