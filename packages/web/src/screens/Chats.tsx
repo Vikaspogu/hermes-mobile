@@ -141,6 +141,7 @@ export function Chats({ rpc, rest, onNavigate, sidebar }: ChatsProps) {
           </button>
         )}
       </form>
+      )}
 
       {sessions.length > 0 && (
         <div className="hm-chats__search">
