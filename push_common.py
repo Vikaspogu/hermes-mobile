@@ -473,3 +473,27 @@ def send_web_push_to_enabled(payload: dict[str, Any], *, profile: str | None = N
     if changed:
         save_push_subscriptions(records)
     return sent
+
+
+def _require_dashboard_auth(request) -> None:
+    """Defense-in-depth auth check for sensitive plugin API routes.
+
+    Hermes' dashboard normally protects `/api/*` before plugin routes run. Keep
+    an explicit check here too so this plugin does not rely solely on mount-time
+    namespace policy for endpoints that expose local transcripts, backups, or
+    push subscription state.
+
+    Lives in push_common (not plugin_api) so voice_history can use it without
+    importing plugin_api — that import created a cycle
+    (plugin_api → voice_live → voice_history → plugin_api) that made the whole
+    plugin API fail to mount in production (every route 404'd).
+    """
+    from fastapi import HTTPException
+
+    try:
+        from hermes_cli.web_server import _require_token  # type: ignore
+    except Exception as exc:  # pragma: no cover - production Hermes provides it
+        if getattr(request.app.state, "auth_required", False) and getattr(request.state, "session", None) is not None:
+            return
+        raise HTTPException(status_code=401, detail="Unauthorized") from exc
+    _require_token(request)
