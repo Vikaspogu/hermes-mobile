@@ -4490,7 +4490,7 @@ a {
   margin-top: 2px;
   padding: 13px;
   border: 1.5px dashed var(--hm-color-primary-soft);
-  background: #f7f9ff;
+  background: var(--hm-color-tint);
   color: var(--hm-color-primary);
   border-radius: 14px;
   font-size: var(--hm-fs-body);
