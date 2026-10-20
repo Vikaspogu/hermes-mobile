@@ -94,7 +94,7 @@ export function groupThreads(sessions: Session[]): ThreadGroup[] {
 export function Chats({ rpc, rest, onNavigate, sidebar }: ChatsProps) {
   const { sessions, load } = useSessionsStore();
   const activeName = useProfilesStore((s) => s.activeName);
-  const { startNewSession, resumeSessionIntoChat, submit } = useChatStore();
+  const { startNewSession, resumeSessionIntoChat } = useChatStore();
   const pendingApprovals = useActivityStore(
     (s) => s.items.filter((i) => i.kind === 'approval' && i.status === 'needs_you').length,
   );
@@ -103,7 +103,6 @@ export function Chats({ rpc, rest, onNavigate, sidebar }: ChatsProps) {
       s.items.find((i): i is Approval => i.kind === 'approval' && i.status === 'needs_you')
         ?.session,
   );
-  const [draft, setDraft] = useState('');
   const [query, setQuery] = useState('');
 
   useEffect(() => {
@@ -122,15 +121,7 @@ export function Chats({ rpc, rest, onNavigate, sidebar }: ChatsProps) {
     onNavigate('chat');
   }
 
-  function handleSend(e: React.FormEvent) {
-    e.preventDefault();
-    const text = draft.trim();
-    if (!text) return;
-    startNewSession(activeName);
-    onNavigate('chat');
-    void submit(rpc, text, activeName ?? undefined);
-    setDraft('');
-  }
+
 
   const connected = useConnectionStore((s) => s.state === 'connected');
 
@@ -180,24 +171,18 @@ export function Chats({ rpc, rest, onNavigate, sidebar }: ChatsProps) {
         )}
 
         {!sidebar && (
-          <form className="hm-home-composer" onSubmit={handleSend}>
-            <input
-              className="hm-home-composer__input"
-              value={draft}
-              onChange={(e) => setDraft(e.target.value)}
-              placeholder="Message Hermes…"
-              aria-label="New chat message"
-              data-testid="chats-composer"
-            />
-            <button
-              type="submit"
-              className="hm-home-composer__send"
-              aria-label="Start chat"
-              disabled={!draft.trim()}
-            >
-              <Icon name="arrowUp" size={18} />
-            </button>
-          </form>
+          <button
+            type="button"
+            className="hm-fab"
+            aria-label="New chat"
+            data-testid="chats-new-chat"
+            onClick={() => {
+              startNewSession(activeName);
+              onNavigate('chat');
+            }}
+          >
+            <Icon name="plus" size={24} />
+          </button>
         )}
 
         {sessions.length > 0 && (
@@ -216,7 +201,7 @@ export function Chats({ rpc, rest, onNavigate, sidebar }: ChatsProps) {
         <div className="hm-chats__list">
           {threads.length === 0 && (
             <p className="hm-muted hm-home-empty">
-              {query ? 'No chats match your search.' : 'No conversations yet. Start one above.'}
+              {query ? 'No chats match your search.' : 'No conversations yet. Tap + to start one.'}
             </p>
           )}
           {threads.map((group) => (

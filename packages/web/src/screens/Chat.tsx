@@ -509,6 +509,15 @@ export function Chat({ rpc, rest, onOpenVoice }: ChatProps) {
   const storedSessionEnded = Boolean(storedSessionId)
     && sessions.length > 0
     && !sessions.some((sess) => sess.id === storedSessionId || sess.lineageRootId === storedSessionId);
+  // Auto-recover from a dead server session: instead of a blocking banner,
+  // start a fresh chat once and show a one-line note until the first message.
+  const [autoRestarted, setAutoRestarted] = useState(false);
+  useEffect(() => {
+    if (storedSessionEnded && !autoRestarted) {
+      setAutoRestarted(true);
+      useChatStore.getState().startNewSession(activeName ?? undefined);
+    }
+  }, [storedSessionEnded, autoRestarted, activeName]);
   const profileLabel = activeProfile?.displayName ?? activeName ?? 'default';
   const modelLabel = activeProfile?.model ?? 'GPT-5.5';
   const headerTitle = currentSession?.title ?? 'Chat';
@@ -663,17 +672,10 @@ export function Chat({ rpc, rest, onOpenVoice }: ChatProps) {
         aria-busy={streaming}
         aria-label="Conversation"
       >
-        {storedSessionEnded && (
-          <div className="hm-warning-banner hm-warning-banner--warn" role="status">
-            <span>Your previous session has ended on the server.</span>
-            <button
-              type="button"
-              className="hm-ghost"
-              onClick={() => useChatStore.getState().startNewSession(activeName ?? undefined)}
-            >
-              Start new chat
-            </button>
-          </div>
+        {autoRestarted && messages.length === 0 && (
+          <p className="hm-chat__session-note" role="status">
+            Your previous chat ended on the server — you’re in a fresh chat.
+          </p>
         )}
 
         {messages.length === 0 ? (

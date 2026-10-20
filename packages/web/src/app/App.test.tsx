@@ -59,9 +59,9 @@ describe('App Phase 3', () => {
     expect(screen.getByRole('heading', { name: 'Chats' })).toBeInTheDocument();
     const nav = screen.getByRole('navigation', { name: 'Primary' });
     expect(nav).toBeInTheDocument();
-    fireEvent.click(within(nav).getByRole('button', { name: 'Work' }));
+    fireEvent.click(within(nav).getByRole('button', { name: 'Inbox' }));
     await waitFor(() =>
-      expect(screen.getByRole('heading', { name: 'Work' })).toBeInTheDocument(),
+      expect(screen.getByRole('heading', { name: 'Inbox' })).toBeInTheDocument(),
     );
   });
 

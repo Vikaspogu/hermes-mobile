@@ -531,7 +531,7 @@ export function AppShell({ connectionState, rpc, rest, onRetry, connectionError 
   const TABS: { key: Screen | 'more'; label: string; icon: IconName; badge?: number | undefined }[] = [
     { key: 'home', label: 'Chats', icon: 'chat' },
     { key: 'approvals', label: 'Inbox', icon: 'shield', badge: pendingApprovals || undefined },
-    { key: 'kanban', label: 'Work', icon: 'kanban' },
+    // ponytail: Work tab hidden — user doesn't use the kanban board. Route stays for deep links.
     { key: 'more', label: 'More', icon: 'menu' },
   ];
 
