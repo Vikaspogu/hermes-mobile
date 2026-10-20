@@ -86,7 +86,7 @@ export function More({ rest, onNavigate }: MoreProps) {
           <div className="hm-more-health__metric">
             <span>CPU {fmtPercent(stats.cpuPercent)}</span>
             <div className="hm-metricbar">
-              <div className="hm-metricbar__fill" style={{ width: `${Math.min(100, stats.cpuPercent)}%` }} />
+              <div className="hm-metricbar__fill" style={{ width: `${Math.min(100, stats.cpuPercent ?? 0)}%` }} />
             </div>
           </div>
           <div className="hm-more-health__metric">

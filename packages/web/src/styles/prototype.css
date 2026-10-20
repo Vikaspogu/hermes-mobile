@@ -40,6 +40,17 @@
   touch-action: pan-y;
 }
 
+/* Mobile base for the desktop split wrapper: without a constraint here the
+   chat column grows to content and .hm-chat__messages can never overflow,
+   so nothing scrolls. Desktop overrides this to grid in the
+   (min-width: 1200px) and (pointer: fine) media query. */
+.hm-desktop-split {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+
 /* ── Header ─────────────────────────────────────────────────────────── */
 .hm-header {
   box-sizing: border-box;
