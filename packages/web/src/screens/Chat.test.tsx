@@ -1123,4 +1123,59 @@ describe('Chat', () => {
 
     expect(screen.queryByText('background command')).not.toBeInTheDocument();
   });
+
+  it('keeps a deep-linked transcript when the session is only missing from the capped list', async () => {
+    core.useChatStore.setState({
+      sessionId: undefined,
+      storedSessionId: 'cron_silent_run',
+      messages: [{ id: 'm1', role: 'assistant', text: 'cron transcript line', createdAt: 1, toolCalls: [] }],
+      streaming: false,
+      error: undefined,
+    });
+    core.useSessionsStore.setState({
+      sessions: [{ id: 'other-session', title: 'Other', profile: 'default', lastActiveAt: 1 } as unknown as core.Session],
+      loading: false,
+      error: undefined,
+      pinnedIds: [],
+    });
+    const otherSession = { id: 'other-session', title: 'Other', profile: 'default', lastActiveAt: 1 } as unknown as core.Session;
+    restMock = makeRestMock({
+      profileSessions: vi.fn(async () => [otherSession]),
+      sessionMessages: vi.fn(async () => ({ messages: [{ id: 1, role: 'assistant', content: 'cron transcript line' }] })),
+    });
+
+    render(<Chat rpc={rpcMock} rest={restMock} />);
+
+    await waitFor(() => expect(restMock.sessionMessages).toHaveBeenCalledWith('cron_silent_run', 'default'));
+    expect(screen.getByText('cron transcript line')).toBeInTheDocument();
+    expect(screen.queryByText(/previous chat ended/i)).not.toBeInTheDocument();
+  });
+
+  it('starts a fresh chat when the stored session is really gone (404)', async () => {
+    core.useChatStore.setState({
+      sessionId: undefined,
+      storedSessionId: 'gone-session',
+      messages: [{ id: 'm1', role: 'assistant', text: 'stale cached line', createdAt: 1, toolCalls: [] }],
+      streaming: false,
+      error: undefined,
+    });
+    core.useSessionsStore.setState({
+      sessions: [{ id: 'other-session', title: 'Other', profile: 'default', lastActiveAt: 1 } as unknown as core.Session],
+      loading: false,
+      error: undefined,
+      pinnedIds: [],
+    });
+    const otherSession = { id: 'other-session', title: 'Other', profile: 'default', lastActiveAt: 1 } as unknown as core.Session;
+    restMock = makeRestMock({
+      profileSessions: vi.fn(async () => [otherSession]),
+      sessionMessages: vi.fn(async () => {
+        throw new core.HermesHttpError(404, 'Not Found', 'session not found');
+      }),
+    });
+
+    render(<Chat rpc={rpcMock} rest={restMock} />);
+
+    await screen.findByText(/previous chat ended/i);
+    expect(screen.queryByText('stale cached line')).not.toBeInTheDocument();
+  });
 });
