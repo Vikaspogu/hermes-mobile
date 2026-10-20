@@ -43,6 +43,7 @@
 }
 .hm-system__metric-label {
   font-size: 12px;
+  font-family: var(--hm-font-mono);
   color: var(--hm-color-text-muted);
   margin-bottom: 4px;
 }

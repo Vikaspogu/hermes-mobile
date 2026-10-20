@@ -53,7 +53,7 @@ function ArtifactRow({ artifact }: { artifact: Artifact }) {
         {KIND_ICON[kind]}
       </span>
       <span className="hm-artifact-row__body">
-        <span className="hm-artifact-row__name">{artifact.name}</span>
+        <span className={`hm-artifact-row__name${kind === 'link' ? ' hm-artifact-row__name--mono' : ''}`}>{artifact.name}</span>
         <span className="hm-artifact-row__sub">
           {KIND_LABEL[kind]} · {fmtAge(artifact.createdAt)}
         </span>
