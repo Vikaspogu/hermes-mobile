@@ -9,87 +9,76 @@ interface ApprovalCardProps {
   onRespond(id: string, choice: ApprovalChoice): void;
 }
 
+/** "2m ago" — matches the M4 inbox meta line. */
+function timeAgo(createdAt: number): string {
+  const s = Math.max(0, Math.round((Date.now() - createdAt) / 1000));
+  if (s < 60) return 'just now';
+  const m = Math.floor(s / 60);
+  if (m < 60) return `${m}m ago`;
+  const h = Math.floor(m / 60);
+  if (h < 24) return `${h}h ago`;
+  return `${Math.floor(h / 24)}d ago`;
+}
+
 export function ApprovalCard({ item, onRespond }: ApprovalCardProps) {
   const [submitting, setSubmitting] = useState<ApprovalChoice | null>(null);
-  const isHighImpact = item.highImpact;
-  const riskLabel = isHighImpact ? 'HIGH RISK' : 'LOW RISK';
-  const riskColor = isHighImpact ? 'var(--hm-color-danger-strong)' : 'var(--hm-color-success-strong)';
-  const riskBg = isHighImpact ? 'var(--hm-color-danger-bg)' : 'var(--hm-color-success-bg)';
   const busy = submitting !== null;
+  const high = item.highImpact;
 
   function respond(choice: ApprovalChoice) {
     if (busy) return;
-    if (choice === 'always') {
-      const ok = window.confirm(
-        'Always allow this approval pattern? This is persistent and can affect future Hermes actions.',
-      );
-      if (!ok) return;
-    }
     setSubmitting(choice);
     onRespond(item.id, choice);
   }
 
+  const meta = [item.session, timeAgo(item.createdAt)].filter(Boolean).join(' · ');
+
   return (
-    <div className="hm-approval-card" data-testid="approval-card">
-      <div className="hm-approval-card__header">
-        <span className="hm-approval-card__shield" aria-hidden="true">
-          <Icon name="shield" size={16} />
+    <div
+      className={high ? 'hm-card hm-inbox-card hm-inbox-card--high' : 'hm-card hm-inbox-card'}
+      data-testid="approval-card"
+    >
+      <div className="hm-inbox-card__title">
+        <span className="hm-inbox-card__tool">
+          <Icon name="shield" size={14} />
+          {item.title}
         </span>
-        <span className="hm-approval-card__tool">{item.title}</span>
-        <span
-          className="hm-approval-card__risk"
-          style={{ background: riskBg, color: riskColor }}
-        >
-          {riskLabel}
+        <span className={high ? 'hm-risk-tag hm-risk-tag--high' : 'hm-risk-tag hm-risk-tag--low'}>
+          {high ? 'HIGH RISK' : 'LOW RISK'}
         </span>
       </div>
-
-      <div className="hm-approval-card__body">
-        {item.session && (
-          <div className="hm-approval-card__session">{item.session}</div>
-        )}
-        {item.summary && (
-          <div className="hm-approval-card__cmd">{item.summary}</div>
-        )}
-        <div className="hm-approval-card__actions">
+      <div className="hm-inbox-card__meta">{meta}</div>
+      {item.summary && <div className="hm-inbox-card__cmd">{item.summary}</div>}
+      {high ? (
+        // M4: high-risk approvals are reviewed in chat, never approved blind from the inbox.
+        <a
+          className="hm-inbox-card__review"
+          href={item.sessionId ? `#/chat?session=${encodeURIComponent(item.sessionId)}` : '#/chat'}
+        >
+          Open chat to review →
+        </a>
+      ) : (
+        <div className="hm-inbox-card__row">
           <button
             type="button"
-            className="hm-approval-card__approve"
-            disabled={busy}
-            onClick={() => respond('once')}
-            aria-label="Approve"
-          >
-            {submitting === 'once' ? 'Approving…' : 'Approve'}
-          </button>
-          <button
-            type="button"
-            className="hm-approval-card__deny"
+            className="hm-btn hm-btn--danger-outline"
             disabled={busy}
             onClick={() => respond('deny')}
-            aria-label="Deny"
+            aria-label="Reject"
           >
-            {submitting === 'deny' ? 'Rejecting…' : 'Deny'}
+            {submitting === 'deny' ? 'Rejecting…' : 'Reject'}
           </button>
           <button
             type="button"
-            className="hm-approval-card__scope"
+            className="hm-btn hm-btn--primary"
             disabled={busy}
-            onClick={() => respond('session')}
-            aria-label="Allow for this session"
+            onClick={() => respond('once')}
+            aria-label="Approve once"
           >
-            {submitting === 'session' ? 'Allowing…' : 'Session'}
-          </button>
-          <button
-            type="button"
-            className="hm-approval-card__scope"
-            disabled={busy}
-            onClick={() => respond('always')}
-            aria-label="Always allow"
-          >
-            {submitting === 'always' ? 'Allowing…' : 'Always'}
+            {submitting === 'once' ? 'Approving…' : 'Approve once'}
           </button>
         </div>
-      </div>
+      )}
     </div>
   );
 }

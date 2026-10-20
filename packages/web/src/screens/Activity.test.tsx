@@ -35,6 +35,20 @@ describe('Activity', () => {
     expect(screen.getByText('Running')).toBeInTheDocument();
   });
 
+
+  it('groups approvals under Needs you and run/system items under Notices', () => {
+    useActivityStore.setState({
+      items: [
+        { id: 'a-1', kind: 'approval', status: 'needs_you', title: 'shell.exec', createdAt: 1 },
+        { id: 'n-1', kind: 'run', status: 'completed', title: 'Nightly backup', summary: 'Snapshot verified', createdAt: 1 },
+      ],
+    });
+    render(<Activity rpc={rpcMock} />);
+    expect(screen.getByText('Needs you · 1')).toBeInTheDocument();
+    expect(screen.getByText('Notices')).toBeInTheDocument();
+    expect(screen.getByTestId('notice-row')).toHaveTextContent('Nightly backup');
+    expect(screen.getByTestId('notice-row')).toHaveTextContent('Snapshot verified');
+  });
   it('shows connecting state when init/offline', () => {
     useConnectionStore.setState({ state: 'init', error: undefined } as ReturnType<typeof useConnectionStore.getState>);
     render(<Activity rpc={rpcMock} />);
