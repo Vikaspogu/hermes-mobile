@@ -1262,8 +1262,7 @@
   flex-shrink: 0;
   border: 0;
   border-radius: 50%;
-  background: var(--hm-color-text);
-  color: var(--hm-color-surface);
+  /* colors live in app/App.css (.hm-composer__send) — single source */
   display: flex;
   align-items: center;
   justify-content: center;

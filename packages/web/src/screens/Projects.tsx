@@ -19,6 +19,7 @@ function useMediaQuery(query: string): boolean {
 }
 interface ProjectsProps {
   rest: RestClient;
+  onNavigate?: (screen: string) => void;
 }
 
 const COLUMNS: TaskStatus[] = [
@@ -126,7 +127,7 @@ function formatTime(ts: number): string {
   return `${Math.floor(h / 24)}d`;
 }
 
-export function Projects({ rest }: ProjectsProps) {
+export function Projects({ rest, onNavigate }: ProjectsProps) {
   const {
     boards,
     activeBoardSlug,
@@ -370,7 +371,7 @@ export function Projects({ rest }: ProjectsProps) {
           ]}
           value="tasks"
           onChange={(v) => {
-            if (v === 'schedules') window.location.hash = '#/cron';
+            if (v === 'schedules') onNavigate?.('cron');
           }}
         />
       </div>

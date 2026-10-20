@@ -608,12 +608,12 @@ export function AppShell({ connectionState, rpc, rest, onRetry, connectionError 
             )}
             {screen === 'sessions'  && <Sessions key={activeName ?? 'default'} rpc={rpc} rest={rest} onSessionOpen={() => navigate('chat')} />}
             {screen === 'approvals' && <Activity key={activeName ?? 'default'} rpc={rpc} rest={rest} />}
-            {screen === 'kanban'    && <Projects key={activeName ?? 'default'} rest={rest} />}
+            {screen === 'kanban'    && <Projects key={activeName ?? 'default'} rest={rest} onNavigate={(s) => navigate(s as Screen)} />}
             {screen === 'agents'    && <Agents key={activeName ?? 'default'} rpc={rpc} />}
             {screen === 'profiles'  && <Profiles key={activeName ?? 'default'} rest={rest} />}
             {screen === 'command'   && <CommandCenter key={activeName ?? 'default'} rest={rest} />}
             {screen === 'home'      && <Chats key={activeName ?? 'default'} rpc={rpc} rest={rest} onNavigate={(s) => navigate(s as Screen)} onOpenVoice={() => startTransition(() => setVoiceOpen(true))} />}
-            {screen === 'cron'      && <Cron key={activeName ?? 'default'} rest={rest} />}
+            {screen === 'cron'      && <Cron key={activeName ?? 'default'} rest={rest} onNavigate={(s) => navigate(s as Screen)} />}
             {screen === 'artifacts' && <Artifacts key={activeName ?? 'default'} rest={rest} />}
             {screen === 'settings'  && (
               <Settings
