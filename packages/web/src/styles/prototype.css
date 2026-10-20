@@ -1926,7 +1926,7 @@ select:focus-visible,
 }
 
 /* ── Desktop (≥1200px): icon rail + split chat + capped widths ─────── */
-@media (min-width: 1200px) {
+@media (min-width: 1200px) and (pointer: fine) {
   .hm-tabbar {
     position: fixed;
     top: 0;
@@ -2027,7 +2027,7 @@ select:focus-visible,
   }
 }
 
-@media (max-width: 1199px) {
+@media (max-width: 1199px), (pointer: coarse) {
   .hm-desktop-split__side {
     display: none;
   }
@@ -2068,7 +2068,7 @@ select:focus-visible,
 .hm-thread-row__title .hm-live-dot { margin-right: 7px; }
 
 /* Desktop chat: rail is the navigation, no back chevron (W1) */
-@media (min-width: 900px) {
+@media (min-width: 1200px) and (pointer: fine) {
   .hm-header__back { display: none; }
 }
 
