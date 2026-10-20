@@ -47,6 +47,7 @@ export function jobEmoji(job: CronJob): string {
 }
 interface CronProps {
   rest: RestClient;
+  onNavigate?: (screen: string) => void;
 }
 
 type SheetMode =
@@ -72,7 +73,7 @@ function isPaused(job: CronJob): boolean {
   return job.state === 'paused' || !job.enabled;
 }
 
-export function Cron({ rest }: CronProps) {
+export function Cron({ rest, onNavigate }: CronProps) {
   const connection = useConnectionStore();
   const profiles = useProfilesStore();
   const loadProfiles = useProfilesStore((state) => state.load);
@@ -261,7 +262,7 @@ export function Cron({ rest }: CronProps) {
           ]}
           value="schedules"
           onChange={(v) => {
-            if (v === 'tasks') window.location.hash = '#/kanban';
+            if (v === 'tasks') onNavigate?.('kanban');
           }}
         />
       </div>
