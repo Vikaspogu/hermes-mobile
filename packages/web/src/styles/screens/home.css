@@ -1,0 +1,195 @@
+/* home.css — M1 Chats (home) screen styles, mockup-parity v2.
+   Values from .pi/artifacts/hermes-mobile-redesign-mockups.html frame M1.
+   Shared atoms (hm-banner, hm-group-label, …) live in ../prototype.css. */
+
+/* mockup .scroll: uniform 10px rhythm between banner/composer/search/list */
+/* M1 wordmark header: the screen renders its own .hm-app-header (mockup .app-header);
+   the shell's generic title header is hidden only while this header is present. */
+/* .hm-screen prefix beats the legacy .hm-home* rules in prototype.css (loaded later). */
+.hm-screen .hm-home {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  gap: 0;
+  padding: 0;
+  overflow: hidden;
+}
+.hm-app-shell:has(.hm-home__header) > .hm-header {
+  display: none;
+}
+.hm-home__header-dot {
+  margin-left: auto;
+}
+
+.hm-screen .hm-chats {
+  gap: 10px;
+}
+
+.hm-screen .hm-chats__list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* mockup .banner — approval waiting (box from shared .hm-banner atom) */
+/* mockup .banner — approval waiting (box from shared .hm-banner atom) */
+.hm-screen .hm-home__approval-banner {
+  flex: none;
+  width: 100%;
+  appearance: none;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+/* mockup: bare 16px ⚠ — reset the legacy 34px icon chip from prototype.css */
+.hm-screen .hm-home__approval-icon {
+  width: auto;
+  height: auto;
+  border-radius: 0;
+  background: none;
+  flex: none;
+  display: flex;
+  color: var(--hm-color-warning-strong);
+}
+.hm-screen .hm-home__approval-body {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.hm-screen .hm-home__approval-chevron {
+  margin-left: auto;
+  flex: none;
+  color: var(--hm-color-warning-strong);
+  font-size: 16px;
+}
+
+/* mockup M1 composer card: pill input + 38px primary send, no +/mic on home */
+.hm-home-composer {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--hm-color-surface);
+  border: 1px solid var(--hm-color-border);
+  border-radius: 14px;
+  padding: 6px 6px 6px 14px;
+}
+.hm-home-composer__input {
+  flex: 1;
+  min-width: 0;
+  height: 38px;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-size: 14.5px;
+  color: var(--hm-color-text);
+  outline: none;
+}
+.hm-home-composer__input::placeholder {
+  color: var(--hm-color-text-faint);
+}
+.hm-home-composer__send {
+  appearance: none;
+  width: 38px;
+  height: 38px;
+  border: 0;
+  border-radius: 50%;
+  background: var(--hm-color-primary);
+  color: var(--hm-color-on-accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  cursor: pointer;
+}
+.hm-home-composer__send:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+/* mockup .search */
+.hm-home-search {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--hm-color-surface);
+  border: 1px solid var(--hm-color-border);
+  border-radius: 12px;
+  padding: 10px 12px;
+  color: var(--hm-color-text-faint);
+  font-size: 14px;
+}
+.hm-home-search input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  color: var(--hm-color-text);
+  outline: none;
+}
+.hm-home-search input::placeholder {
+  color: var(--hm-color-text-faint);
+}
+
+/* mockup .thread — status dot + body + right meta (overrides prototype.css base) */
+.hm-screen .hm-thread-row {
+  align-items: flex-start;
+  gap: 11px;
+  padding: 11px 12px;
+  border-radius: 14px;
+  margin-bottom: 0;
+  font: inherit;
+}
+.hm-screen .hm-thread-row__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex: none;
+  margin-top: 7px;
+}
+.hm-screen .hm-thread-row__dot--live {
+  background: var(--hm-color-primary);
+  box-shadow: 0 0 0 3px var(--hm-color-primary-tint);
+}
+.hm-screen .hm-thread-row__dot--idle {
+  background: #d3d9e6;
+}
+.hm-screen .hm-thread-row__body {
+  display: block;
+}
+.hm-screen .hm-thread-row__title {
+  display: block;
+  font-size: 14.5px;
+  font-weight: 600;
+}
+.hm-screen .hm-thread-row__preview {
+  display: block;
+  font-size: 12.5px;
+  margin-top: 2px;
+}
+.hm-screen .hm-thread-row__meta {
+  line-height: 1.5;
+  text-align: right;
+}
+.hm-screen .hm-thread-row__live {
+  display: block;
+  color: var(--hm-color-primary);
+  font-weight: 700;
+}
+
+.hm-home-empty {
+  padding: 24px 4px;
+}
+
+/* dark theme: keep the idle dot a faint neutral (light value is unreadable on dark) */
+:root[data-theme='dark'] .hm-screen .hm-thread-row__dot--idle {
+  background: #3a4354;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) .hm-screen .hm-thread-row__dot--idle {
+    background: #3a4354;
+  }
+}
