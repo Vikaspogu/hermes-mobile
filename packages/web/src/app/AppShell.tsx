@@ -494,8 +494,8 @@ export function AppShell({ connectionState, rpc, rest, onRetry, connectionError 
       s = 'home';
     }
     if (s !== navStackRef.current[navStackRef.current.length - 1]) {
-      // Tab roots (Chats/Inbox/Work) reset the stack so tabs never show a back button.
-      const next = s === 'home' || s === 'approvals' || s === 'kanban' ? [s] : [...navStackRef.current, s];
+      // Tab roots (Chats/Inbox) reset the stack so tabs never show a back button.
+      const next = s === 'home' || s === 'approvals' ? [s] : [...navStackRef.current, s];
       navStackRef.current = next;
       setNavStack(next);
       window.history.pushState({ hmNav: next.length - 1 }, '');

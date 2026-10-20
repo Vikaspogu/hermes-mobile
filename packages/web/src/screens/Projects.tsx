@@ -361,7 +361,6 @@ export function Projects({ rest, onNavigate }: ProjectsProps) {
 
   return (
     <div className="hm-projects">
-      <div className="hm-projects__topbar">
       <div className="work-head">
         <SegmentedControl
           ariaLabel="Work view"
@@ -375,6 +374,7 @@ export function Projects({ rest, onNavigate }: ProjectsProps) {
           }}
         />
       </div>
+      <div className="hm-projects__topbar">
         <button
           className="hm-projects__board-select"
           onClick={() => setSelectorOpen(!selectorOpen)}
