@@ -354,7 +354,8 @@ textarea {
   display: flex;
   flex-direction: column;
   gap: 12px;
-  padding: 14px 16px calc(20px + env(safe-area-inset-bottom, 0px));
+  /* bottom padding clears the 54px FAB (bottom:96px) so rows scroll past it */
+  padding: 14px 16px calc(84px + env(safe-area-inset-bottom, 0px));
 }
 
 .hm-chats__composer {
@@ -2141,8 +2142,8 @@ select:focus-visible,
 
 /* mockup: .iconbtn — 36×36 ghost icon button */
 .hm-iconbtn {
-  width: 36px;
-  height: 36px;
+  width: var(--hm-tap-min);
+  height: var(--hm-tap-min);
   border-radius: 10px;
   display: flex;
   align-items: center;

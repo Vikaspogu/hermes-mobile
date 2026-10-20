@@ -60,6 +60,7 @@ describe('Agents (M11)', () => {
       node({ id: 'run-7d9', goal: 'Backup to S3', status: 'failed', model: 'ops', stream: [{ kind: 'summary', text: 'missing AWS creds', at: Date.now() }] }),
     ]);
     render(<Agents rpc={rpcMock} />);
+    fireEvent.click(screen.getByRole('tab', { name: 'Recent · 2' }));
     const rows = screen.getAllByTestId('agents-recent-row');
     expect(rows).toHaveLength(2);
     expect(rows[0]).toHaveTextContent('✓');

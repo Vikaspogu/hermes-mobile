@@ -144,7 +144,7 @@ export function Agents({ rpc }: AgentsProps) {
 
       {tab === 'active' && activeNodes.map((node) => <ActiveCard key={node.id} node={node} nowMs={nowMs} />)}
 
-      {recentNodes.length > 0 && (
+      {tab === 'recent' && recentNodes.length > 0 && (
         <>
           <p className="hm-group-label">Recent</p>
           {recentNodes.map((node) => (

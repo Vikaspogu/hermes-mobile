@@ -48,18 +48,19 @@
   padding: 8px 10px;
   margin: 8px 0;
   color: var(--hm-color-text-2);
-  white-space: nowrap;
+  white-space: normal;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow-wrap: anywhere;
   overflow: hidden;
-  text-overflow: ellipsis;
 }
 .hm-inbox-card__row {
   display: flex;
   gap: 10px;
   align-items: center;
 }
-.hm-inbox-card__row .hm-btn {
-  height: 40px;
-}
+/* row buttons inherit the shared 44px .hm-btn height (44px touch target) */
 .hm-inbox-card__review {
   display: inline-block;
   font-size: 12.5px;

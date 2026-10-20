@@ -333,7 +333,7 @@ export function Cron({ rest, onNavigate }: CronProps) {
                   checked={!paused}
                   disabled={actionLoading === `pause:${job.id}` || actionLoading === `resume:${job.id}`}
                   onChange={() => void handlePauseResume(job)}
-                  aria-label={paused ? `Enable ${title}` : `Pause ${title}`}
+                  aria-label={paused ? `${title} paused` : `${title} enabled`}
                 />
                 <span className="hm-toggle__track" aria-hidden="true" />
               </label>
