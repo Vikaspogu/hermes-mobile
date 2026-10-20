@@ -8,6 +8,7 @@ import {
   useActivityStore,
   useConfigStore,
   sessionSourceLabel,
+  HermesHttpError,
   type Approval,
   type RpcClient,
   type RestClient,
@@ -511,13 +512,27 @@ export function Chat({ rpc, rest, onOpenVoice }: ChatProps) {
     && !sessions.some((sess) => sess.id === storedSessionId || sess.lineageRootId === storedSessionId);
   // Auto-recover from a dead server session: instead of a blocking banner,
   // start a fresh chat once and show a one-line note until the first message.
+  // The sessions list is capped and drops silent cron runs, so absence is not
+  // proof the session ended — a notification deep link opens sessions the list
+  // never shows. Probe the server; only a real 404 means it is gone.
   const [autoRestarted, setAutoRestarted] = useState(false);
   useEffect(() => {
-    if (storedSessionEnded && !autoRestarted) {
-      setAutoRestarted(true);
-      useChatStore.getState().startNewSession(activeName ?? undefined);
-    }
-  }, [storedSessionEnded, autoRestarted, activeName]);
+    if (!storedSessionEnded || autoRestarted || !storedSessionId) return undefined;
+    let cancelled = false;
+    rest
+      .sessionMessages(storedSessionId, activeName ?? undefined)
+      .then(() => {
+        // Session exists server-side (e.g. a silent cron run): keep its transcript.
+      })
+      .catch((err) => {
+        if (cancelled || !(err instanceof HermesHttpError) || err.status !== 404) return;
+        setAutoRestarted(true);
+        useChatStore.getState().startNewSession(activeName ?? undefined);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [storedSessionEnded, autoRestarted, storedSessionId, rest, activeName]);
   const profileLabel = activeProfile?.displayName ?? activeName ?? 'default';
   const modelLabel = activeProfile?.model ?? 'GPT-5.5';
   const headerTitle = currentSession?.title ?? 'Chat';
