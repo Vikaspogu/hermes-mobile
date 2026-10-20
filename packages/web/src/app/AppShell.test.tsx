@@ -211,16 +211,13 @@ describe('AppShell', () => {
     expect(row).toHaveTextContent('3 msgs');
   });
 
-  it('starts a new chat from the home composer', async () => {
-    const submit = vi.spyOn(useChatStore.getState(), 'submit').mockResolvedValue('submitted');
+  it('starts a new chat from the home FAB', async () => {
     render(<AppShell connectionState="connected" rpc={rpcMock} rest={restMock} />);
     expect(screen.getByRole('heading', { name: 'Chats' })).toBeInTheDocument();
 
-    const input = screen.getByTestId('chats-composer');
-    fireEvent.change(input, { target: { value: 'hello agent' } });
-    fireEvent.submit(input.closest('form')!);
+    fireEvent.click(screen.getByTestId('chats-new-chat'));
 
-    await waitFor(() => expect(submit).toHaveBeenCalledWith(rpcMock, 'hello agent', undefined));
+    await waitFor(() => expect(screen.getByLabelText('Message input')).toBeInTheDocument());
   });
 
   it('shows the tab bar with Chats active', () => {
@@ -229,7 +226,7 @@ describe('AppShell', () => {
     const nav = screen.getByRole('navigation', { name: 'Primary' });
     expect(within(nav).getByRole('button', { name: 'Chats' })).toHaveAttribute('aria-current', 'page');
     expect(within(nav).getByRole('button', { name: 'Inbox' })).toBeInTheDocument();
-    expect(within(nav).getByRole('button', { name: 'Work' })).toBeInTheDocument();
+    expect(within(nav).queryByRole('button', { name: 'Work' })).not.toBeInTheDocument();
     expect(within(nav).getByRole('button', { name: 'More' })).toBeInTheDocument();
   });
 
@@ -309,14 +306,6 @@ describe('AppShell', () => {
     );
   });
 
-  it('switches to kanban via the Work tab', async () => {
-    render(<AppShell connectionState="connected" rpc={rpcMock} rest={restMock} />);
-    fireEvent.click(screen.getByRole('button', { name: 'Work' }));
-    await waitFor(() =>
-      expect(screen.getByRole('heading', { name: 'Work' })).toBeInTheDocument(),
-    );
-  });
-
   it('navigates to settings screen via the More sheet', async () => {
     render(<AppShell connectionState="connected" rpc={rpcMock} rest={restMock} />);
     fireEvent.click(screen.getByRole('button', { name: 'More' }));
@@ -389,11 +378,11 @@ describe('AppShell', () => {
 
   it('keeps the current screen persisted when the PWA is backgrounded or closed', async () => {
     render(<AppShell connectionState="connected" rpc={rpcMock} rest={restMock} />);
-    fireEvent.click(screen.getByRole('button', { name: 'Work' }));
-    await waitFor(() => expect(screen.getByRole('heading', { name: 'Work' })).toBeInTheDocument());
+    fireEvent.click(screen.getByRole('button', { name: 'Inbox' }));
+    await waitFor(() => expect(screen.getByRole('heading', { name: 'Inbox' })).toBeInTheDocument());
     localStorage.removeItem('hermes-mobile-screen');
     window.dispatchEvent(new Event('pagehide'));
-    expect(localStorage.getItem('hermes-mobile-screen')).toBe('kanban');
+    expect(localStorage.getItem('hermes-mobile-screen')).toBe('approvals');
   });
 
   it('persists screen to localStorage when navigating', async () => {
@@ -467,7 +456,7 @@ describe('AppShell', () => {
     });
     useConnectionStore.setState({ state: 'reconnecting', error: undefined } as ReturnType<typeof useConnectionStore.getState>);
     render(<AppShell connectionState="reconnecting" rpc={rpcMock} rest={restMock} />);
-    await waitFor(() => expect(screen.getByText('Tool actions')).toBeInTheDocument());
+    await waitFor(() => expect(screen.getAllByText(/Running command|Ran command/).length).toBeGreaterThanOrEqual(1));
 
     rpcMock.events.dispatchEvent({
       type: 'approval.request',

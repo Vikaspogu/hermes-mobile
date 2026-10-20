@@ -1,4 +1,5 @@
 import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import { memo, useState } from 'react';
 import type { Approval, Message, ToolCall } from '@hermes-pwa/core';
 import { ToolGroup } from './ToolGroup';
@@ -197,7 +198,7 @@ function MessageBubbleView({
         <p className="hm-message__silent">Silent run — nothing to report</p>
       ) : message.text ? (
         <div className="hm-message__text">
-          <ReactMarkdown components={MARKDOWN_COMPONENTS}>{message.text}</ReactMarkdown>
+          <ReactMarkdown remarkPlugins={[remarkGfm]} components={MARKDOWN_COMPONENTS}>{message.text}</ReactMarkdown>
           {showCaret && <span className="hm-message__caret" />}
         </div>
       ) : null}

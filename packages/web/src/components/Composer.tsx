@@ -484,8 +484,8 @@ export function Composer({
               onClick={onOpenVoice}
               aria-label="Open voice call"
             >
-              <Icon name="wave" size={19} />
-              <span aria-hidden="true">Voice</span>
+              <Icon name="mic" size={19} />
+              <span>Voice</span>
             </button>
           )}
 

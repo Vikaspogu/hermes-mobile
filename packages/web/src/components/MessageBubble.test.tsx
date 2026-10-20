@@ -107,8 +107,9 @@ describe('MessageBubble', () => {
         }}
       />,
     );
-    fireEvent.click(screen.getByRole('button', { name: /Tool actions/i }));
-    expect(screen.getByText('Search')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: /Search/i }));
+    // Header summary + expanded row both carry the title.
+    expect(screen.getAllByText('Search').length).toBeGreaterThanOrEqual(2);
   });
 
   it('keeps inline approval visible for a pending tool after restore clears streaming', () => {
@@ -379,7 +380,9 @@ describe('MessageBubble', () => {
     );
 
     expect(screen.getByText('Check manually:')).toBeInTheDocument();
-    expect(screen.getByText(/\[x\] item stays as regular markdown/)).toBeInTheDocument();
+    // GFM renders task lists as checkboxes; the item must NOT become a TodoPanel.
+    expect(screen.getByRole('checkbox')).toBeChecked();
+    expect(screen.getByText(/item stays as regular markdown/)).toBeInTheDocument();
   });
 
   it('renders app icon and inline live status with animated activity dots', () => {

@@ -1039,7 +1039,10 @@ export const useChatStore = create<ChatStore>((set, get) => ({
         sessionId: cached.sessionId,
         storedSessionId: cached.storedSessionId,
         messages: cached.messages,
-        streaming: cached.streaming,
+        // A cached streaming flag is always stale: no live turn survives a reload,
+        // and a dead turn would otherwise stick the composer in interrupt mode.
+        // A genuinely running turn re-marks streaming via WS events.
+        streaming: false,
         error: undefined,
         cacheProfile: cached.profile ?? cacheProfile,
       });

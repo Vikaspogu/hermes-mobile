@@ -62,7 +62,13 @@ export function ToolGroup({ tools, rpc, streaming }: ToolGroupProps) {
   // Collapsed by default; only running tools stay visible so live progress and approvals are never hidden.
   const showRows = open || runningCount > 0;
   const visibleTools = open ? tools : tools.filter((t) => t.output === undefined);
-
+  // Mockup-style collapsed summary: "Read 2 files · Bash +2" instead of a generic label.
+  const summary = useMemo(() => {
+    const titles = tools.slice(0, 2).map((t) => buildToolView(t).title);
+    const rest = tools.length - titles.length;
+    const text = titles.join(' · ') + (rest > 0 ? ` · +${rest} more` : '');
+    return truncate(text || 'Tool actions', 60);
+  }, [tools]);
   return (
     <div className="hm-tool-group">
       <button
@@ -74,7 +80,7 @@ export function ToolGroup({ tools, rpc, streaming }: ToolGroupProps) {
         <span className="hm-tool-group__header-icon">
           <Icon name="settings" size={12} />
         </span>
-        <span className="hm-tool-group__header-title">Tool actions</span>
+        <span className="hm-tool-group__header-title">{summary}</span>
         <span className="hm-tool-group__header-meta">
           {tools.length} {tools.length === 1 ? 'step' : 'steps'} · {stateLabel}
         </span>

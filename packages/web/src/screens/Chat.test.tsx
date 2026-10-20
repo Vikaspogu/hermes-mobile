@@ -962,10 +962,10 @@ describe('Chat', () => {
 
     render(<Chat rpc={rpcMock} rest={restMock} />);
 
-    expect(screen.getByText('Tool actions')).toBeInTheDocument();
     expect(screen.getByText(/1 step · done/i)).toBeInTheDocument();
-    fireEvent.click(screen.getByRole('button', { name: /Tool actions/i }));
-    expect(screen.getByText(/Ran command/i)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: /Ran command/i }));
+    // Header summary + expanded row both carry the title.
+    expect(screen.getAllByText(/Ran command/i).length).toBeGreaterThanOrEqual(2);
     expect(screen.getByText(/whoami=stasstep/i)).toBeInTheDocument();
   });
 
