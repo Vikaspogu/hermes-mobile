@@ -1,6 +1,14 @@
 /* Prototype design-system overrides — Phase 1 */
 /* Imported after App.css so these rules win by source order. */
 
+/* Form controls don't inherit the body font from the UA stylesheet — without
+   this every button/pill/segment falls back to Arial instead of Hanken Grotesk. */
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
 /* ── Scroll helpers ─────────────────────────────────────────────────── */
 .hm-scroll::-webkit-scrollbar {
   width: 0;

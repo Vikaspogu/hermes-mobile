@@ -447,6 +447,16 @@ export function Composer({
       )}
 
       <div className="hm-composer__pill">
+          <button
+            type="button"
+            className="hm-composer__action"
+            onClick={() => setAttachMenuOpen((v) => !v)}
+            disabled={!onUploadFile}
+            aria-label="Add attachment"
+          >
+            <Icon name="plus" size={19} />
+          </button>
+          <AttachMenu open={attachMenuOpen} onClose={() => setAttachMenuOpen(false)} onFiles={handleFilesSelected} />
         <textarea
           ref={textareaRef}
           value={text}
@@ -466,16 +476,6 @@ export function Composer({
         />
 
         <div className="hm-composer__toolbar">
-          <button
-            type="button"
-            className="hm-composer__action"
-            onClick={() => setAttachMenuOpen((v) => !v)}
-            disabled={!onUploadFile}
-            aria-label="Add attachment"
-          >
-            <Icon name="plus" size={19} />
-          </button>
-          <AttachMenu open={attachMenuOpen} onClose={() => setAttachMenuOpen(false)} onFiles={handleFilesSelected} />
 
           {onOpenVoice && (
             <button

@@ -67,6 +67,12 @@
   text-overflow: ellipsis;
 }
 
+/* mockup: link rows render the URL name in mono */
+.hm-artifact-row__name--mono {
+  font-family: var(--hm-font-mono);
+  font-weight: 500;
+}
+
 /* mockup: .listrow .lr-sub */
 .hm-artifact-row__sub {
   font-size: 12px;
