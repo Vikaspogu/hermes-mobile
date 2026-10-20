@@ -12,6 +12,7 @@ import { dismissTopBackLayer, registerBackLayer } from '../lib/backLayers';
 import { fmtGb, fmtPercent, fmtUptime } from '../lib/formatStats';
 import { HERMES_PWA_VERSION_LABEL } from './version';
 import { syncPushSubscription } from '../pwa/push';
+import '../styles/screens/offline.css';
 
 export type Screen =
   | 'home'
@@ -114,7 +115,7 @@ const SCREEN_TITLES: Record<Screen, string> = {
   approvals: 'Inbox',
   kanban: 'Work',  agents: 'Agents',
   profiles: 'Profiles',
-  cron: 'Schedules',
+  cron: 'Work',
   artifacts: 'Artifacts',
   skills: 'Skills',
   command: 'System',
@@ -573,23 +574,24 @@ export function AppShell({ connectionState, rpc, rest, onRetry, connectionError 
         <LazyScreenErrorBoundary key={screen}>
           <Suspense fallback={<p className="hm-muted hm-loading">Loading…</p>}>
         {connectionState === 'offline' ? (
-          <div className="hm-offline-card" data-testid="offline-card">
-            <span className="hm-offline-card__icon" aria-hidden="true">
-              <Icon name="alert" size={28} />
-            </span>
-            <h2 className="hm-offline-card__title">Can&rsquo;t reach the gateway</h2>
-            <p className="hm-offline-card__url hm-mono">{typeof window !== 'undefined' ? window.location.host : ''}</p>
-            <p className="hm-muted">{connectionError ?? 'Connection failed.'}</p>
-            <div className="hm-offline-card__actions">
+          <div className="hm-offline" data-testid="offline-card">
+            <div className="hm-wordmark">Hermes</div>
+            <div className="hm-offline__icon" aria-hidden="true">📡</div>
+            <h2 className="hm-offline__title">Can&rsquo;t reach the gateway</h2>
+            <p className="hm-offline__url hm-mono">
+              Connection refused at {typeof window !== 'undefined' ? window.location.host : ''}
+            </p>
+            <div className="hm-offline__actions">
               {onRetry && (
-                <button type="button" className="hm-primary" onClick={onRetry}>
+                <button type="button" className="hm-btn hm-btn--primary" onClick={onRetry}>
                   Retry
                 </button>
               )}
-              <button type="button" className="hm-ghost" onClick={() => navigate('settings')}>
-                Connection settings
+              <button type="button" className="hm-btn hm-btn--ghost" onClick={() => navigate('settings')}>
+                Change gateway URL
               </button>
             </div>
+            <p className="hm-offline__hint">Tailscale on? Gateway running? Check Settings → Connection.</p>
           </div>
         ) : (
           <>
