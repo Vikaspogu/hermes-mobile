@@ -18,8 +18,8 @@ Basis: full UI/UX review — Playwright screenshots of every screen at mobile re
 | #3  | 7343977  | Polish: unified approval cards, tab nav, quiet headers, dark-mode fixes, desktop chat sidebar variant                                                              |
 | #4  | d9ce4f5  | Screen-by-screen parity pass M1–M14 + W1 (details below)                                                                                                           |
 | #5  | 1e3b74c  | plugin_api.py mount fix (diagnostics 404 root cause)                                                                                                               |
-| #6  | 6cf0474  | diagnostics 422 fix (`request: Request` annotation) + mount regression test                                                                                         |
-| #7  | c8fea86  | chats preview text, Artifacts 404 note, More sheet gateway health summary (from production mockup verification)                                                      |
+| #6  | 6cf0474  | diagnostics 422 fix (`request: Request` annotation) + mount regression test                                                                                        |
+| #7  | c8fea86  | chats preview text, Artifacts 404 note, More sheet gateway health summary (from production mockup verification)                                                    |
 
 ## Page-by-page: what changed vs mockup
 
