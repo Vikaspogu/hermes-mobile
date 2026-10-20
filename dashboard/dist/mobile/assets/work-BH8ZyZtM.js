@@ -1,0 +1,1 @@
+import{j as s}from"./index-BZC3ldlu.js";function i({options:l,value:a,onChange:r,ariaLabel:m}){return s.jsx("div",{className:"hm-seg",role:"group","aria-label":m,children:l.map(e=>s.jsx("button",{type:"button",className:`hm-seg__item${e.value===a?" hm-seg__item--on":""}`,"aria-pressed":e.value===a,onClick:()=>r(e.value),children:e.label},e.value))})}export{i as S};

@@ -116,7 +116,7 @@ describe('Cron', () => {
     vi.mocked(restMock.cronPauseJob).mockResolvedValue({ ...jobs[0]!, enabled: false });
     render(<Cron rest={restMock} />);
     await waitFor(() => expect(screen.getByText('Daily backup')).toBeInTheDocument());
-    fireEvent.click(screen.getByRole('checkbox', { name: 'Pause Daily backup' }));
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Daily backup enabled' }));
     await waitFor(() => expect(restMock.cronPauseJob).toHaveBeenCalledWith('job-1', 'default'));
   });
 
@@ -124,7 +124,7 @@ describe('Cron', () => {
     vi.mocked(restMock.cronResumeJob).mockResolvedValue({ ...jobs[1]!, enabled: true });
     render(<Cron rest={restMock} />);
     await waitFor(() => expect(screen.getByText('Health check')).toBeInTheDocument());
-    fireEvent.click(screen.getByRole('checkbox', { name: 'Enable Health check' }));
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Health check paused' }));
     await waitFor(() => expect(restMock.cronResumeJob).toHaveBeenCalledWith('job-2', 'default'));
   });
 
