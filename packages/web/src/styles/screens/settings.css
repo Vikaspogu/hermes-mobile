@@ -1,0 +1,136 @@
+/* settings.css — M14 Settings screen (mockup-parity v2).
+   Values lifted from .pi/artifacts/hermes-mobile-redesign-mockups.html frame M14:
+   .scroll, .listrow, .lr-title/.lr-sub/.lr-right, .switch, logout row.
+   Shared atoms reused: .hm-group-label, .hm-btn--danger-outline. */
+
+/* mockup: .scroll — column of rows, 10px gaps, 14/16 padding (overrides App.css .hm-settings) */
+.hm-settings {
+  gap: 10px;
+  padding: 14px 16px;
+}
+
+.hm-settings__group-label--first {
+  padding-top: 0;
+}
+
+/* mockup: .listrow */
+.hm-set-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 13px 14px;
+  background: var(--hm-color-surface);
+  border: 1px solid var(--hm-color-border);
+  border-radius: 14px;
+  width: 100%;
+  text-align: left;
+  font: inherit;
+  color: inherit;
+}
+
+.hm-set-row--link {
+  cursor: pointer;
+}
+
+.hm-set-row__body {
+  flex: 1;
+  min-width: 0;
+}
+
+/* mockup: .lr-title */
+.hm-set-row__title {
+  font-size: 14.5px;
+  font-weight: 600;
+}
+
+/* mockup: .lr-sub */
+.hm-set-row__sub {
+  font-size: 12px;
+  color: var(--hm-color-text-muted);
+  margin-top: 1px;
+  overflow-wrap: anywhere;
+}
+
+.hm-set-row__sub--mono {
+  font-family: var(--hm-font-mono);
+}
+
+/* mockup: .lr-right chevron */
+.hm-set-row__chevron {
+  margin-left: auto;
+  color: var(--hm-color-text-faint);
+  font-size: 12.5px;
+  flex: none;
+}
+
+/* mockup: M14 "Profiles ›" link */
+.hm-set-row__link {
+  margin-left: auto;
+  color: var(--hm-color-primary);
+  font-weight: 600;
+  font-size: 12.5px;
+  flex: none;
+}
+
+/* mockup: .switch / .switch.off — iOS-style toggle */
+.hm-set-switch {
+  width: 42px;
+  height: 25px;
+  border-radius: 13px;
+  background: var(--hm-color-primary);
+  position: relative;
+  flex: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  margin-left: auto;
+}
+
+.hm-set-switch::after {
+  content: '';
+  position: absolute;
+  right: 3px;
+  top: 3px;
+  width: 19px;
+  height: 19px;
+  border-radius: 50%;
+  background: #fff;
+}
+
+.hm-set-switch--off {
+  background: #cfd6e4;
+}
+
+.hm-set-switch--off::after {
+  right: auto;
+  left: 3px;
+}
+
+.hm-set-switch:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.hm-settings__note {
+  margin: 0;
+  font-size: 12px;
+  color: var(--hm-color-text-muted);
+  padding: 0 4px;
+}
+
+.hm-settings__logout {
+  width: 100%;
+  border-radius: 14px;
+  flex: none; /* .hm-btn base is flex:1 — inside the column it would stretch to fill viewport height */
+}
+
+/* Dark theme: mockup only specifies light; keep the off-state track visible on dark surfaces. */
+:root[data-theme='dark'] .hm-set-switch--off {
+  background: var(--hm-color-border);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) .hm-set-switch--off {
+    background: var(--hm-color-border);
+  }
+}
