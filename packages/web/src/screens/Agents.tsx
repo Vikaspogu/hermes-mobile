@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react';
-import { useSpawnStore, useChatStore, type RpcClient, type SpawnNode, type SpawnStatus } from '@hermes-pwa/core';
+import { useSpawnStore, useChatStore, type RpcClient, type SpawnNode } from '@hermes-pwa/core';
+// ponytail: prototype.css's trailing @import of screens/*.css is dropped by Vite
+import '../styles/screens/agents.css';
 
 interface AgentsProps {
   rpc: RpcClient;
@@ -15,121 +17,67 @@ function fmtDuration(s: number | undefined): string {
   return `${m}m${rem > 0 ? ` ${rem}s` : ''}`;
 }
 
-function fmtTokens(n: number | undefined): string {
-  if (!n) return '';
-  return n >= 1000 ? `${(n / 1000).toFixed(1)}k tok` : `${n} tok`;
+function openSessionChat(sessionId: string) {
+  // AppShell's hashchange deep-link handler navigates to chat and resumes the session.
+  window.location.hash = `#/chat?session=${encodeURIComponent(sessionId)}`;
 }
 
-function fmtAge(updatedAt: number, nowMs: number): string {
-  const s = Math.max(0, Math.round((nowMs - updatedAt) / 1000));
-  if (s < 2) return 'now';
-  if (s < 60) return `${s}s ago`;
-  const m = Math.floor(s / 60);
-  if (m < 60) return `${m}m ago`;
-  return `${Math.floor(m / 60)}h ago`;
-}
-
-function StatusDot({ status }: { status: SpawnStatus }) {
-  const color =
-    status === 'running' || status === 'queued'
-      ? 'var(--hm-color-running)'
-      : status === 'completed'
-        ? 'var(--hm-color-success)'
-        : 'var(--hm-color-danger)';
-  const isActive = status === 'running' || status === 'queued';
+function ActiveCard({ node, nowMs }: { node: SpawnNode; nowMs: number }) {
+  const runningFor = fmtDuration((nowMs - node.startedAt) / 1000);
+  const meta = [
+    node.model,
+    node.status === 'queued' ? 'queued' : `running${runningFor ? ` ${runningFor}` : ''}`,
+    node.taskCount > 1 ? `step ${node.taskIndex} of ${node.taskCount}` : '',
+  ].filter(Boolean);
   return (
-    <span
-      className="hm-spawn-dot"
-      style={{
-        background: color,
-        animation: isActive ? 'hm-pulse 1.6s infinite' : undefined,
-      }}
-      aria-label={status}
-    />
-  );
-}
-
-function StreamLine({ text, kind, isError }: { text: string; kind: string; isError?: boolean }) {
-  const isMono = kind === 'tool';
-  return (
-    <div className={`hm-spawn-stream-line${isError ? ' hm-spawn-stream-line--error' : ''}`}>
-      <span className="hm-spawn-stream-glyph" aria-hidden="true">
-        {kind === 'tool' ? '·' : kind === 'summary' ? '✓' : kind === 'thinking' ? '…' : '›'}
-      </span>
-      <span className={isMono ? 'hm-mono hm-spawn-stream-text' : 'hm-spawn-stream-text'}>{text}</span>
+    <div className="hm-card hm-agents-card--active" data-testid="agents-active-card">
+      <div className="hm-agents-card__title">
+        <span>
+          <span className="hm-agents-pulse" aria-hidden="true" />
+          {node.id} · {node.goal}
+        </span>
+      </div>
+      <div className="hm-agents-card__meta">{meta.join(' · ')}</div>
+      <button type="button" className="hm-agents-card__open" onClick={() => openSessionChat(node.sessionId)}>
+        Open chat →
+      </button>
     </div>
   );
 }
 
-function SpawnRow({ node, depth = 0, nowMs }: { node: SpawnNode; depth?: number; nowMs: number }) {
-  const running = node.status === 'running' || node.status === 'queued';
-  const [open, setOpen] = useState(() => running || depth < 2);
-
-  useEffect(() => {
-    if (running) setOpen(true);
-  }, [running]);
-
-  const tokens = (node.inputTokens ?? 0) + (node.outputTokens ?? 0);
+function RecentRow({ node }: { node: SpawnNode }) {
+  const ok = node.status === 'completed';
+  const lastNote = node.stream.at(-1)?.text;
   const meta = [
     node.model,
-    fmtDuration(node.durationSeconds),
-    fmtTokens(tokens),
-    node.costUsd ? `$${node.costUsd.toFixed(2)}` : '',
-    fmtAge(node.updatedAt, nowMs),
+    ok
+      ? `finished${node.durationSeconds ? ` in ${fmtDuration(node.durationSeconds)}` : ''}`
+      : node.status === 'interrupted'
+        ? 'interrupted'
+        : 'failed',
+    !ok && lastNote ? lastNote : '',
   ].filter(Boolean);
-
-  const visibleStream = open ? node.stream.slice(-8) : node.stream.slice(-1);
-
   return (
-    <div className={`hm-spawn-row${depth > 0 ? ' hm-spawn-row--child' : ''}`} data-testid="spawn-row">
-      <button className="hm-spawn-row__header" aria-expanded={open} onClick={() => setOpen((v) => !v)}>
-        <StatusDot status={node.status} />
-        <span className={`hm-spawn-row__goal${running ? ' hm-spawn-row__goal--active' : ''}`}>{node.goal}</span>
-        <span className="hm-spawn-row__chevron" aria-hidden="true">
-          {open ? '▾' : '▸'}
-        </span>
+    <div className="hm-agents-row" data-testid="agents-recent-row">
+      <div className={`hm-agents-row__icon ${ok ? 'hm-agents-row__icon--ok' : 'hm-agents-row__icon--err'}`} aria-label={node.status}>
+        {ok ? '✓' : '✕'}
+      </div>
+      <div className="hm-agents-row__body">
+        <div className="hm-agents-row__title">{node.id} · {node.goal}</div>
+        <div className="hm-agents-row__sub">{meta.join(' · ')}</div>
+      </div>
+      <button type="button" className="hm-agents-row__log" onClick={() => openSessionChat(node.sessionId)}>
+        log
       </button>
-
-      {meta.length > 0 && <p className="hm-spawn-row__meta">{meta.join(' · ')}</p>}
-
-      {open && visibleStream.length > 0 && (
-        <div className="hm-spawn-stream">
-          {visibleStream.map((entry, i) => (
-            <StreamLine key={`${entry.kind}:${entry.at}:${i}`} {...entry} />
-          ))}
-        </div>
-      )}
-
-      {open && (node.filesWritten.length > 0 || node.filesRead.length > 0) && (
-        <div className="hm-spawn-files">
-          {node.filesWritten.slice(0, 4).map((f) => (
-            <span key={f} className="hm-spawn-files__line hm-mono">
-              + {f}
-            </span>
-          ))}
-          {node.filesRead.slice(0, 4).map((f) => (
-            <span key={f} className="hm-spawn-files__line hm-mono">
-              · {f}
-            </span>
-          ))}
-        </div>
-      )}
-
-      {node.children.length > 0 && open && (
-        <div className="hm-spawn-children">
-          {node.children.map((child) => (
-            <SpawnRow key={child.id} node={child} depth={depth + 1} nowMs={nowMs} />
-          ))}
-        </div>
-      )}
     </div>
   );
 }
 
 export function Agents({ rpc }: AgentsProps) {
-  const { tree, agents, handleEvent } = useSpawnStore();
+  const { tree, handleEvent } = useSpawnStore();
   const sessionId = useChatStore((s) => s.sessionId);
   const [nowMs, setNowMs] = useState(() => Date.now());
+  const [tab, setTab] = useState<'active' | 'recent'>('active');
 
   useEffect(() => {
     if (sessionId) useSpawnStore.getState().setSession(sessionId);
@@ -150,26 +98,14 @@ export function Agents({ rpc }: AgentsProps) {
     };
   }, [rpc, handleEvent]);
 
-  const hasActive = agents.some((a) => a.status === 'running' || a.status === 'queued');
-  useEffect(() => {
-    if (!hasActive) return;
-    const id = setInterval(() => setNowMs(Date.now()), 500);
-    return () => clearInterval(id);
-  }, [hasActive]);
-
-  const active = agents.filter((a) => a.status === 'running' || a.status === 'queued').length;
   const activeNodes = tree.filter((n) => n.status === 'running' || n.status === 'queued');
   const recentNodes = tree.filter((n) => n.status !== 'running' && n.status !== 'queued');
-  const failed = agents.filter((a) => a.status === 'failed' || a.status === 'interrupted').length;
-  const totalTokens = agents.reduce((s, a) => s + (a.inputTokens ?? 0) + (a.outputTokens ?? 0), 0);
-  const totalCost = agents.reduce((s, a) => s + (a.costUsd ?? 0), 0);
-  const summary = [
-    agents.length > 0 ? `${agents.length} agent${agents.length !== 1 ? 's' : ''}` : '',
-    active > 0 ? `${active} active` : '',
-    failed > 0 ? `${failed} failed` : '',
-    totalTokens > 0 ? fmtTokens(totalTokens) : '',
-    totalCost > 0 ? `$${totalCost.toFixed(2)}` : '',
-  ].filter(Boolean);
+
+  useEffect(() => {
+    if (activeNodes.length === 0) return;
+    const id = setInterval(() => setNowMs(Date.now()), 1000);
+    return () => clearInterval(id);
+  }, [activeNodes.length]);
 
   if (tree.length === 0) {
     return (
@@ -184,18 +120,38 @@ export function Agents({ rpc }: AgentsProps) {
   }
 
   return (
-    <div className="hm-spawn-tree">
-      {summary.length > 0 && <p className="hm-spawn-tree__summary">{summary.join(' · ')}</p>}
-      <div className="hm-spawn-tree__list">
-        {activeNodes.length > 0 && <p className="hm-thread-group__label">Active</p>}
-        {activeNodes.map((node) => (
-          <SpawnRow key={node.id} node={node} depth={0} nowMs={nowMs} />
-        ))}
-        {recentNodes.length > 0 && <p className="hm-thread-group__label">Recent</p>}
-        {recentNodes.map((node) => (
-          <SpawnRow key={node.id} node={node} depth={0} nowMs={nowMs} />
-        ))}
+    <div className="hm-agents hm-scroll">
+      <div className="hm-seg" role="tablist">
+        <button
+          type="button"
+          role="tab"
+          aria-selected={tab === 'active'}
+          className={`hm-seg__item${tab === 'active' ? ' hm-seg__item--on' : ''}`}
+          onClick={() => setTab('active')}
+        >
+          Active · {activeNodes.length}
+        </button>
+        <button
+          type="button"
+          role="tab"
+          aria-selected={tab === 'recent'}
+          className={`hm-seg__item${tab === 'recent' ? ' hm-seg__item--on' : ''}`}
+          onClick={() => setTab('recent')}
+        >
+          Recent · {recentNodes.length}
+        </button>
       </div>
+
+      {tab === 'active' && activeNodes.map((node) => <ActiveCard key={node.id} node={node} nowMs={nowMs} />)}
+
+      {recentNodes.length > 0 && (
+        <>
+          <p className="hm-group-label">Recent</p>
+          {recentNodes.map((node) => (
+            <RecentRow key={node.id} node={node} />
+          ))}
+        </>
+      )}
     </div>
   );
 }
