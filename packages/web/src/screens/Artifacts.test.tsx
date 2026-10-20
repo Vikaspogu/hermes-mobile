@@ -1,13 +1,13 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, waitFor, fireEvent } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import { Artifacts } from './Artifacts';
 import { useChatStore } from '@hermes-pwa/core';
 
 const makeRest = (overrides = {}) => ({
   sessionArtifacts: vi.fn().mockResolvedValue([
-    { id: 'a-1', name: 'screenshot.png', type: 'image', mime_type: 'image/png', size: 102400, created_at: Date.now() },
-    { id: 'a-2', name: 'report.pdf', type: 'file', mime_type: 'application/pdf', size: 204800, created_at: Date.now() },
-    { id: 'a-3', name: 'https://example.com', type: 'link', url: 'https://example.com', created_at: Date.now() },
+    { id: 'a-1', name: 'screenshot.png', type: 'image/png', path: '/files/screenshot.png', createdAt: Date.now() - 2 * 3600_000 },
+    { id: 'a-2', name: 'output.txt', type: 'text/plain', path: '/files/output.txt', createdAt: Date.now() - 24 * 3600_000 },
+    { id: 'a-3', name: 'https://example.com', type: 'link', path: 'https://example.com', createdAt: Date.now() },
   ]),
   ...overrides,
 }) as unknown as import('@hermes-pwa/core').RestClient;
@@ -23,27 +23,32 @@ describe('Artifacts', () => {
     expect(screen.getByText(/No active session/i)).toBeInTheDocument();
   });
 
-  it('renders artifact rows', async () => {
+  it('renders artifact rows with name and sub-line', async () => {
     render(<Artifacts rest={makeRest()} />);
     await waitFor(() => expect(screen.getAllByTestId('artifact-row').length).toBe(3));
     expect(screen.getByText('screenshot.png')).toBeInTheDocument();
-    expect(screen.getByText('report.pdf')).toBeInTheDocument();
+    expect(screen.getByText('output.txt')).toBeInTheDocument();
+    expect(screen.getByText('Image · 2h')).toBeInTheDocument();
+    expect(screen.getByText('Text · 1d')).toBeInTheDocument();
   });
 
-  it('filters to images only', async () => {
+  it('makes each row a link that opens the artifact', async () => {
     render(<Artifacts rest={makeRest()} />);
     await waitFor(() => expect(screen.getAllByTestId('artifact-row').length).toBe(3));
-    fireEvent.click(screen.getByRole('tab', { name: 'Images' }));
-    expect(screen.getAllByTestId('artifact-row').length).toBe(1);
-    expect(screen.getByText('screenshot.png')).toBeInTheDocument();
+    const row = screen.getByRole('link', { name: /Open screenshot\.png/ });
+    expect(row).toHaveAttribute('href', '/files/screenshot.png');
+    expect(row).toHaveAttribute('target', '_blank');
   });
 
-  it('filters to links only', async () => {
+  it('shows the preview footnote below the list', async () => {
     render(<Artifacts rest={makeRest()} />);
     await waitFor(() => expect(screen.getAllByTestId('artifact-row').length).toBe(3));
-    fireEvent.click(screen.getByRole('tab', { name: 'Links' }));
-    expect(screen.getAllByTestId('artifact-row').length).toBe(1);
-    expect(screen.getByText('https://example.com')).toBeInTheDocument();
+    expect(screen.getByText(/Tap a row for full-screen preview/i)).toBeInTheDocument();
+  });
+
+  it('shows empty state when the session has no artifacts', async () => {
+    render(<Artifacts rest={makeRest({ sessionArtifacts: vi.fn().mockResolvedValue([]) })} />);
+    await waitFor(() => expect(screen.getByText('No artifacts')).toBeInTheDocument());
   });
 
   it('shows a friendly note when the backend has no artifacts API (404)', async () => {
