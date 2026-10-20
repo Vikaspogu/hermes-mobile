@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useChatStore, useModelStore, useProfilesStore, type Profile, type ReasoningEffort, type RestClient } from '@hermes-pwa/core';
 import { Icon } from '../components/Icon';
 import { BottomSheet } from '../components/BottomSheet';
+import '../styles/screens/profiles.css'; // ponytail: prototype.css's trailing @import of screens/*.css is dropped by Vite
 
 interface ProfilesProps {
   rest: RestClient;
@@ -20,6 +21,27 @@ function thinkingLabel(showReasoning: boolean | undefined): string {
   if (showReasoning === true) return 'Shown';
   if (showReasoning === false) return 'Hidden';
   return 'Default';
+}
+
+const EFFORT_SHORT: Record<ReasoningEffort, string> = {
+  none: 'None',
+  minimal: 'Min',
+  low: 'Low',
+  medium: 'Med',
+  high: 'High',
+  xhigh: 'XHigh',
+};
+
+// M10 sub-line: "GPT-5.5 (Med) · Reversible-first · CLI" — model (effort) · note.
+function profileMeta(p: Profile): string {
+  let model = p.model ?? '';
+  if (model && p.reasoningEffort) {
+    model = `${model} (${EFFORT_SHORT[p.reasoningEffort]})`;
+  } else if (model) {
+    // preview data packs "Model · Effort" into one string; mockup wants "Model (Effort)"
+    model = model.replace(/ · ([^·]+)$/, ' ($1)');
+  }
+  return [model, p.description].filter(Boolean).join(' · ') || 'No model set';
 }
 
 export function Profiles({ rest }: ProfilesProps) {
@@ -187,58 +209,66 @@ export function Profiles({ rest }: ProfilesProps) {
   const modelPickerTitle = modelProfile ? `Model for ${modelProfile.displayName ?? modelProfile.name}` : 'Profile model';
 
   return (
-    <div className="hm-agents">
-      <p className="hm-agents__subtitle hm-muted">
-        Profiles — each has its own model, soul &amp; skills.
-      </p>
+    <div className="hm-profiles hm-scroll">
+      {/* M10: "+" lives in the header in the mockup; the shell owns the header,
+          so it sits in a right-aligned row directly beneath it. */}
+      <div className="hm-profiles__bar">
+        <button
+          type="button"
+          className="hm-iconbtn hm-profiles__add"
+          aria-label="New profile"
+          onClick={openSheet}
+        >
+          <Icon name="plus" size={18} />
+        </button>
+      </div>
 
       {error && <div className="hm-warning-banner hm-warning-banner--error">{error}</div>}
       {modelError && <div className="hm-warning-banner hm-warning-banner--error">{modelError}</div>}
       {loading && <p className="hm-muted hm-loading">Loading profiles…</p>}
-      <button className="hm-agents__new-btn" aria-label="New profile" onClick={openSheet}>
-        <Icon name="plus" size={16} /> New profile
-      </button>
 
       {profiles.length === 0 && !loading && (
-        <button className="hm-agents__new-btn" onClick={() => void load(rest)}>
+        <button type="button" className="hm-ghost" onClick={() => void load(rest)}>
           Reload profiles
         </button>
       )}
 
-      <div className="hm-agents__list">
-        {profiles.map((p) => {
-          return (
-            <button
-              key={p.name}
-              type="button"
-              className={`hm-profile-row${p.isActive ? ' hm-profile-row--active' : ''}`}
-              data-testid="agent-card"
-              onClick={() => setMenuProfile(p)}
-              aria-label={`Open actions for profile ${p.name}`}
-            >
-              <span className="hm-agent-card__avatar" aria-hidden="true">
-                <Icon name="robot" size={20} />
-              </span>
-              <span className="hm-profile-row__body">
-                <span className="hm-profile-row__title">
-                  <span className="hm-agent-card__name">{p.displayName ?? p.name}</span>
-                  {p.isActive && (
-                    <span className="hm-badge hm-badge--active" aria-label="Active profile">
-                      ACTIVE
-                    </span>
-                  )}
-                </span>
-                <span className="hm-profile-row__sub hm-muted">
-                  {[p.model, p.description].filter(Boolean).join(' · ') || 'No model set'}
-                </span>
-              </span>
-              <span className="hm-profile-row__chev" aria-hidden="true">
-                <Icon name="chevR" size={14} />
-              </span>
-            </button>
-          );
-        })}
-      </div>
+      {profiles.map((p) => (
+        <div
+          key={p.name}
+          className={`hm-card hm-profile-card${p.isActive ? ' hm-profile-card--active' : ''}`}
+          data-testid="agent-card"
+        >
+          <button
+            type="button"
+            className="hm-profile-card__main"
+            onClick={() => (p.isActive ? setMenuProfile(p) : void handleActivate(p.name))}
+            disabled={actingName === p.name}
+            aria-label={p.isActive ? `Manage active profile ${p.name}` : `Switch to profile ${p.name}`}
+          >
+            <span className="hm-profile-card__title">
+              <span className="hm-profile-card__name">{p.displayName ?? p.name}</span>
+              {p.isActive && <span className="hm-profile-card__active-pill">ACTIVE</span>}
+            </span>
+            <span className="hm-profile-card__meta">{profileMeta(p)}</span>
+          </button>
+          <button
+            type="button"
+            className="hm-profile-card__more"
+            aria-label={`Open actions for profile ${p.name}`}
+            onClick={() => setMenuProfile(p)}
+          >
+            ⋯
+          </button>
+        </div>
+      ))}
+
+      {profiles.length > 0 && (
+        <p className="hm-profiles__note">
+          Model settings live here only —<br />
+          Settings deep-links to this screen.
+        </p>
+      )}
 
       {menuProfile && (() => {
         const p = menuProfile;

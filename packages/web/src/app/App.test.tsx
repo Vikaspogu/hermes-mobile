@@ -75,7 +75,7 @@ describe('App Phase 3', () => {
     } as ReturnType<typeof coreModule.useConnectionStore>);
 
     render(<App />);
-    expect(screen.getByText('Network down')).toBeInTheDocument();
+    expect(screen.getByText(/reach the gateway/)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Retry/i })).toBeInTheDocument();
   });
 

@@ -6,10 +6,8 @@ import type {
   RestClient,
   SystemStats as DomainSystemStats,
 } from '@hermes-pwa/core';
-import { Icon } from '../components/Icon';
-import { BottomSheet } from '../components/BottomSheet';
-import { HERMES_PWA_VERSION_LABEL } from '../app/version';
-import { fmtGb, fmtPercent, fmtUptime } from '../lib/formatStats';
+import { fmtGb, fmtUptime } from '../lib/formatStats';
+import '../styles/screens/system.css';
 
 interface SystemScreenProps {
   rest: RestClient;
@@ -22,14 +20,8 @@ interface SystemStats {
   memoryPercent: number | undefined;
   diskUsedMb: number | undefined;
   diskTotalMb: number | undefined;
-  diskFreeMb: number | undefined;
   diskPercent: number | undefined;
   uptimeSeconds: number | undefined;
-  hostUptimeSeconds: number | undefined;
-  pid: number | undefined;
-  activeSessions: number | undefined;
-  platforms: string[] | undefined;
-  version: string | undefined;
 }
 
 interface BackupEntry {
@@ -40,7 +32,15 @@ interface BackupEntry {
   kind: string | undefined;
 }
 
-type OpsKey = 'doctor' | 'security-audit' | 'backup';
+type CheckStatus = 'passed' | 'failed' | 'running' | 'unknown';
+
+interface HealthCheck {
+  key: 'doctor' | 'security-audit' | 'backup';
+  label: string;
+  status: CheckStatus;
+  sub: string;
+  fix: boolean;
+}
 
 type TerminalState = {
   open: boolean;
@@ -58,6 +58,11 @@ function fmtMb(mb: number | undefined): string {
   if (mb == null) return '—';
   if (mb >= 1024) return fmtGb(mb);
   return `${mb.toFixed(1)} MB`;
+}
+
+function fmtGbShort(mb: number | undefined): string {
+  if (mb == null) return '—';
+  return (mb / 1024).toFixed(1);
 }
 
 function fmtDate(ts: number | undefined): string {
@@ -78,14 +83,8 @@ function parseStats(raw: DomainSystemStats): SystemStats {
     memoryPercent: raw.memoryPercent,
     diskUsedMb: raw.diskUsedMb,
     diskTotalMb: raw.diskTotalMb,
-    diskFreeMb: raw.diskFreeMb,
     diskPercent: raw.diskPercent,
     uptimeSeconds: raw.uptimeSeconds,
-    hostUptimeSeconds: raw.hostUptimeSeconds,
-    pid: raw.pid,
-    activeSessions: raw.activeSessions,
-    platforms: undefined,
-    version: raw.version,
   };
 }
 
@@ -107,52 +106,15 @@ function parseBackups(raw: DomainCheckpoint[]): BackupEntry[] {
     .sort((a, b) => backupSortRank(a) - backupSortRank(b) || (b.createdAt ?? 0) - (a.createdAt ?? 0));
 }
 
-interface OpDef {
-  key: OpsKey;
-  label: string;
-  icon: 'shield' | 'alert' | 'archive';
-  iconBg: string;
-  iconColor: string;
-  runLabel: string;
-  command: string;
-  defaultDetail: string;
-  warning?: boolean;
+/** Map an ops action log to a health-check status. No real health-check API
+ *  exists; the action log (exit code) is the only record of the last run. */
+function checkFromAction(status: SystemActionStatus | null): { status: CheckStatus; sub: string } {
+  if (!status) return { status: 'unknown', sub: 'not run yet · tap to run' };
+  if (status.running) return { status: 'running', sub: 'running…' };
+  if (status.exitCode === 0) return { status: 'passed', sub: 'passed' };
+  if (status.exitCode != null) return { status: 'failed', sub: `failed · exit ${status.exitCode}` };
+  return { status: 'unknown', sub: 'not run yet · tap to run' };
 }
-
-const BACKUP_OP: OpDef = {
-  key: 'backup',
-  label: 'Backup',
-  icon: 'archive',
-  iconBg: '#eef1ff',
-  iconColor: '#2540ff',
-  runLabel: 'Back up',
-  command: 'hermes backup',
-  defaultDetail: 'Create a Hermes backup archive',
-};
-
-const OPS: OpDef[] = [
-  {
-    key: 'doctor',
-    label: 'Doctor',
-    icon: 'shield',
-    iconBg: '#e3fbef',
-    iconColor: '#15a06a',
-    runLabel: 'Run',
-    command: 'hermes doctor',
-    defaultDetail: 'Run Hermes CLI health checks',
-  },
-  {
-    key: 'security-audit',
-    label: 'Security audit',
-    icon: 'alert',
-    iconBg: '#fff7ed',
-    iconColor: '#c2790f',
-    runLabel: 'Run',
-    command: 'hermes security audit',
-    defaultDetail: 'Run local security checks',
-    warning: true,
-  },
-];
 
 function terminalFromStatus(previous: TerminalState, status: SystemActionStatus): TerminalState {
   return {
@@ -175,25 +137,32 @@ function fallbackLines(command: string, result: OpsRunResult): string[] {
   return lines;
 }
 
+const CHECK_COMMANDS: Record<HealthCheck['key'], { title: string; command: string }> = {
+  doctor: { title: 'Doctor', command: 'hermes doctor' },
+  'security-audit': { title: 'Security audit', command: 'hermes security audit' },
+  backup: { title: 'Backup', command: 'hermes backup' },
+};
+
 export function CommandCenter({ rest }: SystemScreenProps) {
   const [stats, setStats] = useState<SystemStats | null>(null);
   const [backups, setBackups] = useState<BackupEntry[]>([]);
-  const [gatewaySheetOpen, setGatewaySheetOpen] = useState(false);
-  const [backupsOpen, setBackupsOpen] = useState(false);
+  const [actions, setActions] = useState<Record<string, SystemActionStatus | null>>({});
   const [loading, setLoading] = useState(true);
-  const [opsResult, setOpsResult] = useState<Record<string, string>>({});
   const [opsRunning, setOpsRunning] = useState<string | null>(null);
   const [error, setError] = useState<string | undefined>(undefined);
   const [terminal, setTerminal] = useState<TerminalState | null>(null);
   const [pollAction, setPollAction] = useState<string | null>(null);
 
   const refreshSystem = useCallback(async () => {
-    const [raw, backupRows] = await Promise.all([
+    const [raw, backupRows, doctor, audit] = await Promise.all([
       rest.systemStats(),
       rest.opsBackups().catch(() => []),
+      rest.actionStatus('doctor', 1).catch(() => null),
+      rest.actionStatus('security-audit', 1).catch(() => null),
     ]);
     setStats(parseStats(raw));
     setBackups(parseBackups(backupRows));
+    setActions({ doctor, 'security-audit': audit });
   }, [rest]);
 
   useEffect(() => {
@@ -294,20 +263,15 @@ export function CommandCenter({ rest }: SystemScreenProps) {
     }
   }
 
-  async function runOp(op: OpDef) {
-    setOpsResult((prev) => ({ ...prev, [op.key]: 'Running in terminal…' }));
-    await startTerminalAction(op.label, op.command, () => rest.opsRun(op.key), op.key);
-  }
-
-  async function runBackup() {
-    setBackupsOpen(true);
-    await runOp(BACKUP_OP);
+  async function runCheck(key: HealthCheck['key']) {
+    const def = CHECK_COMMANDS[key];
+    await startTerminalAction(def.title, def.command, () => rest.opsRun(key), key);
   }
 
   async function runGatewayAction(action: 'restart' | 'stop') {
     const label = action === 'restart' ? 'Restart gateway' : 'Stop gateway';
     const command = `hermes gateway ${action}`;
-    const ok = window.confirm(`${label}? This affects live messaging gateway runtime.`);
+    const ok = window.confirm(`${label}? This interrupts all live sessions.`);
     if (!ok) return;
     await startTerminalAction(label, command, () => rest.gatewayAction(action), `gateway-${action}`);
   }
@@ -326,163 +290,130 @@ export function CommandCenter({ rest }: SystemScreenProps) {
 
   const latestArchive = backups.find((backup) => backup.kind === 'archive');
   const latestBackup = latestArchive ?? backups[0];
-  const backupSummary = latestBackup
-    ? `${latestArchive ? 'Latest archive' : 'Latest artifact'} ${fmtDate(latestBackup.createdAt) || '—'} · ${fmtMb(latestBackup.sizeMb)}`
-    : 'No backups found';
+
+  const checks: HealthCheck[] = (['security-audit', 'doctor'] as const).map((key) => {
+    const result = checkFromAction(actions[key] ?? null);
+    return {
+      key,
+      label: CHECK_COMMANDS[key].title,
+      status: result.status,
+      sub: result.sub,
+      fix: result.status === 'failed',
+    };
+  });
+  checks.push(latestBackup
+    ? {
+        key: 'backup',
+        label: 'Backups',
+        status: 'passed',
+        sub: `latest ${fmtDate(latestBackup.createdAt) || '—'} · ${fmtMb(latestBackup.sizeMb)}`,
+        fix: false,
+      }
+    : {
+        key: 'backup',
+        label: 'Backups',
+        status: 'failed',
+        sub: 'no backups yet',
+        fix: true,
+      });
 
   return (
-    <div className="hm-command hm-scroll">
+    <div className="hm-command hm-system hm-scroll">
       {error && <div className="hm-warning-banner hm-warning-banner--error">{error}</div>}
 
-      <div className="hm-command__gateway-card" data-testid="gateway-card">
-        <div className="hm-command__gateway-head">
-          <span className="hm-command__gateway-status-dot" aria-hidden="true" />
-          <span className="hm-command__gateway-label">Gateway running</span>
-          {stats?.pid != null && (
-            <span className="hm-command__gateway-pid">pid {stats.pid}</span>
-          )}
+      <div className="hm-card hm-system__gateway" data-testid="gateway-card">
+        <div className="hm-system__gateway-title">
+          <span className="hm-system__gateway-name">
+            <span className="hm-dot" aria-hidden="true" />
+            Gateway running
+          </span>
+          <span className="hm-system__gateway-uptime">up {fmtUptime(stats?.uptimeSeconds)}</span>
         </div>
-        <div className="hm-command__gateway-stats">
-          <div>
-            <div className="hm-command__gateway-stat-label">gateway uptime</div>
-            <div className="hm-command__gateway-stat-value">{fmtUptime(stats?.uptimeSeconds)}</div>
-          </div>
-          <div>
-            <div className="hm-command__gateway-stat-label">platforms</div>
-            <div className="hm-command__gateway-stat-value">
-              {stats?.platforms && stats.platforms.length > 0 ? stats.platforms.join(', ') : '—'}
-            </div>
-          </div>
-          <div>
-            <div className="hm-command__gateway-stat-label">sessions</div>
-            <div className="hm-command__gateway-stat-value">
-              {stats?.activeSessions != null ? `${stats.activeSessions} live` : '—'}
-            </div>
-          </div>
-        </div>
-        <div className="hm-command__gateway-actions">
+        <div className="hm-system__gateway-actions">
           <button
-            className="hm-command__gw-btn"
-            aria-label="Manage gateway"
-            onClick={() => setGatewaySheetOpen(true)}
+            type="button"
+            className="hm-btn hm-btn--ghost"
+            disabled={opsRunning === 'gateway-restart'}
+            onClick={() => void runGatewayAction('restart')}
           >
-            Manage gateway
+            {opsRunning === 'gateway-restart' ? 'Restarting…' : 'Restart…'}
+          </button>
+          <button
+            type="button"
+            className="hm-btn hm-btn--danger-outline"
+            disabled={opsRunning === 'gateway-stop'}
+            onClick={() => void runGatewayAction('stop')}
+          >
+            {opsRunning === 'gateway-stop' ? 'Stopping…' : 'Stop…'}
           </button>
         </div>
       </div>
 
       {(stats?.cpuPercent != null || stats?.memoryMb != null || stats?.diskUsedMb != null) && (
-        <div className="hm-command__resources">
+        <div className="hm-card hm-system__metrics">
           {stats!.cpuPercent != null && (
-            <div className="hm-command__resource-chip">
-              <span className="hm-command__resource-label">CPU</span>
-              <span className="hm-command__resource-value">{fmtPercent(stats!.cpuPercent)}</span>
-              <span className="hm-meter" aria-hidden="true">
-                <span style={{ width: `${Math.min(100, stats!.cpuPercent ?? 0)}%` }} />
-              </span>
-              <span className="hm-command__resource-detail">current load</span>
+            <div className="hm-system__metric">
+              <div className="hm-system__metric-label">CPU {Math.round(stats!.cpuPercent)}%</div>
+              <div className="hm-metricbar">
+                <div className="hm-metricbar__fill" style={{ width: `${Math.min(100, stats!.cpuPercent)}%` }} />
+              </div>
             </div>
           )}
           {stats!.memoryMb != null && (
-            <div className="hm-command__resource-chip">
-              <span className="hm-command__resource-label">RAM</span>
-              <span className="hm-command__resource-value">{fmtPercent(stats!.memoryPercent)}</span>
-              <span className="hm-meter" aria-hidden="true">
-                <span style={{ width: `${Math.min(100, stats!.memoryPercent ?? 0)}%` }} />
-              </span>
-              <span className="hm-command__resource-detail">
-                {fmtGb(stats!.memoryMb)} / {fmtGb(stats!.memoryTotalMb)} used
-              </span>
+            <div className="hm-system__metric">
+              <div className="hm-system__metric-label">
+                RAM {fmtGbShort(stats!.memoryMb)} / {fmtGb(stats!.memoryTotalMb)}
+              </div>
+              <div className="hm-metricbar">
+                <div className="hm-metricbar__fill" style={{ width: `${Math.min(100, stats!.memoryPercent ?? 0)}%` }} />
+              </div>
             </div>
           )}
           {stats!.diskUsedMb != null && (
-            <div className="hm-command__resource-chip">
-              <span className="hm-command__resource-label">Disk</span>
-              <span className="hm-command__resource-value">{fmtPercent(stats!.diskPercent)}</span>
-              <span className="hm-meter" aria-hidden="true">
-                <span style={{ width: `${Math.min(100, stats!.diskPercent ?? 0)}%` }} />
-              </span>
-              <span className="hm-command__resource-detail">
-                {fmtGb(stats!.diskUsedMb)} / {fmtGb(stats!.diskTotalMb)} used
-              </span>
+            <div className="hm-system__metric">
+              <div className="hm-system__metric-label">
+                Disk {fmtGbShort(stats!.diskUsedMb)} / {fmtGb(stats!.diskTotalMb)}
+              </div>
+              <div className="hm-metricbar">
+                <div
+                  className="hm-metricbar__fill hm-metricbar__fill--warn"
+                  style={{ width: `${Math.min(100, stats!.diskPercent ?? 0)}%` }}
+                />
+              </div>
             </div>
           )}
         </div>
       )}
 
-      <div className="hm-command__ops-list">
-        {OPS.map((op) => (
-          <div key={op.key} className="hm-command__op-row">
-            <span
-              className="hm-command__op-icon"
-              style={{ background: op.iconBg, color: op.iconColor }}
-              aria-hidden="true"
-            >
-              <Icon name={op.icon} size={18} />
-            </span>
-            <div className="hm-command__op-body">
-              <span className="hm-command__op-label">{op.label}</span>
-              <span className={`hm-command__op-detail ${op.warning && !opsResult[op.key] ? 'hm-command__op-detail--warning' : 'hm-muted'}`}>
-                {opsResult[op.key] || op.defaultDetail}
-              </span>
-            </div>
-            <button
-              className={`hm-command__op-btn ${op.key === 'backup' ? 'hm-command__op-btn--primary' : ''}`}
-              onClick={() => void runOp(op)}
-              disabled={opsRunning === op.key}
-              aria-label={op.label}
-            >
-              {opsRunning === op.key ? '…' : op.runLabel}
-            </button>
-          </div>
-        ))}
-      </div>
-
-      <section className={`hm-command__section hm-command__backups ${backupsOpen ? 'hm-command__backups--open' : ''}`}>
-        <div className="hm-command__backups-head">
-          <button
-            type="button"
-            className="hm-command__backups-toggle"
-            aria-expanded={backupsOpen}
-            onClick={() => setBackupsOpen((open) => !open)}
+      <div className="hm-group-label">Health checks</div>
+      {checks.map((check) => (
+        <button
+          key={check.key}
+          type="button"
+          className="hm-system__check"
+          disabled={opsRunning === check.key}
+          onClick={() => void runCheck(check.key)}
+          aria-label={check.fix ? `${check.label} — fix` : check.label}
+        >
+          <span
+            className={`hm-system__check-icon${
+              check.status === 'passed'
+                ? ' hm-system__check-icon--ok'
+                : check.status === 'failed'
+                  ? ' hm-system__check-icon--warn'
+                  : ' hm-system__check-icon--idle'
+            }`}
+            aria-hidden="true"
           >
-            <span className="hm-command__backups-title">Backups</span>
-            <span className="hm-command__backups-count">{backups.length}</span>
-            <span className="hm-command__backups-summary">{backupSummary}</span>
-            <span className="hm-command__backups-chevron" aria-hidden="true">{backupsOpen ? '⌃' : '⌄'}</span>
-          </button>
-          <button
-            type="button"
-            className="hm-command__backup-new"
-            onClick={() => void runBackup()}
-            disabled={opsRunning === 'backup'}
-            aria-label="Create new backup"
-          >
-            {opsRunning === 'backup' ? 'Creating…' : 'New backup'}
-          </button>
-        </div>
-
-        {backupsOpen && (
-          <div className="hm-command__checkpoint-list" data-testid="backup-list">
-            {backups.length === 0 ? (
-              <div className="hm-command__backup-empty">No backups found yet. Use New backup to create one.</div>
-            ) : backups.map((backup) => (
-              <div key={backup.id} className="hm-command__checkpoint-row hm-command__backup-row">
-                <span className="hm-command__checkpoint-id" title={backup.name}>{backup.name}</span>
-                <span className="hm-command__checkpoint-when">{fmtDate(backup.createdAt)}</span>
-                {backup.kind && <span className="hm-command__checkpoint-kind">{backup.kind}</span>}
-                {backup.sizeMb != null && <span className="hm-command__checkpoint-size">{fmtMb(backup.sizeMb)}</span>}
-                <span className="hm-command__backup-restore-note">restore pending</span>
-              </div>
-            ))}
-          </div>
-        )}
-      </section>
-
-      <div className="hm-command__versions">
-        <span className="hm-command__version-chip">PWA {HERMES_PWA_VERSION_LABEL}</span>
-        {stats?.version && <span className="hm-command__version-chip">backend {stats.version}</span>}
-      </div>
+            {check.status === 'passed' ? '✓' : check.status === 'failed' ? '⚠' : check.status === 'running' ? '…' : '○'}
+          </span>
+          <span className="hm-system__check-body">
+            <span className="hm-system__check-title">{check.label}</span>
+            <span className="hm-system__check-sub">{check.sub}</span>
+          </span>
+          {check.fix && <span className="hm-system__check-fix">fix</span>}
+        </button>
+      ))}
 
       {terminal?.open && (
         <div className="hm-sheet hm-command__terminal" role="dialog" aria-modal="true" aria-label={`${terminal.title} terminal`}>
@@ -505,35 +436,6 @@ export function CommandCenter({ rest }: SystemScreenProps) {
             </pre>
           </div>
         </div>
-      )}
-      {gatewaySheetOpen && (
-        <BottomSheet title="Manage gateway" onClose={() => setGatewaySheetOpen(false)}>
-          <p className="hm-muted">Restarting or stopping the gateway interrupts all live sessions.</p>
-          <div className="hm-sheet-actions">
-            <button
-              type="button"
-              className="hm-ghost"
-              disabled={opsRunning === 'gateway-restart'}
-              onClick={() => {
-                setGatewaySheetOpen(false);
-                void runGatewayAction('restart');
-              }}
-            >
-              {opsRunning === 'gateway-restart' ? 'Restarting…' : 'Restart gateway'}
-            </button>
-            <button
-              type="button"
-              className="hm-ghost hm-text-danger"
-              disabled={opsRunning === 'gateway-stop'}
-              onClick={() => {
-                setGatewaySheetOpen(false);
-                void runGatewayAction('stop');
-              }}
-            >
-              {opsRunning === 'gateway-stop' ? 'Stopping…' : 'Stop gateway'}
-            </button>
-          </div>
-        </BottomSheet>
       )}
     </div>
   );

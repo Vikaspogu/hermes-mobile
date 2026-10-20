@@ -154,7 +154,9 @@
   --hm-color-warning:    #ffc14d;
   --hm-color-danger:     #ff6b6b;
   --hm-color-running:    #5c7cff;
-
+  --hm-color-success-strong: #4ade80;
+  --hm-color-warning-strong: #fbbf24;
+  --hm-color-danger-strong:  #f87171;
   --hm-color-success-bg: #11261a;
   --hm-color-warning-bg: #2a2110;
   --hm-color-danger-bg:  #2a1414;
@@ -180,7 +182,9 @@
     --hm-color-warning:    #ffc14d;
     --hm-color-danger:     #ff6b6b;
     --hm-color-running:    #5c7cff;
-
+    --hm-color-success-strong: #4ade80;
+    --hm-color-warning-strong: #fbbf24;
+    --hm-color-danger-strong:  #f87171;
     --hm-color-success-bg: #11261a;
     --hm-color-warning-bg: #2a2110;
     --hm-color-danger-bg:  #2a1414;

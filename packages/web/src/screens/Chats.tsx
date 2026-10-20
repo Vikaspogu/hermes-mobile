@@ -1,16 +1,21 @@
-import { useEffect, useMemo, useState } from 'react';
+import { Fragment, useEffect, useMemo, useState } from 'react';
 import {
   useActivityStore,
+  useConnectionStore,
   useSessionsStore,
   useProfilesStore,
   useChatStore,
   sessionSourceId,
   sessionSourceLabel,
+  type Approval,
   type Session,
   type RpcClient,
   type RestClient,
 } from '@hermes-pwa/core';
 import { Icon } from '../components/Icon';
+// ponytail: prototype.css's trailing @import of screens/*.css is dropped by Vite
+// (spec: @import must lead the file), so the screen pulls its own styles.
+import '../styles/screens/home.css';
 
 interface ChatsProps {
   rpc: RpcClient;
@@ -22,20 +27,37 @@ interface ChatsProps {
   onOpenVoice?: () => void;
 }
 
-function fmtAge(updatedAt: number): string {
-  // updated_at arrives as Unix seconds; accept ms too.
-  const delta = Math.max(0, Date.now() - (updatedAt > 10_000_000_000 ? updatedAt : updatedAt * 1000));
-  if (delta < 60_000) return 'now';
-  if (delta < 3_600_000) return `${Math.floor(delta / 60_000)}m`;
-  if (delta < 86_400_000) return `${Math.floor(delta / 3_600_000)}h`;
-  return `${Math.floor(delta / 86_400_000)}d`;
+/** updated_at arrives as Unix seconds; accept ms too. */
+function toMs(updatedAt: number): number {
+  return updatedAt > 10_000_000_000 ? updatedAt : updatedAt * 1000;
 }
 
-function isToday(updatedAt: number): boolean {
-  const ms = updatedAt > 10_000_000_000 ? updatedAt : updatedAt * 1000;
-  const d = new Date(ms);
-  const now = new Date();
-  return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth() && d.getDate() === now.getDate();
+function sameDay(a: Date, b: Date): boolean {
+  return (
+    a.getFullYear() === b.getFullYear() &&
+    a.getMonth() === b.getMonth() &&
+    a.getDate() === b.getDate()
+  );
+}
+
+function isToday(ms: number): boolean {
+  return sameDay(new Date(ms), new Date());
+}
+
+function isYesterday(ms: number): boolean {
+  const yesterday = new Date();
+  yesterday.setDate(yesterday.getDate() - 1);
+  return sameDay(new Date(ms), yesterday);
+}
+
+/** M1 meta: clock time for today's threads, "Nd" for older ones. */
+function fmtAge(updatedAt: number): string {
+  const ms = toMs(updatedAt);
+  if (isToday(ms)) {
+    const d = new Date(ms);
+    return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+  }
+  return `${Math.max(1, Math.floor((Date.now() - ms) / 86_400_000))}d`;
 }
 
 function isLive(s: Session): boolean {
@@ -47,30 +69,39 @@ function freshness(s: Session): number {
 }
 
 interface ThreadGroup {
-  key: 'live' | 'today' | 'earlier';
+  key: 'today' | 'yesterday' | 'earlier';
   label: string;
   items: Session[];
 }
 
 export function groupThreads(sessions: Session[]): ThreadGroup[] {
-  const live = sessions.filter(isLive).sort((a, b) => freshness(b) - freshness(a));
-  const rest = sessions.filter((s) => !isLive(s)).sort((a, b) => freshness(b) - freshness(a));
-  const today = rest.filter((s) => isToday(freshness(s)));
-  const earlier = rest.filter((s) => !isToday(freshness(s)));
+  const sorted = [...sessions].sort((a, b) => freshness(b) - freshness(a));
+  const today = sorted.filter((s) => isToday(toMs(freshness(s))));
+  const yesterday = sorted.filter(
+    (s) => !isToday(toMs(freshness(s))) && isYesterday(toMs(freshness(s))),
+  );
+  const earlier = sorted.filter(
+    (s) => !isToday(toMs(freshness(s))) && !isYesterday(toMs(freshness(s))),
+  );
   const groups: ThreadGroup[] = [
-    { key: 'live', label: 'Live', items: live },
     { key: 'today', label: 'Today', items: today },
+    { key: 'yesterday', label: 'Yesterday', items: yesterday },
     { key: 'earlier', label: 'Earlier', items: earlier },
   ];
   return groups.filter((g) => g.items.length > 0);
 }
 
-export function Chats({ rpc, rest, onNavigate, onOpenVoice, sidebar }: ChatsProps) {
+export function Chats({ rpc, rest, onNavigate, sidebar }: ChatsProps) {
   const { sessions, load } = useSessionsStore();
   const activeName = useProfilesStore((s) => s.activeName);
   const { startNewSession, resumeSessionIntoChat, submit } = useChatStore();
   const pendingApprovals = useActivityStore(
     (s) => s.items.filter((i) => i.kind === 'approval' && i.status === 'needs_you').length,
+  );
+  const firstPendingSession = useActivityStore(
+    (s) =>
+      s.items.find((i): i is Approval => i.kind === 'approval' && i.status === 'needs_you')
+        ?.session,
   );
   const [draft, setDraft] = useState('');
   const [query, setQuery] = useState('');
@@ -80,9 +111,7 @@ export function Chats({ rpc, rest, onNavigate, onOpenVoice, sidebar }: ChatsProp
   }, [load, rest]);
 
   const threads = useMemo(() => {
-    const visible = sessions.filter(
-      (s) => !s.archived && sessionSourceId(s) !== 'cron',
-    );
+    const visible = sessions.filter((s) => !s.archived && sessionSourceId(s) !== 'cron');
     const q = query.trim().toLowerCase();
     const filtered = q ? visible.filter((s) => (s.title ?? '').toLowerCase().includes(q)) : visible;
     return groupThreads(filtered);
@@ -103,102 +132,129 @@ export function Chats({ rpc, rest, onNavigate, onOpenVoice, sidebar }: ChatsProp
     setDraft('');
   }
 
+  const connected = useConnectionStore((s) => s.state === 'connected');
+
   return (
-    <div className="hm-chats">
-      {!sidebar && pendingApprovals > 0 && (
-        <button
-          className="hm-home__approval-banner"
-          onClick={() => onNavigate('approvals')}
-          data-testid="approval-banner"
-        >
-          <span className="hm-home__approval-icon">
-            <Icon name="alert" size={18} />
-          </span>
-          <span className="hm-home__approval-body">
-            <span className="hm-home__approval-title">
-              {pendingApprovals} approval{pendingApprovals !== 1 ? 's' : ''} waiting
-            </span>
-            <span className="hm-home__approval-sub">Agent is paused waiting on you</span>
-          </span>
-          <span className="hm-home__approval-chevron" aria-hidden="true">
-            <Icon name="chevR" size={15} />
-          </span>
-        </button>
-      )}
-
+    <div className="hm-home">
       {!sidebar && (
-      <form className="hm-chats__composer" onSubmit={handleSend}>
-        <Icon name="plus" size={18} />
-        <input
-          className="hm-chats__composer-input"
-          value={draft}
-          onChange={(e) => setDraft(e.target.value)}
-          placeholder="Message Hermes…"
-          aria-label="New chat message"
-          data-testid="chats-composer"
-        />
-        {!draft.trim() && onOpenVoice && (
-          <button type="button" className="hm-chats__composer-mic" aria-label="Voice chat" onClick={onOpenVoice}>
-            <Icon name="mic" size={17} />
-          </button>
-        )}
-        {draft.trim() && (
-          <button type="submit" className="hm-chats__composer-send" aria-label="Start chat">
-            <Icon name="arrowUp" size={16} />
-          </button>
-        )}
-      </form>
-      )}
-
-      {sessions.length > 0 && (
-        <div className="hm-chats__search">
-          <Icon name="search" size={15} />
-          <input
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search chats"
-            aria-label="Search chats"
-            data-testid="chats-search"
+        <header className="hm-app-header hm-home__header" data-testid="home-header">
+          <span className="hm-wordmark">Hermes</span>
+          <span
+            className={`hm-dot${connected ? '' : ' hm-dot--faint'} hm-home__header-dot`}
+            aria-label={connected ? 'Connected' : 'Not connected'}
+            role="status"
           />
-        </div>
+          <span className="hm-app-header__sub">{activeName ?? 'default'}</span>
+          <button
+            type="button"
+            className="hm-iconbtn"
+            aria-label="Open settings"
+            onClick={() => onNavigate('settings')}
+          >
+            <Icon name="settings" size={20} />
+          </button>
+        </header>
       )}
-
-      <div className="hm-chats__list">
-        {threads.length === 0 && (
-          <p className="hm-muted" style={{ padding: '24px 4px' }}>
-            {query ? 'No chats match your search.' : 'No conversations yet. Start one above.'}
-          </p>
+      <div className="hm-chats">
+        {!sidebar && pendingApprovals > 0 && (
+          <button
+            className="hm-banner hm-home__approval-banner"
+            onClick={() => onNavigate('approvals')}
+            data-testid="approval-banner"
+          >
+            <span className="hm-home__approval-icon" aria-hidden="true">
+              <Icon name="alert" size={16} />
+            </span>
+            <span className="hm-home__approval-body">
+              <span className="hm-banner__title">
+                {pendingApprovals} approval{pendingApprovals !== 1 ? 's' : ''} waiting
+              </span>
+              <span className="hm-banner__sub">
+                {firstPendingSession ?? 'Agent is paused waiting on you'}
+              </span>
+            </span>
+            <span className="hm-home__approval-chevron" aria-hidden="true">
+              ›
+            </span>
+          </button>
         )}
-        {threads.map((group) => (
-          <section key={group.key} className="hm-thread-group">
-            <div className="hm-thread-group__label">{group.label}</div>
-            {group.items.map((s) => (
-              <button
-                key={s.id}
-                className="hm-thread-row"
-                onClick={() => void openThread(s)}
-                data-testid="thread-row"
-              >
-                <span className="hm-thread-row__body">
-                  <span className="hm-thread-row__title">
-                    {isLive(s) && <span className="hm-live-dot" aria-label="live" />}
-                    {s.title?.trim() || 'Untitled'}
+
+        {!sidebar && (
+          <form className="hm-home-composer" onSubmit={handleSend}>
+            <input
+              className="hm-home-composer__input"
+              value={draft}
+              onChange={(e) => setDraft(e.target.value)}
+              placeholder="Message Hermes…"
+              aria-label="New chat message"
+              data-testid="chats-composer"
+            />
+            <button
+              type="submit"
+              className="hm-home-composer__send"
+              aria-label="Start chat"
+              disabled={!draft.trim()}
+            >
+              <Icon name="arrowUp" size={18} />
+            </button>
+          </form>
+        )}
+
+        {sessions.length > 0 && (
+          <div className="hm-home-search">
+            <Icon name="search" size={15} />
+            <input
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Search chats"
+              aria-label="Search chats"
+              data-testid="chats-search"
+            />
+          </div>
+        )}
+
+        <div className="hm-chats__list">
+          {threads.length === 0 && (
+            <p className="hm-muted hm-home-empty">
+              {query ? 'No chats match your search.' : 'No conversations yet. Start one above.'}
+            </p>
+          )}
+          {threads.map((group) => (
+            <Fragment key={group.key}>
+              <div className="hm-group-label">{group.label}</div>
+              {group.items.map((s) => (
+                <button
+                  key={s.id}
+                  className="hm-thread-row"
+                  onClick={() => void openThread(s)}
+                  data-testid="thread-row"
+                >
+                  <span
+                    className={`hm-thread-row__dot ${isLive(s) ? 'hm-thread-row__dot--live' : 'hm-thread-row__dot--idle'}`}
+                    aria-hidden="true"
+                  />
+                  <span className="hm-thread-row__body">
+                    <span className="hm-thread-row__title">{s.title?.trim() || 'Untitled'}</span>
+                    <span className="hm-thread-row__preview">
+                      {s.previewText ??
+                        ([
+                          sessionSourceLabel(sessionSourceId(s) ?? '') ?? undefined,
+                          s.messageCount ? `${s.messageCount} msgs` : undefined,
+                        ]
+                          .filter(Boolean)
+                          .join(' · ') ||
+                          'Session')}
+                    </span>
                   </span>
-                  <span className="hm-thread-row__preview">
-                    {s.previewText ??
-                      ([
-                        sessionSourceLabel(sessionSourceId(s) ?? '') ?? undefined,
-                        s.messageCount ? `${s.messageCount} msgs` : undefined,
-                      ]
-                        .filter(Boolean)
-                        .join(' · ') || 'Session')}
+                  <span className="hm-thread-row__meta">
+                    {fmtAge(freshness(s))}
+                    {isLive(s) && <span className="hm-thread-row__live">● live</span>}
                   </span>
-                </span>
-                <span className="hm-thread-row__meta">{fmtAge(freshness(s))}</span>
-              </button>
-            ))}
-          </section>
-        ))}
+                </button>
+              ))}
+            </Fragment>
+          ))}
+        </div>
       </div>
     </div>
   );

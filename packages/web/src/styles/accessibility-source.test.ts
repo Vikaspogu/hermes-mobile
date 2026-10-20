@@ -19,7 +19,8 @@ describe('accessibility source guards', () => {
     expect(tokensCss).toContain('--hm-color-success-strong');
     expect(approvalCardSource).not.toMatch(/#(?:c4413c|15a06a|fdeaea|e3fbef)/i);
     expect(approvalInlineSource).not.toMatch(/#(?:dc4b46|15a06a|fdeaea|e3fbef|fff4e3|d98a16)/i);
-    expect(approvalCardSource).toContain('var(--hm-color-danger-strong)');
+    expect(approvalCardSource).toContain('hm-risk-tag--high');
+    expect(prototypeCss).toMatch(/\.hm-risk-tag--high\s*\{[^}]*var\(--hm-color-danger-strong\)/s);
     expect(approvalInlineSource).toContain('var(--hm-color-danger-strong)');
   });
 });

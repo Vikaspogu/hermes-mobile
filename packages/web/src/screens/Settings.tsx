@@ -1,10 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
-import { useConnectionStore, useProfilesStore, useModelStore, useConfigStore, useSessionsStore } from '@hermes-pwa/core';
+import { useProfilesStore, useModelStore } from '@hermes-pwa/core';
 import type { RestClient, SystemStats, PushStatus } from '@hermes-pwa/core';
-import { Icon } from '../components/Icon';
 import { HERMES_PWA_VERSION_LABEL } from '../app/version';
 import { currentPushSubscriptionId, disablePushNotifications, enablePushNotifications, getPushCapability } from '../pwa/push';
-import { canPromptInstall, INSTALL_PROMPT_CHANGED_EVENT, isIosSafari, promptInstall } from '../pwa/install';
+import '../styles/screens/settings.css'; // ponytail: prototype.css's trailing @import of screens/*.css is dropped by Vite
 
 interface SettingsProps {
   rest: RestClient;
@@ -12,105 +11,143 @@ interface SettingsProps {
   onLogout: () => void;
 }
 
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
+// M14 local preferences — no server-side setting exists for these yet.
+const THEME_STORAGE_KEY = 'hermes-pwa.theme.v1';
+const NOTIFY_APPROVALS_STORAGE_KEY = 'hermes-pwa.notifyApprovals.v1';
+const NOTIFY_RUNS_STORAGE_KEY = 'hermes-pwa.notifyRuns.v1';
+
+type ThemeSetting = 'system' | 'light' | 'dark';
+const THEME_ORDER: readonly ThemeSetting[] = ['system', 'light', 'dark'];
+const THEME_LABELS: Record<ThemeSetting, string> = { system: 'System', light: 'Light', dark: 'Dark' };
+
+function readTheme(): ThemeSetting {
+  try {
+    const raw = window.localStorage.getItem(THEME_STORAGE_KEY);
+    return raw === 'light' || raw === 'dark' ? raw : 'system';
+  } catch {
+    return 'system';
+  }
+}
+
+function applyTheme(theme: ThemeSetting) {
+  if (theme === 'system') {
+    delete document.documentElement.dataset.theme;
+  } else {
+    document.documentElement.dataset.theme = theme;
+  }
+}
+
+function readStoredBool(key: string, fallback: boolean): boolean {
+  try {
+    const raw = window.localStorage.getItem(key);
+    return raw === null ? fallback : raw === '1';
+  } catch {
+    return fallback;
+  }
+}
+
+function writeStoredBool(key: string, value: boolean) {
+  try {
+    window.localStorage.setItem(key, value ? '1' : '0');
+  } catch {
+    /* private mode — preference just doesn't persist */
+  }
+}
+
+function Row({ title, sub, mono = false, right, onClick, ariaLabel }: {
+  title: React.ReactNode;
+  sub?: React.ReactNode;
+  mono?: boolean;
+  right?: React.ReactNode;
+  onClick?: () => void;
+  ariaLabel?: string;
+}) {
+  const body = (
+    <>
+      <div className="hm-set-row__body">
+        <div className="hm-set-row__title">{title}</div>
+        {sub ? <div className={`hm-set-row__sub${mono ? ' hm-set-row__sub--mono' : ''}`}>{sub}</div> : null}
+      </div>
+      {right}
+    </>
+  );
+  if (onClick) {
+    return (
+      <button type="button" className="hm-set-row hm-set-row--link" onClick={onClick} aria-label={ariaLabel}>
+        {body}
+      </button>
+    );
+  }
+  return <div className="hm-set-row">{body}</div>;
+}
+
+function Chevron() {
   return (
-    <section className="hm-settings__section">
-      <h3 className="hm-settings__section-title">{title}</h3>
-      <div className="hm-settings__section-body">{children}</div>
-    </section>
+    <span className="hm-set-row__chevron" aria-hidden="true">
+      ›
+    </span>
   );
 }
 
-type BusyInputMode = 'queue' | 'steer' | 'interrupt';
-
-
-
-function normalizeBusyInputMode(value: unknown): BusyInputMode {
-  return value === 'queue' || value === 'interrupt' || value === 'steer' ? value : 'queue';
-}
-
-function busyInputModeLabel(value: BusyInputMode): string {
-  if (value === 'queue') return 'Queue after current turn';
-  if (value === 'interrupt') return 'Interrupt current turn';
-  return 'Steer running turn';
-}
-
-function busyInputModeDescription(value: BusyInputMode): string {
-  if (value === 'queue') return 'Messages typed while Hermes is busy are sent after the current turn finishes.';
-  if (value === 'interrupt') return 'Messages typed while Hermes is busy interrupt the current turn, then send as the next prompt.';
-  return 'Messages typed while Hermes is busy are injected into the running turn without interrupting.';
-}
-
-function SettingsRow({ label, value, children, action }: { label: string; value?: string; children?: React.ReactNode; action?: React.ReactNode }) {
+function Toggle({ checked, disabled, label, onChange }: {
+  checked: boolean;
+  disabled?: boolean;
+  label: string;
+  onChange: (next: boolean) => void;
+}) {
   return (
-    <div className="hm-settings-row">
-      <span className="hm-settings-row__label">{label}</span>
-      {value ? <span className="hm-settings-row__value hm-muted">{value}</span> : children}
-      {action}
-    </div>
+    <button
+      type="button"
+      role="switch"
+      aria-checked={checked}
+      aria-label={label}
+      disabled={disabled}
+      className={`hm-set-switch${checked ? '' : ' hm-set-switch--off'}`}
+      onClick={() => onChange(!checked)}
+    />
   );
 }
 
 export function Settings({ rest, onNavigate, onLogout }: SettingsProps) {
-  const { status } = useConnectionStore();
   const activeName = useProfilesStore((s) => s.activeName);
   const activeProfile = useProfilesStore((s) => s.profiles.find((p) => p.name === s.activeName));
   const { info, error: modelError, loadInfo } = useModelStore();
-  const showCronInAll = useSessionsStore((s) => s.showCronInAll);
-  const setShowCronInAll = useSessionsStore((s) => s.setShowCronInAll);
-  const config = useConfigStore((s) => s.config);
-  const configLoading = useConfigStore((s) => s.loading);
-  const configSaving = useConfigStore((s) => s.saving);
-  const configError = useConfigStore((s) => s.error);
-  const loadConfig = useConfigStore((s) => s.load);
-  const updateConfig = useConfigStore((s) => s.update);
-  const busyInputMode = normalizeBusyInputMode(config?.display?.busy_input_mode);
   const [stats, setStats] = useState<SystemStats | undefined>();
-  const [statsLoading, setStatsLoading] = useState(true);
   const [statsError, setStatsError] = useState<string | undefined>();
   const [pushStatus, setPushStatus] = useState<PushStatus | undefined>();
   const [pushLoading, setPushLoading] = useState(true);
   const [pushError, setPushError] = useState<string | undefined>();
   const [pushBusy, setPushBusy] = useState(false);
   const [localPushId, setLocalPushId] = useState<string | null>(null);
-  const [installPromptAvailable, setInstallPromptAvailable] = useState(false);
-  const [installing, setInstalling] = useState(false);
-  const [installOutcome, setInstallOutcome] = useState<string | undefined>();
+  const [theme, setTheme] = useState<ThemeSetting>(readTheme);
+  const [notifyApprovals, setNotifyApprovals] = useState(() => readStoredBool(NOTIFY_APPROVALS_STORAGE_KEY, true));
+  const [notifyRuns, setNotifyRuns] = useState(() => readStoredBool(NOTIFY_RUNS_STORAGE_KEY, false));
 
-  const gatewayHost = typeof window !== 'undefined' ? window.location.host : 'hermes.local:9119';
-  const authLabel = status?.authRequired
-    ? (status.authProviders?.join(', ') || 'Basic')
-    : (status ? 'None' : '—');
+  const gatewayUrl = typeof window !== 'undefined' ? window.location.origin : 'http://hermes.local:9119';
   const modelLabel = activeProfile?.model ?? info?.model ?? '—';
-  const providerLabel = activeProfile?.provider ?? info?.provider;
   const pushProfile = activeName || 'default';
   const pushCapability = useMemo(() => getPushCapability(), []);
-  const iosSafari = useMemo(() => isIosSafari(), []);
   // Only this browser's own subscription counts: another device's must not hide "Enable on this device".
   const activePushSubscription = localPushId
     ? pushStatus?.subscriptions.find((sub) => sub.id === localPushId && sub.enabled)
     : undefined;
-  const pushStatusLabel = pushLoading
-    ? 'Loading…'
-    : pushStatus?.available
-      ? 'Available'
-      : (pushStatus?.reason ?? pushCapability.reason ?? 'Unavailable');
 
   useEffect(() => {
     void loadInfo(rest);
-    void loadConfig(rest);
-  }, [rest, loadInfo, loadConfig]);
+  }, [rest, loadInfo]);
 
   useEffect(() => {
-    setStatsLoading(true);
+    applyTheme(theme);
+  }, [theme]);
+
+  useEffect(() => {
     rest
       .systemStats()
       .then((s) => {
         setStats(s);
         setStatsError(undefined);
       })
-      .catch((err) => setStatsError(err instanceof Error ? err.message : 'Failed to load stats'))
-      .finally(() => setStatsLoading(false));
+      .catch((err) => setStatsError(err instanceof Error ? err.message : 'Failed to load stats'));
   }, [rest]);
 
   function reloadPushStatus() {
@@ -131,249 +168,121 @@ export function Settings({ rest, onNavigate, onLogout }: SettingsProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [rest, pushProfile]);
 
-  useEffect(() => {
-    const refreshInstallPrompt = () => setInstallPromptAvailable(canPromptInstall());
-    refreshInstallPrompt();
-    window.addEventListener(INSTALL_PROMPT_CHANGED_EVENT, refreshInstallPrompt);
-    window.addEventListener('focus', refreshInstallPrompt);
-    return () => {
-      window.removeEventListener(INSTALL_PROMPT_CHANGED_EVENT, refreshInstallPrompt);
-      window.removeEventListener('focus', refreshInstallPrompt);
-    };
-  }, []);
-
-  async function handleBusyInputModeChange(mode: BusyInputMode) {
-    try {
-      await updateConfig(rest, 'display.busy_input_mode', mode);
-    } catch {
-      /* error surfaced in config store */
-    }
-  }
-
-  async function handleEnablePush() {
+  async function handleDevicePushChange(next: boolean) {
     setPushBusy(true);
     setPushError(undefined);
     try {
-      if (!pushStatus?.vapidPublicKey) {
-        throw new Error(pushStatus?.reason ?? 'Push server is missing a VAPID public key.');
+      if (next) {
+        if (!pushStatus?.vapidPublicKey) {
+          throw new Error(pushStatus?.reason ?? 'Push server is missing a VAPID public key.');
+        }
+        await enablePushNotifications(rest, pushStatus.vapidPublicKey, pushProfile);
+      } else {
+        await disablePushNotifications(rest, activePushSubscription?.id, pushProfile);
       }
-      await enablePushNotifications(rest, pushStatus.vapidPublicKey, activeName || 'default');
       reloadPushStatus();
     } catch (err) {
-      setPushError(err instanceof Error ? err.message : 'Failed to enable notifications');
+      setPushError(err instanceof Error ? err.message : 'Failed to update notifications');
     } finally {
       setPushBusy(false);
     }
   }
 
-  async function handleDisablePush() {
-    setPushBusy(true);
-    setPushError(undefined);
+  function handleThemeChange() {
+    const next = THEME_ORDER[(THEME_ORDER.indexOf(theme) + 1) % THEME_ORDER.length] ?? 'system';
+    setTheme(next);
     try {
-      await disablePushNotifications(rest, activePushSubscription?.id, pushProfile);
-      reloadPushStatus();
-    } catch (err) {
-      setPushError(err instanceof Error ? err.message : 'Failed to disable notifications');
-    } finally {
-      setPushBusy(false);
+      window.localStorage.setItem(THEME_STORAGE_KEY, next);
+    } catch {
+      /* private mode */
     }
   }
 
-  async function handleTestPush() {
-    if (!activePushSubscription?.id) return;
-    setPushBusy(true);
-    setPushError(undefined);
-    try {
-      await rest.pushTest(activePushSubscription.id, pushProfile);
-      reloadPushStatus();
-    } catch (err) {
-      setPushError(err instanceof Error ? err.message : 'Failed to send test notification');
-    } finally {
-      setPushBusy(false);
-    }
+  function handleNotifyApprovalsChange(next: boolean) {
+    setNotifyApprovals(next);
+    writeStoredBool(NOTIFY_APPROVALS_STORAGE_KEY, next);
   }
 
-  async function handleInstallApp() {
-    setInstalling(true);
-    setInstallOutcome(undefined);
-    try {
-      const outcome = await promptInstall();
-      setInstallOutcome(outcome === 'unavailable' ? 'Install prompt is not available in this browser right now.' : `Install ${outcome}.`);
-      setInstallPromptAvailable(canPromptInstall());
-    } finally {
-      setInstalling(false);
-    }
+  function handleNotifyRunsChange(next: boolean) {
+    setNotifyRuns(next);
+    writeStoredBool(NOTIFY_RUNS_STORAGE_KEY, next);
   }
+
+  const devicePushEnabled = Boolean(activePushSubscription);
+  const devicePushDisabled =
+    pushBusy ||
+    pushLoading ||
+    (!devicePushEnabled && (!pushCapability.supported || !pushStatus?.available || !pushStatus.vapidPublicKey));
 
   return (
     <div className="hm-settings hm-scroll">
       {statsError && <div className="hm-warning-banner hm-warning-banner--error">{statsError}</div>}
       {modelError && <div className="hm-warning-banner hm-warning-banner--error">{modelError}</div>}
-      {configError && <div className="hm-warning-banner hm-warning-banner--error">{configError}</div>}
       {pushError && <div className="hm-warning-banner hm-warning-banner--error">{pushError}</div>}
 
-      <Section title="Profiles">
-        <button
-          className="hm-settings-row hm-settings-row--link"
-          onClick={() => onNavigate('profiles')}
-          aria-label="Manage profiles"
-        >
-          <span className="hm-settings-row__body">
-            <span className="hm-settings-row__label">Manage profiles</span>
-            {activeProfile && (
-              <span className="hm-settings-row__sub hm-muted">
-                Active: {activeProfile.displayName ?? activeProfile.name}
-              </span>
-            )}
-          </span>
-          <span className="hm-settings-row__chevron" aria-hidden="true">
-            <Icon name="chevR" size={14} />
-          </span>
-        </button>
-      </Section>
+      <div className="hm-group-label hm-settings__group-label--first">Connection</div>
+      <Row title="Gateway URL" sub={gatewayUrl} mono right={<Chevron />} />
+      <Row
+        title="Model"
+        sub={`${modelLabel} · managed in Profiles`}
+        right={<span className="hm-set-row__link">Profiles ›</span>}
+        onClick={() => onNavigate('profiles')}
+        ariaLabel="Manage model in Profiles"
+      />
 
-      <Section title="Connection">
-        <SettingsRow label="Gateway URL" value={gatewayHost} />
-        <SettingsRow label="Auth" value={authLabel} />
-        <button
-          type="button"
-          className="hm-settings-row hm-settings-row--link"
-          onClick={() => onNavigate('profiles')}
-          aria-label="Change model in Profiles"
-        >
-          <span className="hm-settings-row__body">
-            <span className="hm-settings-row__label">Model</span>
-            <span className="hm-settings-row__sub hm-muted">
-              {providerLabel ? `${providerLabel} / ${modelLabel}` : modelLabel} · set per profile
-            </span>
-          </span>
-          <span className="hm-settings-row__chevron" aria-hidden="true">
-            <Icon name="chevR" size={14} />
-          </span>
-        </button>
-      </Section>
-
-      <Section title="Notifications">
-        <SettingsRow label="Browser" value={pushCapability.supported ? `Supported · permission ${pushCapability.permission}` : (pushCapability.reason ?? 'Unsupported')} />
-        <SettingsRow label="Server" value={pushStatusLabel} />
-        <SettingsRow label="Devices" value={pushLoading ? 'Loading…' : String(pushStatus?.subscriptions.filter((s) => s.enabled).length ?? 0)} />
-        {pushCapability.iosStandaloneRequired && (
-          <p className="hm-muted">iPhone/iPad: install Hermes Mobile to Home Screen before enabling notifications.</p>
-        )}
-        <div className="hm-settings__segmented" aria-label="Push notification actions">
-          {activePushSubscription?.id ? (
-            <>
-              <button
-                type="button"
-                className="hm-filter-chip"
-                disabled={pushBusy || pushLoading || !pushStatus?.available}
-                onClick={() => void handleTestPush()}
-              >
-                Send test
-              </button>
-              <button
-                type="button"
-                className="hm-filter-chip"
-                disabled={pushBusy || pushLoading}
-                onClick={() => void handleDisablePush()}
-              >
-                Disable device
-              </button>
-            </>
-          ) : (
-            <button
-              type="button"
-              className="hm-filter-chip"
-              disabled={pushBusy || pushLoading || !pushCapability.supported || !pushStatus?.available || !pushStatus.vapidPublicKey}
-              onClick={() => void handleEnablePush()}
-            >
-              Enable on this device
-            </button>
-          )}
-        </div>
-      </Section>
-
-      <Section title="Install app">
-        <SettingsRow
-          label="Browser install"
-          value={installPromptAvailable ? 'Install prompt ready' : 'Use browser menu or Add to Home Screen'}
-        />
-        {installPromptAvailable ? (
-          <button
-            type="button"
-            className="hm-filter-chip"
-            disabled={installing}
-            onClick={() => void handleInstallApp()}
-          >
-            Install Hermes Mobile
-          </button>
-        ) : iosSafari ? (
-          <p className="hm-muted">iPhone/iPad Safari: tap Share, then choose Add to Home Screen.</p>
-        ) : (
-          <p className="hm-muted">If no install prompt is available, use your browser menu and choose Add to Home Screen / Install app.</p>
-        )}
-        {installOutcome && <p className="hm-muted">{installOutcome}</p>}
-      </Section>
-
-      <Section title="Chat behavior">
-        <SettingsRow label="Busy input" value={configLoading ? 'Loading…' : busyInputModeLabel(busyInputMode)} />
-        <p className="hm-muted">{busyInputModeDescription(busyInputMode)}</p>
-        <div className="hm-settings__segmented" role="radiogroup" aria-label="Busy input mode">
-          {(['steer', 'queue', 'interrupt'] as const).map((mode) => (
-            <button
-              key={mode}
-              type="button"
-              className={`hm-filter-chip ${busyInputMode === mode ? 'hm-filter-chip--active' : ''}`}
-              disabled={configLoading || configSaving}
-              onClick={() => void handleBusyInputModeChange(mode)}
-              role="radio"
-              aria-checked={busyInputMode === mode}
-            >
-              {busyInputModeLabel(mode)}
-            </button>
-          ))}
-        </div>
-        <label className="hm-settings-row">
-          <span className="hm-settings-row__body">
-            <span className="hm-settings-row__label">Show cron results in All</span>
-            <span className="hm-muted">Cron runs always appear under the Cron chip in Sessions.</span>
-          </span>
-          <input
-            type="checkbox"
-            aria-label="Show cron results in All"
-            checked={showCronInAll}
-            onChange={(e) => setShowCronInAll(e.target.checked)}
+      <div className="hm-group-label">Notifications</div>
+      <Row
+        title="Enable on this device"
+        right={
+          <Toggle
+            checked={devicePushEnabled}
+            disabled={devicePushDisabled}
+            label="Enable notifications on this device"
+            onChange={(next) => void handleDevicePushChange(next)}
           />
-        </label>
-      </Section>
+        }
+      />
+      <Row
+        title="Approval requests"
+        right={
+          <Toggle
+            checked={notifyApprovals}
+            label="Approval request notifications"
+            onChange={handleNotifyApprovalsChange}
+          />
+        }
+      />
+      <Row
+        title="Runs completed"
+        right={
+          <Toggle
+            checked={notifyRuns}
+            label="Run completion notifications"
+            onChange={handleNotifyRunsChange}
+          />
+        }
+      />
+      {pushCapability.iosStandaloneRequired && !devicePushEnabled && (
+        <p className="hm-settings__note">iPhone/iPad: install Hermes Mobile to Home Screen before enabling notifications.</p>
+      )}
 
-      <Section title="About">
-        <SettingsRow label="PWA client" value={HERMES_PWA_VERSION_LABEL} />
-        <SettingsRow label="Hermes backend" value={statsLoading ? 'Loading…' : (stats?.version ?? '—')} />
-        <button
-          className="hm-settings-row hm-settings-row--link"
-          onClick={() => onNavigate('command')}
-          aria-label="Open system command center"
-        >
-          <span className="hm-settings-row__body">
-            <span className="hm-settings-row__label">System command center</span>
-            <span className="hm-settings-row__sub hm-muted">Restart, update, doctor</span>
-          </span>
-          <span className="hm-settings-row__chevron" aria-hidden="true">
-            <Icon name="chevR" size={14} />
-          </span>
-        </button>
-      </Section>
+      <div className="hm-group-label">Appearance</div>
+      <Row
+        title="Theme"
+        sub={THEME_LABELS[theme]}
+        right={<Chevron />}
+        onClick={handleThemeChange}
+        ariaLabel={`Theme: ${THEME_LABELS[theme]}. Tap to change.`}
+      />
 
-      <button
-        className="hm-settings-row hm-settings-row--link hm-text-danger"
-        onClick={onLogout}
-        aria-label="Log out"
-      >
-        <span className="hm-settings-row__label">Log out</span>
-        <span className="hm-settings-row__chevron" aria-hidden="true">
-          <Icon name="logout" size={14} />
-        </span>
+      <div className="hm-group-label">About</div>
+      <Row
+        title={`Hermes PWA v${HERMES_PWA_VERSION_LABEL}`}
+        sub={`Gateway ${stats?.version ?? '—'} · plugin hermes-pwa`}
+      />
+
+      <button type="button" className="hm-btn hm-btn--danger-outline hm-settings__logout" onClick={onLogout}>
+        Log out
       </button>
     </div>
   );

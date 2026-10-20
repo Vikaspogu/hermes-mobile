@@ -1,10 +1,22 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useProjectsStore, useConnectionStore, useProfilesStore } from '@hermes-pwa/core';
-import type { RestClient, TaskStatus } from '@hermes-pwa/core';
+import type { RestClient, Task, TaskStatus } from '@hermes-pwa/core';
 import { TaskCard } from '../components/TaskCard';
 import { Icon } from '../components/Icon';
 import { BottomSheet } from '../components/BottomSheet';
+import { SegmentedControl } from '../components/SegmentedControl';
+import '../styles/screens/work.css';
 
+function useMediaQuery(query: string): boolean {
+  const [matches, setMatches] = useState(() => window.matchMedia(query).matches);
+  useEffect(() => {
+    const mql = window.matchMedia(query);
+    const listener = (e: MediaQueryListEvent) => setMatches(e.matches);
+    mql.addEventListener('change', listener);
+    return () => mql.removeEventListener('change', listener);
+  }, [query]);
+  return matches;
+}
 interface ProjectsProps {
   rest: RestClient;
 }
@@ -61,6 +73,49 @@ const MOVE_STATUSES: TaskStatus[] = [
   'done',
 ];
 
+
+/* ── M5 Work → Tasks helpers ─────────────────────────────────────── */
+export type WorkFilter = 'active' | 'blocked' | 'done' | 'all';
+
+export function workFilterCounts(tasks: Task[]): { active: number; blocked: number; done: number } {
+  return {
+    active: tasks.filter((t) => t.status === 'running' || t.status === 'in_progress').length,
+    blocked: tasks.filter((t) => t.status === 'blocked').length,
+    done: tasks.filter((t) => t.status === 'done').length,
+  };
+}
+
+export function matchesWorkFilter(task: Task, filter: WorkFilter): boolean {
+  if (filter === 'all') return true;
+  if (filter === 'active') return task.status === 'running' || task.status === 'in_progress';
+  if (filter === 'blocked') return task.status === 'blocked';
+  return task.status === 'done';
+}
+
+/** Mockup .prio tones: P0 red / P1 amber / P2 grey. Numeric priority (TaskCard
+    convention: <=0 means none) is bucketed onto those tones. */
+export function prioTone(priority: number | undefined): 'p0' | 'p1' | 'p2' | null {
+  const p = typeof priority === 'number' ? priority : 0;
+  if (p <= 0) return null;
+  if (p >= 10) return 'p0';
+  if (p >= 5) return 'p1';
+  return 'p2';
+}
+
+/** Mockup .task-meta sub-line: live run / blocked warning / plain stage. */
+export function workTaskMeta(task: Task): { live: boolean; warn: boolean; text: string } {
+  const assignee = task.assignee ?? 'default';
+  if (task.status === 'running' || task.status === 'in_progress') {
+    const run = task.run ?? task.id;
+    // ponytail: some payloads already suffix the run with "live" — don't double it.
+    const label = /\blive\b/.test(run) ? run : `${run} live`;
+    return { live: true, warn: false, text: `${label} · @${assignee}` };
+  }
+  if (task.status === 'blocked') {
+    return { live: false, warn: true, text: `⚠ blocked · ${task.block ?? 'needs input'}` };
+  }
+  return { live: false, warn: false, text: `${COLUMN_LABEL[task.status].toLowerCase()} · @${assignee}` };
+}
 function formatTime(ts: number): string {
   const s = Math.round((Date.now() - ts) / 1000);
   if (s < 60) return `${s}s`;
@@ -94,6 +149,8 @@ export function Projects({ rest }: ProjectsProps) {
 
   const [selectorOpen, setSelectorOpen] = useState(false);
   const [stageFilter, setStageFilter] = useState<TaskStatus | 'all'>('all');
+  const [workFilter, setWorkFilter] = useState<WorkFilter>('all');
+  const isDesktop = useMediaQuery('(min-width: 900px)');
   const [commentText, setCommentText] = useState('');
   const [creatingBoard, setCreatingBoard] = useState(false);
   const [newBoardName, setNewBoardName] = useState('');
@@ -156,6 +213,20 @@ export function Projects({ rest }: ProjectsProps) {
     // ponytail: empty stages collapse out of the default view; the pills are how you focus one.
     return nonEmptyColumns.length > 0 ? nonEmptyColumns : columns;
   }, [columns, nonEmptyColumns, stageFilter]);
+
+  // M5 flat list: group chips (Active · n | Blocked · n | Done · n | All).
+  const workCounts = useMemo(() => workFilterCounts(tasks), [tasks]);
+  const workChips = useMemo(
+    () =>
+      [
+        { id: 'active', label: `Active · ${workCounts.active}` },
+        { id: 'blocked', label: `Blocked · ${workCounts.blocked}` },
+        { id: 'done', label: `Done · ${workCounts.done}` },
+        { id: 'all', label: 'All' },
+      ] as { id: WorkFilter; label: string }[],
+    [workCounts],
+  );
+  const workTasks = useMemo(() => tasks.filter((t) => matchesWorkFilter(t, workFilter)), [tasks, workFilter]);
 
   useEffect(() => {
     if (stageFilter !== 'all' && !columns.some((c) => c.status === stageFilter && c.tasks.length > 0)) {
@@ -290,6 +361,19 @@ export function Projects({ rest }: ProjectsProps) {
   return (
     <div className="hm-projects">
       <div className="hm-projects__topbar">
+      <div className="work-head">
+        <SegmentedControl
+          ariaLabel="Work view"
+          options={[
+            { value: 'tasks', label: 'Tasks' },
+            { value: 'schedules', label: 'Schedules' },
+          ]}
+          value="tasks"
+          onChange={(v) => {
+            if (v === 'schedules') window.location.hash = '#/cron';
+          }}
+        />
+      </div>
         <button
           className="hm-projects__board-select"
           onClick={() => setSelectorOpen(!selectorOpen)}
@@ -306,40 +390,6 @@ export function Projects({ rest }: ProjectsProps) {
         >
           <Icon name="refresh" size={14} />
         </button>
-        <button
-          type="button"
-          className="hm-primary hm-projects__new-task"
-          onClick={() => openCreateForm(stageFilter !== 'all' ? stageFilter : 'todo')}
-          data-testid="kanban-new-task"
-        >
-          <Icon name="plus" size={14} /> New
-        </button>
-      </div>
-
-      <div className="hm-projects__stage-pills" role="tablist" aria-label="Stage filter">
-        <button
-          type="button"
-          role="tab"
-          aria-selected={stageFilter === 'all'}
-          className={`hm-projects__stage-pill${stageFilter === 'all' ? ' hm-projects__stage-pill--active' : ''}`}
-          onClick={() => setStageFilter('all')}
-        >
-          All
-          <span className="hm-projects__stage-count">{tasks.length}</span>
-        </button>
-        {nonEmptyColumns.map((col) => (
-          <button
-            key={col.status}
-            type="button"
-            role="tab"
-            aria-selected={stageFilter === col.status}
-            className={`hm-projects__stage-pill${stageFilter === col.status ? ' hm-projects__stage-pill--active' : ''}`}
-            onClick={() => setStageFilter(col.status)}
-          >
-            {col.label}
-            <span className="hm-projects__stage-count">{col.tasks.length}</span>
-          </button>
-        ))}
       </div>
 
       {selectorOpen && (
@@ -399,6 +449,34 @@ export function Projects({ rest }: ProjectsProps) {
           )}
         </div>
       )}
+      {isDesktop ? (
+        <>
+      <div className="hm-projects__stage-pills" role="tablist" aria-label="Stage filter">
+        <button
+          type="button"
+          role="tab"
+          aria-selected={stageFilter === 'all'}
+          className={`hm-projects__stage-pill${stageFilter === 'all' ? ' hm-projects__stage-pill--active' : ''}`}
+          onClick={() => setStageFilter('all')}
+        >
+          All
+          <span className="hm-projects__stage-count">{tasks.length}</span>
+        </button>
+        {nonEmptyColumns.map((col) => (
+          <button
+            key={col.status}
+            type="button"
+            role="tab"
+            aria-selected={stageFilter === col.status}
+            className={`hm-projects__stage-pill${stageFilter === col.status ? ' hm-projects__stage-pill--active' : ''}`}
+            onClick={() => setStageFilter(col.status)}
+          >
+            {col.label}
+            <span className="hm-projects__stage-count">{col.tasks.length}</span>
+          </button>
+        ))}
+      </div>
+
 
       {error && <div className="hm-warning-banner hm-warning-banner--error">{error}</div>}
       {loading && tasks.length === 0 && <p className="hm-muted hm-loading">Loading board…</p>}
@@ -423,10 +501,69 @@ export function Projects({ rest }: ProjectsProps) {
         {tasks.length === 0 && !loading && (
           <div className="hm-projects__empty-board">
             <p>No tasks on this board</p>
-            <p className="hm-muted">Tap New above to add one.</p>
+            <p className="hm-muted">Tap + to add one.</p>
           </div>
         )}
       </div>
+        </>
+      ) : (
+        <div className="work-scroll">
+          <div className="work-pillrow" role="group" aria-label="Filter tasks">
+            {workChips.map((chip) => (
+              <button
+                key={chip.id}
+                type="button"
+                className={`hm-pill${workFilter === chip.id ? ' hm-pill--on' : ''}`}
+                aria-pressed={workFilter === chip.id}
+                onClick={() => setWorkFilter(chip.id)}
+              >
+                {chip.label}
+              </button>
+            ))}
+          </div>
+          {error && <div className="hm-warning-banner hm-warning-banner--error">{error}</div>}
+          {loading && tasks.length === 0 && <p className="hm-muted hm-loading">Loading board…</p>}
+          <div className="work-task-list">
+            {workTasks.map((task) => {
+              const tone = prioTone(task.priority);
+              const meta = workTaskMeta(task);
+              return (
+                <button
+                  key={task.id}
+                  type="button"
+                  className="work-task-row"
+                  onClick={() => void handleOpenTask(task.id)}
+                >
+                  {tone && <span className={`work-prio work-prio--${tone}`}>{tone.toUpperCase()}</span>}
+                  <span className="work-task-row__body">
+                    <span className="work-task-row__title">{task.title}</span>
+                    <span className={`work-task-row__meta${meta.warn ? ' work-task-row__meta--warn' : ''}`}>
+                      {meta.live && <span className="work-pulse" aria-hidden="true" />}
+                      {meta.text}
+                    </span>
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+          {workTasks.length === 0 && !loading && (
+            <div className="hm-projects__empty-board">
+              <p>No tasks match this filter</p>
+              <p className="hm-muted">Tap + to add one.</p>
+            </div>
+          )}
+        </div>
+      )}
+
+      <button
+        type="button"
+        className="hm-fab"
+        data-testid="kanban-new-task"
+        aria-label="New task"
+        onClick={() => openCreateForm(stageFilter !== 'all' ? stageFilter : 'todo')}
+      >
+        +
+      </button>
 
       {createForm.open && createForm.column && (
         <BottomSheet

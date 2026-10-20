@@ -969,7 +969,7 @@ describe('Chat', () => {
     expect(screen.getByText(/whoami=stasstep/i)).toBeInTheDocument();
   });
 
-  it('renders approval inline on the running terminal tool row and sends canonical choice', async () => {
+  it('renders high-risk approval in the dock and approves via slide-to-approve', async () => {
     vi.mocked(rpcMock.request).mockResolvedValue({ resolved: true });
     core.useChatStore.setState({
       sessionId: 'sess-1',
@@ -1005,7 +1005,8 @@ describe('Chat', () => {
     render(<Chat rpc={rpcMock} rest={restMock} />);
 
     expect(screen.getByText('hermes gateway restart')).toBeInTheDocument();
-    fireEvent.click(screen.getByRole('button', { name: 'Run' }));
+    expect(screen.getByText('HIGH RISK')).toBeInTheDocument();
+    fireEvent.keyDown(screen.getByRole('slider', { name: 'Slide to approve' }), { key: 'End' });
 
     await waitFor(() => {
       expect(rpcMock.request).toHaveBeenCalledWith('approval.respond', {
@@ -1066,7 +1067,7 @@ describe('Chat', () => {
           title: 'Approval required',
           summary: 'dangerous command again',
           sessionId: 'sess-1',
-          highImpact: true,
+          highImpact: false,
           createdAt: 2,
         } as core.Approval,
       ],
@@ -1074,10 +1075,9 @@ describe('Chat', () => {
       error: undefined,
     });
     render(<Chat rpc={rpcMock} rest={restMock} />);
-    const alwaysButton = await screen.findByRole('button', { name: 'Always' });
-    await waitFor(() => expect(alwaysButton).not.toBeDisabled());
-    fireEvent.click(alwaysButton);
-
+    expect(screen.getByText('LOW RISK')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'More approval options' }));
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Always allow' }));
     await waitFor(() => {
       expect(confirmSpy).toHaveBeenCalled();
       expect(rpcMock.request).toHaveBeenCalledWith('approval.respond', {

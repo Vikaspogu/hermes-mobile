@@ -1,87 +1,82 @@
 import { useEffect, useState } from 'react';
-import { HermesHttpError, useChatStore, type RestClient, type Artifact as DomainArtifact } from '@hermes-pwa/core';
+// ponytail: prototype.css's trailing @import of screens/*.css is dropped by Vite
+import '../styles/screens/artifacts.css';
+import { HermesHttpError, useChatStore, type RestClient, type Artifact } from '@hermes-pwa/core';
 
 interface ArtifactsProps {
   rest: RestClient;
 }
 
-type ArtifactKind = 'image' | 'file' | 'link' | 'other';
-type Filter = 'all' | 'images' | 'files' | 'links';
+type ArtifactKind = 'image' | 'text' | 'chart' | 'link' | 'file';
 
-interface Artifact {
-  id: string;
-  kind: ArtifactKind;
-  name: string;
-  url: string | undefined;
-  mimeType: string | undefined;
-  size: number | undefined;
-  createdAt: number;
-}
+const KIND_ICON: Record<ArtifactKind, string> = {
+  image: '🖼',
+  text: '📄',
+  chart: '📊',
+  link: '🔗',
+  file: '📄',
+};
 
-const FILTERS: { key: Filter; label: string }[] = [
-  { key: 'all', label: 'All' },
-  { key: 'images', label: 'Images' },
-  { key: 'files', label: 'Files' },
-  { key: 'links', label: 'Links' },
-];
+const KIND_LABEL: Record<ArtifactKind, string> = {
+  image: 'Image',
+  text: 'Text',
+  chart: 'Markdown',
+  link: 'Link',
+  file: 'File',
+};
 
-function detectKind(type: string): ArtifactKind {
-  const t = type.toLowerCase();
+function detectKind(artifact: Artifact): ArtifactKind {
+  const t = artifact.type.toLowerCase();
   if (t === 'image' || t.startsWith('image/')) return 'image';
   if (t === 'link' || t === 'text/uri-list') return 'link';
-  if (t === 'file' || t) return 'file';
-  return 'other';
+  if (t.includes('markdown') || artifact.name.toLowerCase().endsWith('.md')) return 'chart';
+  if (t.startsWith('text/')) return 'text';
+  return 'file';
 }
 
-function parseArtifact(raw: DomainArtifact): Artifact {
-  return {
-    id: raw.id,
-    kind: detectKind(raw.type),
-    name: raw.name,
-    url: raw.path,
-    mimeType: raw.type,
-    size: undefined,
-    createdAt: raw.createdAt,
-  };
+function fmtAge(ts: number): string {
+  const mins = Math.max(0, Math.round((Date.now() - ts) / 60000));
+  if (mins < 60) return `${mins}m`;
+  const hours = Math.round(mins / 60);
+  if (hours < 24) return `${hours}h`;
+  return `${Math.round(hours / 24)}d`;
 }
 
-function fmtSize(bytes: number | undefined): string {
-  if (!bytes) return '';
-  if (bytes < 1024) return `${bytes} B`;
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-}
-
-function ArtifactItem({ artifact }: { artifact: Artifact }) {
-  const icon = artifact.kind === 'image' ? '🖼' : artifact.kind === 'link' ? '🔗' : '📎';
-  return (
-    <div className="hm-artifact-row" data-testid="artifact-row">
-      <span className="hm-artifact-row__icon" aria-hidden="true">
-        {artifact.kind === 'image' && artifact.url ? (
-          <img className="hm-artifact-row__thumb" src={artifact.url} alt="" loading="lazy" />
-        ) : (
-          icon
-        )}
+function ArtifactRow({ artifact }: { artifact: Artifact }) {
+  const kind = detectKind(artifact);
+  const iconClass = `hm-artifact-row__icon${
+    kind === 'image' ? ' hm-artifact-row__icon--image' : kind === 'chart' ? ' hm-artifact-row__icon--chart' : ''
+  }`;
+  const body = (
+    <>
+      <span className={iconClass} aria-hidden="true">
+        {KIND_ICON[kind]}
       </span>
       <span className="hm-artifact-row__body">
         <span className="hm-artifact-row__name">{artifact.name}</span>
-        {(artifact.mimeType || artifact.size) && (
-          <span className="hm-artifact-row__meta hm-muted">
-            {[artifact.mimeType, fmtSize(artifact.size)].filter(Boolean).join(' · ')}
-          </span>
-        )}
+        <span className="hm-artifact-row__sub">
+          {KIND_LABEL[kind]} · {fmtAge(artifact.createdAt)}
+        </span>
       </span>
-      {artifact.url && (
-        <a
-          href={artifact.url}
-          className="hm-ghost hm-artifact-row__action"
-          target="_blank"
-          rel="noreferrer"
-          aria-label={`Open ${artifact.name}`}
-        >
-          ↗
-        </a>
-      )}
+      <span className="hm-artifact-row__chevron" aria-hidden="true">
+        ›
+      </span>
+    </>
+  );
+  return artifact.path ? (
+    <a
+      className="hm-artifact-row"
+      data-testid="artifact-row"
+      href={artifact.path}
+      target="_blank"
+      rel="noreferrer"
+      aria-label={`Open ${artifact.name}`}
+    >
+      {body}
+    </a>
+  ) : (
+    <div className="hm-artifact-row" data-testid="artifact-row">
+      {body}
     </div>
   );
 }
@@ -91,14 +86,13 @@ export function Artifacts({ rest }: ArtifactsProps) {
   const [artifacts, setArtifacts] = useState<Artifact[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | undefined>(undefined);
-  const [filter, setFilter] = useState<Filter>('all');
 
   useEffect(() => {
     if (!sessionId) return;
     setLoading(true);
     void rest
       .sessionArtifacts(sessionId)
-      .then((raw) => setArtifacts(raw.map(parseArtifact)))
+      .then(setArtifacts)
       .catch((err) =>
         setError(
           err instanceof HermesHttpError && err.status === 404
@@ -111,15 +105,8 @@ export function Artifacts({ rest }: ArtifactsProps) {
       .finally(() => setLoading(false));
   }, [rest, sessionId]);
 
-  const filtered = artifacts.filter((a) => {
-    if (filter === 'images') return a.kind === 'image';
-    if (filter === 'files') return a.kind === 'file';
-    if (filter === 'links') return a.kind === 'link';
-    return true;
-  });
-
   return (
-    <div className="hm-artifacts">
+    <div className="hm-artifacts-screen">
       {!sessionId ? (
         <div className="hm-empty-state">
           <span style={{ fontSize: 36 }} aria-hidden="true">📎</span>
@@ -128,34 +115,25 @@ export function Artifacts({ rest }: ArtifactsProps) {
         </div>
       ) : (
         <>
-          <div className="hm-artifacts__filters" role="tablist" aria-label="Artifact type filters">
-            {FILTERS.map((f) => (
-              <button
-                key={f.key}
-                className={`hm-filter-chip${filter === f.key ? ' hm-filter-chip--active' : ''}`}
-                onClick={() => setFilter(f.key)}
-                role="tab"
-                aria-selected={filter === f.key}
-              >
-                {f.label}
-              </button>
-            ))}
-          </div>
-
           {error && <div className="hm-warning-banner hm-warning-banner--error">{error}</div>}
           {loading && <p className="hm-muted hm-loading">Loading artifacts…</p>}
 
-          {filtered.length === 0 && !loading ? (
+          {!loading && artifacts.length === 0 ? (
             <div className="hm-empty-state">
               <p>No artifacts</p>
               <p className="hm-muted">Files and images from this session will appear here.</p>
             </div>
           ) : (
-            <div className="hm-artifacts__list">
-              {filtered.map((a) => (
-                <ArtifactItem key={a.id} artifact={a} />
+            <>
+              {artifacts.map((a) => (
+                <ArtifactRow key={a.id} artifact={a} />
               ))}
-            </div>
+              <p className="hm-artifacts-screen__note">
+                Tap a row for full-screen preview.
+                <br />
+                Desktop shows the preview beside the list.
+              </p>
+            </>
           )}
         </>
       )}

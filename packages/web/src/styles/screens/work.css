@@ -1,0 +1,192 @@
+/* work.css — M5 Work → Tasks + M6 Work → Schedules (mockup-parity v2).
+   Values mirror .pi/artifacts/hermes-mobile-redesign-mockups.html (.seg/.pill/
+   .task-row/.prio/.listrow/.switch/.fab/.empty-note); colors via tokens so dark
+   theme keeps working. Shared atoms (hm-seg, hm-pill, hm-fab, hm-toggle) live in
+   ../prototype.css. */
+
+/* Segmented control sits directly under the app header (mockup .scroll top). */
+.work-head {
+  flex: none;
+  padding: 14px 16px 4px;
+}
+
+/* Board selector shares the seg row; App.css gives it flex:1 which stretches it
+   full-width on desktop — cap it to content width. */
+.hm-projects .hm-projects__board-select {
+  flex: 0 1 auto;
+}
+/* Scrollable content region: mockup .scroll (14px 16px, 10px gaps). */
+.work-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 10px 16px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* M5 filter chips (Active · 3 | Blocked · 1 | Done · 2 | All) — atoms: .hm-pill */
+.work-pillrow {
+  display: flex;
+  gap: 7px;
+  overflow-x: auto;
+  flex: none;
+  padding: 2px 0;
+}
+
+/* ── M5 task rows ─────────────────────────────────────────────────── */
+.work-task-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.work-task-row {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  padding: 11px 12px;
+  background: var(--hm-color-surface);
+  border: 1px solid var(--hm-color-border);
+  border-radius: 13px;
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+}
+
+.work-task-row__body {
+  flex: 1;
+  min-width: 0;
+}
+
+.work-task-row__title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--hm-color-text);
+}
+
+.work-task-row__meta {
+  font-size: 12px;
+  color: var(--hm-color-text-muted);
+  margin-top: 2px;
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.work-task-row__meta--warn {
+  color: var(--hm-color-warning-strong);
+}
+
+/* Mockup .prio — P0 red tint, P1 amber tint, P2+ neutral. */
+.work-prio {
+  font-size: 10.5px;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 6px;
+  flex: none;
+  margin-top: 1px;
+}
+
+.work-prio--p0 {
+  background: var(--hm-color-danger-bg);
+  color: var(--hm-color-danger-strong);
+}
+
+.work-prio--p1 {
+  background: var(--hm-color-warning-bg);
+  color: var(--hm-color-warning-strong);
+}
+
+.work-prio--p2 {
+  background: var(--hm-color-surface-2);
+  color: var(--hm-color-text-muted);
+}
+
+/* Mockup .pulse — blue live dot. */
+.work-pulse {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--hm-color-primary);
+  animation: work-pulse 1.2s infinite;
+  flex: none;
+}
+
+@keyframes work-pulse {
+  50% {
+    opacity: 0.3;
+  }
+}
+
+/* ── M6 schedule rows (mockup .listrow) ───────────────────────────── */
+.work-listrow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 13px 14px;
+  background: var(--hm-color-surface);
+  border: 1px solid var(--hm-color-border);
+  border-radius: 14px;
+}
+
+.work-listrow--paused {
+  opacity: 0.62;
+}
+
+.work-listrow__main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  text-align: left;
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+}
+
+.work-listrow__icon {
+  width: 38px;
+  height: 38px;
+  border-radius: 11px;
+  background: var(--hm-color-surface-2);
+  border: 1px solid var(--hm-color-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  font-size: 16px;
+}
+
+.work-listrow__body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.work-listrow__name {
+  font-size: 14.5px;
+  font-weight: 600;
+  color: var(--hm-color-text);
+}
+
+.work-listrow__meta {
+  font-size: 12px;
+  color: var(--hm-color-text-muted);
+  margin-top: 1px;
+}
+
+/* Mockup .empty-note — M6 footnote. */
+.work-footnote {
+  text-align: center;
+  color: var(--hm-color-text-muted);
+  font-size: 13.5px;
+  padding: 26px 30px;
+  line-height: 1.6;
+  margin: 0;
+}

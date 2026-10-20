@@ -9,10 +9,42 @@ import {
   ENGLISH_SCHEDULE_STRINGS,
 } from '@hermes-pwa/core';
 import type { CronJob, CronJobRun, RestClient, ScheduleBuilderState } from '@hermes-pwa/core';
-import { Icon } from '../components/Icon';
 import { ScheduleBuilder } from '../components/ScheduleBuilder';
 import { BottomSheet } from '../components/BottomSheet';
+import { SegmentedControl } from '../components/SegmentedControl';
+import '../styles/screens/work.css';
 
+/** Mockup M6 shows 12-hour times ("Daily at 3:00 AM"); core describeSchedule returns 24h. */
+export function to12h(text: string): string {
+  return text.replace(/\b([01]?\d|2[0-3]):([0-5]\d)\b/g, (_m, h: string, min: string) => {
+    const hour = Number(h);
+    const suffix = hour < 12 ? 'AM' : 'PM';
+    const h12 = hour % 12 === 0 ? 12 : hour % 12;
+    return `${h12}:${min} ${suffix}`;
+  });
+}
+
+/** "next in 6h" relative label; null when the job has no upcoming run. */
+export function relFuture(ts: number | undefined): string | null {
+  if (!ts) return null;
+  const diff = ts - Date.now();
+  if (diff <= 0) return 'due';
+  const min = Math.round(diff / 60000);
+  if (min < 60) return `in ${min}m`;
+  const hours = Math.round(min / 60);
+  if (hours < 48) return `in ${hours}h`;
+  return `in ${Math.round(hours / 24)}d`;
+}
+
+/** ponytail: keyword heuristic for the mockup's emoji icons; unknown jobs get ⏰. */
+export function jobEmoji(job: CronJob): string {
+  const text = `${job.name ?? ''} ${job.prompt ?? ''}`.toLowerCase();
+  if (/backup|night/.test(text)) return '🌙';
+  if (/secur|audit/.test(text)) return '🛡';
+  if (/health|doctor/.test(text)) return '🩺';
+  if (/prune|clean/.test(text)) return '🧹';
+  return '⏰';
+}
 interface CronProps {
   rest: RestClient;
 }
@@ -220,6 +252,19 @@ export function Cron({ rest }: CronProps) {
 
   return (
     <div className="hm-cron">
+      <div className="work-head">
+        <SegmentedControl
+          ariaLabel="Work view"
+          options={[
+            { value: 'tasks', label: 'Tasks' },
+            { value: 'schedules', label: 'Schedules' },
+          ]}
+          value="schedules"
+          onChange={(v) => {
+            if (v === 'tasks') window.location.hash = '#/kanban';
+          }}
+        />
+      </div>
       <div className="hm-cron__topbar">
         <select
           className="hm-select hm-cron__profile"
@@ -233,9 +278,6 @@ export function Cron({ rest }: CronProps) {
             </option>
           ))}
         </select>
-        <button type="button" className="hm-cron__create" onClick={openCreate} data-testid="cron-new">
-          <Icon name="plus" size={14} /> New
-        </button>
       </div>
 
       {error && <div className="hm-warning-banner hm-warning-banner--error">{error}</div>}
@@ -245,7 +287,7 @@ export function Cron({ rest }: CronProps) {
         {jobs.length === 0 && !loading && (
           <div className="hm-empty-state hm-empty-state--inline">
             <p className="hm-body-semibold">No schedules yet</p>
-            <p className="hm-muted">Tap New to schedule your first job.</p>
+            <p className="hm-muted">Tap + to schedule your first job.</p>
           </div>
         )}
 
@@ -257,34 +299,33 @@ export function Cron({ rest }: CronProps) {
             job.scheduleDisplay ?? job.expression,
             ENGLISH_SCHEDULE_STRINGS,
           );
+          const next = relFuture(job.nextRun);
+          const lastLabel =
+            job.lastError || (job.lastStatus && job.lastStatus !== 'ok')
+              ? '✗'
+              : job.lastRun || job.lastStatus === 'ok'
+                ? '✓'
+                : '—';
+          const meta = `${to12h(scheduleText)} · next ${next ?? '—'} · last ${lastLabel}`;
           return (
-            <div key={`${job.profile}:${job.id}`} className="hm-cron-card">
+            <div
+              key={`${job.profile}:${job.id}`}
+              className={`work-listrow${paused ? ' work-listrow--paused' : ''}`}
+            >
               <button
                 type="button"
-                className="hm-cron-card__main"
+                className="work-listrow__main"
                 onClick={() => openDetail(job)}
                 aria-label={`Open ${title}`}
               >
-                <div className="hm-cron-card__header">
-                  <Icon name="cron" size={18} />
-                  <span className="hm-cron-card__title">{title}</span>
-                  <span className={`hm-badge ${paused ? 'hm-badge--pending' : 'hm-badge--pass'}`}>
-                    {paused ? 'paused' : job.state ?? 'scheduled'}
-                  </span>
-                  {job.profile && <span className="hm-badge hm-badge--profile">{job.profile}</span>}
-                </div>
-                <div className="hm-cron-card__meta">
-                  <span
-                    className={`hm-cron-card__dot${job.lastError ? ' hm-cron-card__dot--error' : job.lastRun ? ' hm-cron-card__dot--ok' : ''}`}
-                    aria-hidden="true"
-                  />
-                  <span className="hm-cron-card__schedule">{scheduleText}</span>
-                  <span className="hm-cron-card__next">Next {formatTime(job.nextRun)}</span>
-                  <span className="hm-muted">Last {formatTime(job.lastRun)}</span>
-                </div>
-                {job.lastError && <p className="hm-cron-card__error">{job.lastError}</p>}
+                <span className="work-listrow__icon" aria-hidden="true">
+                  {jobEmoji(job)}
+                </span>
+                <span className="work-listrow__body">
+                  <span className="work-listrow__name">{title}</span>
+                  <span className="work-listrow__meta">{meta}</span>
+                </span>
               </button>
-
               <label className="hm-toggle" onClick={(e) => e.stopPropagation()}>
                 <input
                   type="checkbox"
@@ -300,6 +341,19 @@ export function Cron({ rest }: CronProps) {
         })}
       </div>
 
+      <p className="work-footnote">
+        Cron expressions live in the edit sheet — you read plain English here.
+      </p>
+
+      <button
+        type="button"
+        className="hm-fab"
+        data-testid="cron-new"
+        aria-label="New schedule"
+        onClick={openCreate}
+      >
+        +
+      </button>
       {sheet?.mode === 'create' && (
         <BottomSheet
           title="New schedule"

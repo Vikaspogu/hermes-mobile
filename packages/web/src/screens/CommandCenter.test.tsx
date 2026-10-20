@@ -1,15 +1,20 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import { CommandCenter } from './CommandCenter';
-import { HERMES_PWA_RELEASE_VERSION } from '../app/version';
 
-const VERSION_RE = new RegExp(`PWA\\s+${HERMES_PWA_RELEASE_VERSION.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`);
+const makeStatus = (name: string, exitCode: number | null = 0, running = false) => ({
+  name,
+  running,
+  exitCode,
+  pid: 4567,
+  lines: [`${name} output`],
+});
 
 const makeRest = (overrides = {}) => ({
   systemStats: vi.fn().mockResolvedValue({
     pid: 1234,
     uptimeSeconds: 7200,
-    cpuPercent: 12.5,
+    cpuPercent: 18,
     memoryUsedMb: 512,
     memoryTotalMb: 2048,
     memoryPercent: 25,
@@ -21,13 +26,7 @@ const makeRest = (overrides = {}) => ({
   }),
   opsRun: vi.fn().mockResolvedValue({ ok: true, name: 'doctor', pid: 4567 }),
   gatewayAction: vi.fn().mockResolvedValue({ ok: true, name: 'gateway-restart', pid: 4568 }),
-  actionStatus: vi.fn().mockResolvedValue({
-    name: 'doctor',
-    running: false,
-    exitCode: 0,
-    pid: 4567,
-    lines: ['=== doctor started ===', 'doctor ok'],
-  }),
+  actionStatus: vi.fn((name: string) => Promise.resolve(makeStatus(name))),
   opsCheckpoints: vi.fn().mockResolvedValue([]),
   opsBackups: vi.fn().mockResolvedValue([
     { id: 'backup-state', name: 'hermes-pwa-state-20260611T184500Z', createdAt: Date.now(), sizeMb: 31.1, kind: 'directory' },
@@ -36,109 +35,91 @@ const makeRest = (overrides = {}) => ({
   ...overrides,
 }) as unknown as import('@hermes-pwa/core').RestClient;
 
-describe('CommandCenter', () => {
-  it('shows gateway card with stats', async () => {
+describe('CommandCenter (M13 System)', () => {
+  it('shows the gateway card with green-dot status, uptime, and Restart/Stop buttons', async () => {
     render(<CommandCenter rest={makeRest()} />);
     await waitFor(() => expect(screen.getByTestId('gateway-card')).toBeInTheDocument());
-    expect(screen.getByText(/pid 1234/i)).toBeInTheDocument();
-    expect(screen.getByText(/3 live/i)).toBeInTheDocument();
-    expect(screen.getByText(VERSION_RE)).toBeInTheDocument();
-    expect(screen.getByText(/backend v0\.9\.0/)).toBeInTheDocument();
+    expect(screen.getByText(/Gateway running/i)).toBeInTheDocument();
+    expect(screen.getByText(/up 2h 0m/i)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Restart…/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Stop…/i })).toBeInTheDocument();
   });
 
-  it('shows CPU, RAM, and disk resource chips', async () => {
+  it('shows CPU, RAM, and Disk metrics with bars', async () => {
     render(<CommandCenter rest={makeRest()} />);
-    await waitFor(() => expect(screen.getByText('CPU')).toBeInTheDocument());
-    expect(screen.getByText('RAM')).toBeInTheDocument();
-    expect(screen.getByText('Disk')).toBeInTheDocument();
-    expect(screen.getByText(/12\.5%/)).toBeInTheDocument();
-    expect(screen.getByText(/25\.0%/)).toBeInTheDocument();
-    expect(screen.getByText(/50\.0%/)).toBeInTheDocument();
+    await waitFor(() => expect(screen.getByText('CPU 18%')).toBeInTheDocument());
+    expect(screen.getByText('RAM 0.5 / 2.0 GB')).toBeInTheDocument();
+    expect(screen.getByText('Disk 64.0 / 128.0 GB')).toBeInTheDocument();
   });
 
-  it('runs doctor op in a terminal modal and shows CLI output', async () => {
+  it('renders health-check rows derived from action logs and backups', async () => {
+    render(<CommandCenter rest={makeRest()} />);
+    await waitFor(() => expect(screen.getByText('Security audit')).toBeInTheDocument());
+    expect(screen.getByText('Doctor')).toBeInTheDocument();
+    expect(screen.getAllByText('passed')).toHaveLength(2);
+    expect(screen.getByText('Backups')).toBeInTheDocument();
+    expect(screen.getByText(/latest today/i)).toBeInTheDocument();
+  });
+
+  it('marks a failed check amber with a fix link', async () => {
+    const rest = makeRest({
+      actionStatus: vi.fn((name: string) => Promise.resolve(
+        name === 'security-audit' ? makeStatus(name, 1) : makeStatus(name),
+      )),
+    });
+    render(<CommandCenter rest={rest} />);
+    await waitFor(() => expect(screen.getByText(/failed · exit 1/i)).toBeInTheDocument());
+    expect(screen.getByText('fix')).toBeInTheDocument();
+  });
+
+  it('marks Backups as failed with fix when there are no backups', async () => {
+    const rest = makeRest({ opsBackups: vi.fn().mockResolvedValue([]) });
+    render(<CommandCenter rest={rest} />);
+    await waitFor(() => expect(screen.getByText(/no backups yet/i)).toBeInTheDocument());
+    expect(screen.getByText('fix')).toBeInTheDocument();
+  });
+
+  it('runs a health check from its row and streams output in the terminal', async () => {
     const rest = makeRest();
     render(<CommandCenter rest={rest} />);
     await waitFor(() => expect(screen.getByRole('button', { name: 'Doctor' })).toBeInTheDocument());
     fireEvent.click(screen.getByRole('button', { name: 'Doctor' }));
     await waitFor(() => expect(screen.getByRole('dialog', { name: /Doctor terminal/i })).toBeInTheDocument());
-    await waitFor(() => expect(screen.getByTestId('terminal-output')).toHaveTextContent('doctor ok'));
+    await waitFor(() => expect(screen.getByTestId('terminal-output')).toHaveTextContent('doctor output'));
     expect(rest.opsRun).toHaveBeenCalledWith('doctor');
-    expect(rest.actionStatus).toHaveBeenCalledWith('doctor', 800);
   });
 
-  it('runs security audit through the terminal action path', async () => {
-    const rest = makeRest({
-      opsRun: vi.fn().mockResolvedValue({ ok: true, name: 'security-audit', pid: 4569 }),
-      actionStatus: vi.fn().mockResolvedValue({
-        name: 'security-audit',
-        running: false,
-        exitCode: 0,
-        pid: 4569,
-        lines: ['security-audit ok'],
-      }),
-    });
-    render(<CommandCenter rest={rest} />);
-    await waitFor(() => expect(screen.getByRole('button', { name: 'Security audit' })).toBeInTheDocument());
-    fireEvent.click(screen.getByRole('button', { name: 'Security audit' }));
-    await waitFor(() => expect(screen.getByRole('dialog', { name: /Security audit terminal/i })).toBeInTheDocument());
-    await waitFor(() => expect(screen.getByTestId('terminal-output')).toHaveTextContent('security-audit ok'));
-    expect(rest.opsRun).toHaveBeenCalledWith('security-audit');
-  });
-
-  it('shows backups collapsed by default, summarizes archives, and expands the adaptive list', async () => {
-    render(<CommandCenter rest={makeRest()} />);
-    await waitFor(() => expect(screen.getByRole('button', { name: /Backups/i })).toBeInTheDocument());
-    expect(screen.getByText(/Latest archive/i)).toBeInTheDocument();
-    expect(screen.getByText(/251\.6 MB/i)).toBeInTheDocument();
-    expect(screen.queryByTestId('backup-list')).not.toBeInTheDocument();
-    fireEvent.click(screen.getByRole('button', { name: /Backups/i }));
-    await waitFor(() => expect(screen.getByTestId('backup-list')).toBeInTheDocument());
-    expect(screen.getByText('before-hermes-pwa-redesign-20260611T184500Z.zip')).toBeInTheDocument();
-    expect(screen.getByText('hermes-pwa-state-20260611T184500Z')).toBeInTheDocument();
-    expect(screen.getByText('directory')).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: /Restore hermes-pwa-state-20260611T184500Z/i })).not.toBeInTheDocument();
-    expect(screen.getAllByText(/restore pending/i).length).toBeGreaterThan(0);
-  });
-
-  it('creates a new backup from the Backups panel', async () => {
+  it('runs a backup from the Backups row', async () => {
     const rest = makeRest({
       opsRun: vi.fn().mockResolvedValue({ ok: true, name: 'backup', pid: 4570 }),
-      actionStatus: vi.fn().mockResolvedValue({
-        name: 'backup',
-        running: false,
-        exitCode: 0,
-        pid: 4570,
-        lines: ['backup ok'],
-      }),
     });
     render(<CommandCenter rest={rest} />);
-    await waitFor(() => expect(screen.getByRole('button', { name: /Create new backup/i })).toBeInTheDocument());
-    fireEvent.click(screen.getByRole('button', { name: /Create new backup/i }));
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Backups' })).toBeInTheDocument());
+    fireEvent.click(screen.getByRole('button', { name: 'Backups' }));
     await waitFor(() => expect(screen.getByRole('dialog', { name: /Backup terminal/i })).toBeInTheDocument());
-    await waitFor(() => expect(screen.getByTestId('terminal-output')).toHaveTextContent('backup ok'));
     expect(rest.opsRun).toHaveBeenCalledWith('backup');
   });
 
-  it('confirms and starts gateway restart in the terminal modal', async () => {
+  it('confirms and starts gateway restart from the Restart button', async () => {
     const confirm = vi.spyOn(window, 'confirm').mockReturnValue(true);
-    const rest = makeRest({
-      actionStatus: vi.fn().mockResolvedValue({
-        name: 'gateway-restart',
-        running: false,
-        exitCode: 0,
-        pid: 4568,
-        lines: ['gateway restart ok'],
-      }),
-    });
+    const rest = makeRest();
     render(<CommandCenter rest={rest} />);
-    await waitFor(() => expect(screen.getByRole('button', { name: /Manage gateway/i })).toBeInTheDocument());
-    fireEvent.click(screen.getByRole('button', { name: /Manage gateway/i }));
-    fireEvent.click(await screen.findByRole('button', { name: /Restart gateway/i }));
+    await waitFor(() => expect(screen.getByRole('button', { name: /Restart…/i })).toBeInTheDocument());
+    fireEvent.click(screen.getByRole('button', { name: /Restart…/i }));
     await waitFor(() => expect(screen.getByRole('dialog', { name: /Restart gateway terminal/i })).toBeInTheDocument());
-    await waitFor(() => expect(screen.getByTestId('terminal-output')).toHaveTextContent('gateway restart ok'));
     expect(confirm).toHaveBeenCalled();
     expect(rest.gatewayAction).toHaveBeenCalledWith('restart');
+    confirm.mockRestore();
+  });
+
+  it('does not call gatewayAction when the confirm is cancelled', async () => {
+    const confirm = vi.spyOn(window, 'confirm').mockReturnValue(false);
+    const rest = makeRest();
+    render(<CommandCenter rest={rest} />);
+    await waitFor(() => expect(screen.getByRole('button', { name: /Stop…/i })).toBeInTheDocument());
+    fireEvent.click(screen.getByRole('button', { name: /Stop…/i }));
+    expect(confirm).toHaveBeenCalled();
+    expect(rest.gatewayAction).not.toHaveBeenCalled();
     confirm.mockRestore();
   });
 
