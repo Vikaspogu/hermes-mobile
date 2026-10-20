@@ -184,10 +184,9 @@ const PREVIEW_STATUSES: TaskStatus[] = [
 ];
 
 const previewProfiles: Profile[] = [
-  { name: 'default',        model: 'GPT-5.5 · Med',    displayName: 'default',        description: 'General engineering copilot · reversible-first', isActive: true  },
-  { name: 'career-content', model: 'Claude Sonnet',     displayName: 'career-content', description: 'Long-form content & posts',                      isActive: false },
-  { name: 'ops',            model: 'GPT-5.5 · High',   displayName: 'ops',            description: 'Infra, deploys & incident response',             isActive: false },
-  { name: 'research',       model: 'o-series · High',  displayName: 'research',       description: 'Deep research, keeps things reversible',         isActive: false },
+  { name: 'default', model: 'GPT-5.5 · Med',      displayName: 'default', description: 'Reversible-first · CLI',           isActive: true  },
+  { name: 'fast',    model: 'GPT-5 mini · Low',   displayName: 'fast',    description: 'YOLO · quick questions',           isActive: false },
+  { name: 'deep',    model: 'Opus 5.5 · High',    displayName: 'deep',    description: 'Careful-first · refactors',        isActive: false },
 ];
 
 const previewTasks: Task[] = [
@@ -323,11 +322,17 @@ const noopRest: RestClient = {
 };
 
 export function AppPreview() {
+  // ponytail: scene from the ?preview value — '' (full data), 'low' (only the
+  // low-risk approval pending), 'high' (only high-risk), 'offline' (gateway down).
+  const scene = new URLSearchParams(window.location.search).get('preview') ?? '';
+  const offline = scene === 'offline';
+
   useEffect(() => {
-    useConnectionStore.setState({ state: 'connected', error: undefined });
+    useConnectionStore.setState({ state: offline ? 'offline' : 'connected', error: undefined });
     useSessionsStore.setState({ sessions: previewSessions, loading: false, error: undefined });
     useActivityStore.setState({
       items: [
+        ...(scene === 'high' ? [] : [
         {
           id: 'a1',
           kind: 'approval',
@@ -339,6 +344,8 @@ export function AppPreview() {
           visibility: 'private',
           createdAt: Date.now(),
         } as Approval,
+        ]),
+        ...(scene === 'low' ? [] : [
         {
           id: 'a2',
           kind: 'approval',
@@ -352,6 +359,18 @@ export function AppPreview() {
           // than the 5s realtime grace when a REST refresh lands without them.
           createdAt: Date.now(),
         } as Approval,
+        ]),
+        // M4 notices (always present, both scenes)
+        {
+          id: 'n1', kind: 'run', status: 'completed',
+          title: 'Nightly backup', summary: 'Snapshot verified ✓ · 31 MB',
+          sessionId: 'prev-6', createdAt: Date.now() - 2 * 3600_000,
+        },
+        {
+          id: 'n2', kind: 'system', status: 'completed',
+          title: 'Security audit', summary: 'No findings · 6h cron',
+          createdAt: Date.now() - 5 * 3600_000,
+        },
       ],
       loading: false,
       error: undefined,
@@ -410,7 +429,8 @@ export function AppPreview() {
     useSpawnStore.setState((st) => ({
       tree: st.agents.map((a) => ({ ...a, children: [] })),
     }));
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- seed once per preview load
   }, []);
 
-  return <AppShell connectionState="connected" rpc={noopRpc} rest={noopRest} />;
+  return <AppShell connectionState={offline ? 'offline' : 'connected'} rpc={noopRpc} rest={noopRest} />;
 }

@@ -2089,3 +2089,371 @@ select:focus-visible,
   cursor: pointer;
   flex: 0 0 auto;
 }
+
+/* ════════════════════════════════════════════════════════════════════════
+   SHARED ATOMS — mockup-parity v2 (M1–M14)
+   Values lifted from .pi/artifacts/hermes-mobile-redesign-mockups.html.
+   Class names use the repo's .hm- prefix; mockup name noted per block.
+   Screen-specific styles go in styles/screens/*.css, not here.
+   ════════════════════════════════════════════════════════════════════════ */
+
+/* mockup: .wordmark — home header brand */
+.hm-wordmark {
+  font-family: var(--hm-font-display);
+  font-size: 19px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+
+/* mockup: .app-header — 56px bar (home / big-title / back variants) */
+.hm-app-header {
+  height: 56px;
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 16px;
+  background: var(--hm-color-surface);
+  border-bottom: 1px solid var(--hm-color-border);
+}
+.hm-app-header__title { font-size: 16px; font-weight: 700; }
+.hm-app-header__sub { font-size: 12px; color: var(--hm-color-text-muted); }
+
+/* mockup: .iconbtn — 36×36 ghost icon button */
+.hm-iconbtn {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--hm-color-text-muted);
+  flex: none;
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+}
+
+/* mockup: .dot — status dot (success / faint variants) */
+.hm-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--hm-color-success);
+  flex: none;
+}
+.hm-dot--faint { background: var(--hm-color-text-faint); }
+
+/* mockup: .card */
+.hm-card {
+  background: var(--hm-color-surface);
+  border: 1px solid var(--hm-color-border);
+  border-radius: 14px;
+  padding: 13px 14px;
+}
+.hm-card--lg { border-radius: 16px; }
+
+/* mockup: .group-label — TODAY / NEEDS YOU section labels */
+.hm-group-label {
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--hm-color-text-faint);
+  padding: 10px 4px 2px;
+}
+
+/* mockup: .pill / .pill.on — filter chips */
+.hm-pill {
+  flex: none;
+  font-size: 12.5px;
+  font-weight: 600;
+  padding: 7px 13px;
+  border-radius: 999px;
+  background: var(--hm-color-surface);
+  border: 1px solid var(--hm-color-border);
+  color: var(--hm-color-text-muted);
+  cursor: pointer;
+}
+.hm-pill--on {
+  background: var(--hm-color-primary-tint);
+  border-color: #cdd6ff;
+  color: var(--hm-color-primary);
+}
+
+/* mockup: .seg — segmented control (Work: Tasks/Agents/Schedules) */
+.hm-seg {
+  display: flex;
+  background: var(--hm-color-surface-2);
+  border: 1px solid var(--hm-color-border);
+  border-radius: 12px;
+  padding: 3px;
+  flex: none;
+}
+.hm-seg__item {
+  flex: 1;
+  text-align: center;
+  font-size: 13.5px;
+  font-weight: 600;
+  padding: 8px;
+  border-radius: 9px;
+  color: var(--hm-color-text-muted);
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+}
+.hm-seg__item--on {
+  background: var(--hm-color-surface);
+  color: var(--hm-color-text);
+  box-shadow: 0 1px 3px rgba(20, 30, 60, 0.08);
+}
+
+/* mockup: .fab — new-chat floating action button */
+.hm-fab {
+  position: absolute;
+  right: 18px;
+  bottom: 96px;
+  width: 54px;
+  height: 54px;
+  border-radius: 50%;
+  background: var(--hm-color-primary);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  border: 0;
+  cursor: pointer;
+  box-shadow: 0 8px 20px rgba(37, 64, 255, 0.35);
+}
+
+/* mockup: .metricbar — CPU/RAM/Disk meters (Disk uses warning fill) */
+.hm-metricbar {
+  height: 6px;
+  border-radius: 3px;
+  background: var(--hm-color-surface-2);
+  overflow: hidden;
+  border: 1px solid var(--hm-color-border);
+}
+.hm-metricbar__fill {
+  height: 100%;
+  border-radius: 3px;
+  background: var(--hm-color-primary);
+}
+.hm-metricbar__fill--warn { background: var(--hm-color-warning); }
+
+/* mockup: .dock-tag tag-low/tag-high — LOW RISK / HIGH RISK pills */
+.hm-risk-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  padding: 3px 8px;
+  border-radius: 6px;
+}
+.hm-risk-tag--low {
+  background: var(--hm-color-success-bg);
+  color: var(--hm-color-success-strong);
+}
+.hm-risk-tag--high {
+  background: var(--hm-color-danger-bg);
+  color: var(--hm-color-danger-strong);
+}
+
+/* mockup: .btn family — block buttons */
+.hm-btn {
+  flex: 1;
+  height: 44px;
+  border-radius: 12px;
+  font-size: 14.5px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  cursor: pointer;
+}
+.hm-btn--primary { background: var(--hm-color-primary); color: #fff; }
+.hm-btn--danger-outline {
+  background: var(--hm-color-surface);
+  color: var(--hm-color-danger-strong);
+  border: 1px solid #eec8c6;
+}
+.hm-btn--ghost {
+  background: var(--hm-color-surface-2);
+  border: 1px solid var(--hm-color-border);
+  color: var(--hm-color-text-muted);
+}
+
+/* mockup: .approval-dock + .dock-* — sticky dock above the composer */
+.hm-approval-dock {
+  flex: none;
+  background: var(--hm-color-surface);
+  border-top: 1px solid var(--hm-color-border);
+  padding: 12px 14px 10px;
+  box-shadow: 0 -8px 24px rgba(20, 30, 60, 0.08);
+}
+.hm-approval-dock--high { border-top: 2px solid var(--hm-color-danger); }
+.hm-approval-dock__title {
+  font-size: 13.5px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.hm-approval-dock__meta { font-size: 12px; color: var(--hm-color-text-muted); margin-top: 2px; }
+.hm-approval-dock__cmd {
+  font-family: var(--hm-font-mono);
+  font-size: 12px;
+  background: var(--hm-color-surface-2);
+  border: 1px solid var(--hm-color-border);
+  border-radius: 9px;
+  padding: 8px 10px;
+  margin: 8px 0;
+  color: var(--hm-color-text-2);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.hm-approval-dock__row { display: flex; gap: 10px; align-items: center; }
+
+/* mockup: .slide-track/.slide-knob/.slide-hint — M3 slide-to-approve */
+.hm-slide-track {
+  flex: 1;
+  height: 48px;
+  border-radius: 24px;
+  background: var(--hm-color-danger-bg);
+  border: 1px solid #f0c4c2;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--hm-color-danger-strong);
+}
+.hm-slide-knob {
+  position: absolute;
+  left: 4px;
+  top: 4px;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--hm-color-danger);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 15px;
+}
+.hm-slide-hint {
+  position: absolute;
+  left: 56px;
+  right: 12px;
+  height: 2px;
+  background: repeating-linear-gradient(90deg, #e2a3a0 0 6px, transparent 6px 12px);
+  opacity: 0.6;
+  top: 50%;
+}
+
+/* mockup: .composer — + button, input pill, mic, send */
+.hm-composer {
+  flex: none;
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  padding: 10px 12px 12px;
+  background: var(--hm-color-surface);
+  border-top: 1px solid var(--hm-color-border);
+}
+.hm-composer__field {
+  flex: 1;
+  background: var(--hm-color-surface-2);
+  border: 1px solid var(--hm-color-border);
+  border-radius: 20px;
+  padding: 11px 14px;
+  font-size: 14.5px;
+  color: var(--hm-color-text);
+  min-height: 44px;
+}
+.hm-roundbtn {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--hm-color-primary);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  border: 0;
+  cursor: pointer;
+}
+.hm-roundbtn--ghost {
+  background: var(--hm-color-surface-2);
+  color: var(--hm-color-text-muted);
+  border: 1px solid var(--hm-color-border);
+}
+
+/* mockup: .banner — warning banner (e.g. approvals waiting on home) */
+.hm-banner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--hm-color-warning-bg);
+  border: 1px solid #f3dcb8;
+  border-radius: 14px;
+  padding: 11px 12px;
+}
+.hm-banner__title { font-size: 13.5px; font-weight: 700; color: var(--hm-color-warning-strong); }
+.hm-banner__sub { font-size: 12px; color: var(--hm-color-warning-strong); opacity: 0.85; }
+
+/* mockup: .kbd — mono metadata chip */
+.hm-kbd {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  color: var(--hm-color-text-faint);
+  background: var(--hm-color-surface-2);
+  border: 1px solid var(--hm-color-border);
+  border-radius: 7px;
+  padding: 3px 8px;
+  font-family: var(--hm-font-mono);
+}
+
+/* mockup: .tab .badge — red count badge (Inbox) */
+.hm-tab-badge {
+  position: absolute;
+  top: 2px;
+  left: 50%;
+  margin-left: 6px;
+  background: var(--hm-color-danger);
+  color: #fff;
+  font-size: 9.5px;
+  font-weight: 700;
+  min-width: 16px;
+  height: 16px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 4px;
+}
+
+/* ── Screen styles (filled by screen agents — keep these imports LAST) ── */
+@import './screens/home.css';
+@import './screens/thread.css';
+@import './screens/inbox.css';
+@import './screens/work.css';
+@import './screens/more.css';
+@import './screens/voice.css';
+@import './screens/offline.css';
+@import './screens/profiles.css';
+@import './screens/agents.css';
+@import './screens/artifacts.css';
+@import './screens/system.css';
+@import './screens/settings.css';

@@ -7,7 +7,7 @@ import { Icon, type IconName } from '../components/Icon';
 import { UpdateNotification } from '../components/UpdateNotification';
 import { LazyScreenErrorBoundary } from './LazyScreenErrorBoundary';
 import { usePresence } from '../hooks/usePresence';
-import { getInitialScreen, persistScreen, sessionFromLocationHash } from '../lib/screenStorage';
+import { getInitialScreen, persistScreen, screenFromLocationHash, sessionFromLocationHash } from '../lib/screenStorage';
 import { dismissTopBackLayer, registerBackLayer } from '../lib/backLayers';
 import { fmtGb, fmtPercent, fmtUptime } from '../lib/formatStats';
 import { HERMES_PWA_VERSION_LABEL } from './version';
@@ -170,7 +170,7 @@ export function AppShell({ connectionState, rpc, rest, onRetry, connectionError 
   const screen: Screen = navStack[navStack.length - 1] ?? 'home';
   const [moreOpen, setMoreOpen] = useState(false);
   const [moreStats, setMoreStats] = useState<SystemStats | null>(null);
-  const [voiceOpen, setVoiceOpen] = useState(false);
+  const [voiceOpen, setVoiceOpen] = useState(() => screenFromLocationHash() === 'voice');
   const [gatewayHealth, setGatewayHealth] = useState<GatewayHealth>('checking');
   const [updateCheck, setUpdateCheck] = useState<UpdateCheck | undefined>();
   const [updateDismissedVersion, setUpdateDismissedVersion] = useState<string | null>(() => {
