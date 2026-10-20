@@ -93,15 +93,14 @@ export function Artifacts({ rest }: ArtifactsProps) {
     void rest
       .sessionArtifacts(sessionId)
       .then(setArtifacts)
-      .catch((err) =>
-        setError(
-          err instanceof HermesHttpError && err.status === 404
-            ? 'Artifacts need a newer Hermes backend — this server has no artifacts API yet.'
-            : err instanceof Error
-              ? err.message
-              : 'Failed to load',
-        ),
-      )
+      .catch((err) => {
+        // 404 = backend has no artifacts API: that's the normal empty state, not an error.
+        if (err instanceof HermesHttpError && err.status === 404) {
+          setArtifacts([]);
+          return;
+        }
+        setError(err instanceof Error ? err.message : 'Failed to load');
+      })
       .finally(() => setLoading(false));
   }, [rest, sessionId]);
 

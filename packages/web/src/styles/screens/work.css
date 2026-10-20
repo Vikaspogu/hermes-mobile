@@ -10,10 +10,16 @@
   padding: 14px 16px 4px;
 }
 
-/* Board selector shares the seg row; App.css gives it flex:1 which stretches it
-   full-width on desktop — cap it to content width. */
+/* Board selector sits on its own row under the seg (same slot as the profile
+   select on Schedules) — stretch it and give it the .hm-select pill look. */
 .hm-projects .hm-projects__board-select {
-  flex: 0 1 auto;
+  flex: 1;
+  min-height: var(--hm-tap-min);
+  padding: 0 var(--hm-space-3);
+  border: 1px solid var(--hm-color-border);
+  border-radius: var(--hm-radius-full);
+  background: var(--hm-color-surface);
+  justify-content: space-between;
 }
 /* Scrollable content region: mockup .scroll (14px 16px, 10px gaps). */
 .work-scroll {
