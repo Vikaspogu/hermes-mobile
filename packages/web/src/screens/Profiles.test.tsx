@@ -41,14 +41,14 @@ describe('Profiles', () => {
 
   it('renders profiles and marks active', async () => {
     render(<Profiles rest={makeRest()} />);
-    await waitFor(() => expect(screen.getByText('Default', { selector: '.hm-agent-card__name' })).toBeInTheDocument());
-    expect(screen.getByText('Research', { selector: '.hm-agent-card__name' })).toBeInTheDocument();
+    await waitFor(() => expect(screen.getByText('Default', { selector: '.hm-profile-card__name' })).toBeInTheDocument());
+    expect(screen.getByText('Research', { selector: '.hm-profile-card__name' })).toBeInTheDocument();
     expect(screen.getByText('ACTIVE')).toBeInTheDocument();
   });
 
   it('keeps the new profile action above the profile list', async () => {
     const { container } = render(<Profiles rest={makeRest()} />);
-    await waitFor(() => expect(screen.getByText('Default', { selector: '.hm-agent-card__name' })).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText('Default', { selector: '.hm-profile-card__name' })).toBeInTheDocument());
     const newProfile = screen.getByRole('button', { name: /New profile/i });
     const firstCard = container.querySelector('[data-testid="agent-card"]');
     expect(firstCard).toBeTruthy();
@@ -61,6 +61,13 @@ describe('Profiles', () => {
     await waitFor(() => expect(screen.getByText('Research')).toBeInTheDocument());
     await openProfileActions('research');
     fireEvent.click(await screen.findByRole('button', { name: /Activate research/i }));
+    await waitFor(() => expect(rest.profileActivate).toHaveBeenCalledWith('research'));
+  });
+
+  it('activates an inactive profile by tapping its card', async () => {
+    const rest = makeRest();
+    render(<Profiles rest={rest} />);
+    fireEvent.click(await screen.findByRole('button', { name: /Switch to profile research/i }));
     await waitFor(() => expect(rest.profileActivate).toHaveBeenCalledWith('research'));
   });
 
@@ -105,7 +112,7 @@ describe('Profiles', () => {
   it('creates a profile', async () => {
     const rest = makeRest();
     render(<Profiles rest={rest} />);
-    await waitFor(() => expect(screen.getByText('New profile')).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByRole('button', { name: /New profile/i })).toBeInTheDocument());
     fireEvent.click(screen.getByRole('button', { name: /New profile/i }));
     await waitFor(() => expect(screen.getByText('Create profile')).toBeInTheDocument());
     fireEvent.change(screen.getByPlaceholderText('e.g. research'), { target: { value: 'ops' } });
