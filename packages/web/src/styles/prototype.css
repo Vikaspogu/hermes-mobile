@@ -2228,6 +2228,13 @@ select:focus-visible,
   box-shadow: 0 1px 3px rgba(20, 30, 60, 0.08);
 }
 
+/* Dark: --hm-color-surface (#161b22) is DARKER than the surface-2 (#1c222b) seg
+   track, so the active pill reads as a hole. Raise it above the track instead. */
+:root[data-theme='dark'] .hm-seg__item--on {
+  background: #28303c;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.45);
+}
+
 /* mockup: .fab — new-chat floating action button */
 .hm-fab {
   position: absolute;
