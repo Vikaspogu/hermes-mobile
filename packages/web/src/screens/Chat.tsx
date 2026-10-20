@@ -8,11 +8,13 @@ import {
   useActivityStore,
   useConfigStore,
   sessionSourceLabel,
+  type Approval,
   type RpcClient,
   type RestClient,
 } from '@hermes-pwa/core';
 import { MessageBubble } from '../components/MessageBubble';
 import { Composer } from '../components/Composer';
+import '../styles/screens/thread.css'; // ponytail: prototype.css's trailing @import of screens/*.css is dropped by Vite
 import {
   MAX_ATTACHMENT_BYTES,
   attachmentTooLargeMessage,
@@ -22,7 +24,8 @@ import {
 } from '../components/attachmentLimits';
 import { Icon } from '../components/Icon';
 import { parseMaybeObject } from '../lib/toolView';
-import { pendingApprovalsForMessage, selectPendingApprovals } from '../lib/pendingApprovals';
+import { selectDockApproval, selectPendingApprovals } from '../lib/pendingApprovals';
+import { ApprovalDock } from '../components/ApprovalDock';
 
 interface ChatProps {
   rpc: RpcClient;
@@ -39,6 +42,17 @@ const CONTROL_CHAR_PATTERN = /[\u0000-\u001F\u007F]+/gu;
 const NON_CHAT_STATUS_KINDS = new Set(['lifecycle', 'compress', 'compressing', 'compression']);
 const NON_CHAT_STATUS_TEXT = /\b(compacting context|summarizing earlier conversation|compression summary|preflight compression)\b/i;
 const CHAT_HISTORY_REFRESH_INTERVAL_MS = 5_000;
+
+interface ApprovalRecord {
+  id: string;
+  decision: 'approve' | 'reject';
+  title: string;
+  at: number;
+}
+
+function formatRecordTime(value: number): string {
+  return new Date(value).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+}
 
 function normalizeBusyInputMode(value: unknown): BusyInputMode {
   return value === 'queue' || value === 'interrupt' || value === 'steer' ? value : 'queue';
@@ -121,6 +135,19 @@ export function Chat({ rpc, rest, onOpenVoice }: ChatProps) {
     () => [sessionId, storedSessionId].filter((value): value is string => Boolean(value)),
     [sessionId, storedSessionId],
   );
+  const dockApproval = useMemo(
+    () => selectDockApproval(pendingApprovals, activeSessionIds),
+    [pendingApprovals, activeSessionIds],
+  );
+  const [detailsOpen, setDetailsOpen] = useState(false);
+  const [approvalRecords, setApprovalRecords] = useState<ApprovalRecord[]>([]);
+
+  const handleApprovalResolved = useCallback((approval: Approval, decision: 'approve' | 'reject') => {
+    setApprovalRecords((prev) => [
+      ...prev,
+      { id: `${approval.id}:${decision}:${prev.length}`, decision, title: approval.title, at: Date.now() },
+    ]);
+  }, []);
 
   const enqueuePrompt = useCallback((text: string, options: { front?: boolean } = {}) => {
     if (options.front) {
@@ -449,7 +476,7 @@ export function Chat({ rpc, rest, onOpenVoice }: ChatProps) {
       scrollFrameKindRef.current = 'timeout';
       scrollFrameRef.current = window.setTimeout(scroll, 0);
     }
-  }, [scrollContentSignal, pendingApprovalCount, liveStatus.text, streaming, error, composerLayoutVersion]);
+  }, [scrollContentSignal, pendingApprovalCount, liveStatus.text, streaming, error, composerLayoutVersion, approvalRecords.length]);
 
   useEffect(() => {
     return () => {
@@ -484,6 +511,14 @@ export function Chat({ rpc, rest, onOpenVoice }: ChatProps) {
     && !sessions.some((sess) => sess.id === storedSessionId || sess.lineageRootId === storedSessionId);
   const profileLabel = activeProfile?.displayName ?? activeName ?? 'default';
   const modelLabel = activeProfile?.model ?? 'GPT-5.5';
+  const headerTitle = currentSession?.title ?? 'Chat';
+  const headerSub = [
+    modelLabel,
+    profileLabel,
+    currentSession?.source ? sessionSourceLabel(currentSession.source) : undefined,
+  ]
+    .filter((value): value is string => Boolean(value))
+    .join(' · ');
   const busySubmitLabel =
     busyInputMode === 'queue' ? 'Queue message' : busyInputMode === 'interrupt' ? 'Interrupt and send' : 'Steer agent';
   const busyPlaceholder =
@@ -576,6 +611,48 @@ export function Chat({ rpc, rest, onOpenVoice }: ChatProps) {
 
   return (
     <div className="hm-chat">
+      <header className="hm-app-header hm-chat-header">
+        <button type="button" className="hm-iconbtn" aria-label="Back to chats" onClick={() => window.history.back()}>
+          <Icon name="back" size={20} />
+        </button>
+        <div className="hm-chat-header__text">
+          <div className="hm-app-header__title">{headerTitle}</div>
+          <div className="hm-app-header__sub">{headerSub}</div>
+        </div>
+        <button
+          type="button"
+          className="hm-iconbtn"
+          aria-label="Thread details"
+          aria-expanded={detailsOpen}
+          onClick={() => setDetailsOpen((v) => !v)}
+        >
+          ⋯
+        </button>
+        {detailsOpen && (
+          <div className="hm-chat-details">
+            <div className="hm-chat-details__row">
+              <span>Profile</span>
+              <span>{profileLabel}</span>
+            </div>
+            <div className="hm-chat-details__row">
+              <span>Model</span>
+              <span>{modelLabel}</span>
+            </div>
+            {branchLabel && (
+              <div className="hm-chat-details__row">
+                <span>Branch</span>
+                <span>{branchLabel}</span>
+              </div>
+            )}
+            {(storedSessionId ?? sessionId) && (
+              <div className="hm-chat-details__row">
+                <span>Session</span>
+                <span className="hm-chat-details__value--mono">{storedSessionId ?? sessionId}</span>
+              </div>
+            )}
+          </div>
+        )}
+      </header>
       <div
         className="hm-chat__messages hm-scroll"
         ref={listRef}
@@ -586,22 +663,6 @@ export function Chat({ rpc, rest, onOpenVoice }: ChatProps) {
         aria-busy={streaming}
         aria-label="Conversation"
       >
-        <div className="hm-chat__context">
-          {profileLabel && (
-            <span className="hm-chat__context-chip hm-chat__context-chip--primary">
-              <Icon name="robot" size={12} />
-              {profileLabel}
-            </span>
-          )}
-          {modelLabel && <span className="hm-chat__context-chip hm-chat__context-chip--secondary">{modelLabel}</span>}
-          {branchLabel && (
-            <span className="hm-chat__context-chip hm-chat__context-chip--secondary">
-              <Icon name="branch" size={12} />
-              {branchLabel}
-            </span>
-          )}
-        </div>
-
         {storedSessionEnded && (
           <div className="hm-warning-banner hm-warning-banner--warn" role="status">
             <span>Your previous session has ended on the server.</span>
@@ -631,14 +692,35 @@ export function Chat({ rpc, rest, onOpenVoice }: ChatProps) {
               streaming={streaming}
               liveStatus={index === messages.length - 1 && streaming ? liveStatus.text : ''}
               liveFace={undefined}
-              pendingApprovals={pendingApprovalsForMessage(pendingApprovals, index, messages.length)}
-              activeSessionIds={activeSessionIds}
             />
           ))
         )}
 
+        {approvalRecords.map((record) => (
+          <div className="hm-chat__record" key={record.id}>
+            <span
+              className={`hm-chat__record-mark${record.decision === 'reject' ? ' hm-chat__record-mark--reject' : ''}`}
+              aria-hidden="true"
+            >
+              {record.decision === 'approve' ? '✓' : '✕'}
+            </span>
+            {record.decision === 'approve' ? 'Approved' : 'Rejected'}{' '}
+            <span className="hm-chat__record-tool">{record.title}</span> · {formatRecordTime(record.at)}
+          </div>
+        ))}
+
         {error ? <div className="hm-warning-banner hm-warning-banner--error">{error}</div> : null}
       </div>
+      {dockApproval && (
+        <ApprovalDock
+          rpc={rpc}
+          approval={dockApproval}
+          sessionTitle={currentSession?.title}
+          cwd={currentSession?.cwd}
+          fallbackSessionId={sessionId ?? storedSessionId}
+          onResolved={handleApprovalResolved}
+        />
+      )}
       <Composer
         onSend={handleSend}
         slashCommandsRpc={rpc}
