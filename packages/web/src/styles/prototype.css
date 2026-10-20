@@ -2444,16 +2444,4 @@ select:focus-visible,
   padding: 0 4px;
 }
 
-/* ── Screen styles (filled by screen agents — keep these imports LAST) ── */
-@import './screens/home.css';
-@import './screens/thread.css';
-@import './screens/inbox.css';
-@import './screens/work.css';
-@import './screens/more.css';
-@import './screens/voice.css';
-@import './screens/offline.css';
-@import './screens/profiles.css';
-@import './screens/agents.css';
-@import './screens/artifacts.css';
-@import './screens/system.css';
-@import './screens/settings.css';
+/* Screen styles are imported directly by their owning components. */
