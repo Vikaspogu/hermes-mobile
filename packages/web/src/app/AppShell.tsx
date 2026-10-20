@@ -12,6 +12,7 @@ import { dismissTopBackLayer, registerBackLayer } from '../lib/backLayers';
 import { fmtGb, fmtPercent, fmtUptime } from '../lib/formatStats';
 import { HERMES_PWA_VERSION_LABEL } from './version';
 import { syncPushSubscription } from '../pwa/push';
+import '../styles/screens/more.css';
 import '../styles/screens/offline.css';
 
 export type Screen =
@@ -582,11 +583,13 @@ export function AppShell({ connectionState, rpc, rest, onRetry, connectionError 
               Connection refused at {typeof window !== 'undefined' ? window.location.host : ''}
             </p>
             <div className="hm-offline__actions">
-              {onRetry && (
-                <button type="button" className="hm-btn hm-btn--primary" onClick={onRetry}>
-                  Retry
-                </button>
-              )}
+              <button
+                type="button"
+                className="hm-btn hm-btn--primary"
+                onClick={onRetry ?? (() => window.location.reload())}
+              >
+                Retry
+              </button>
               <button type="button" className="hm-btn hm-btn--ghost" onClick={() => navigate('settings')}>
                 Change gateway URL
               </button>

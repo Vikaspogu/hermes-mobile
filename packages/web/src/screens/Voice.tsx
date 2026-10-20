@@ -2,7 +2,8 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { Icon } from '../components/Icon';
 
 import { useReducedMotion } from '../hooks/useReducedMotion';
-import { useProfilesStore } from '@hermes-pwa/core';
+import { useProfilesStore, useChatStore, useSessionsStore } from '@hermes-pwa/core';
+import '../styles/screens/voice.css';
 // Live voice call with the Hermes agent. Ports the talk-desktop dashboard web
 // client (agent-platform-custom images/hermes-agent/plugins/talk-desktop) into
 // a PWA screen: WebRTC realtime session, two engines (Codex Live gpt-live-1,
@@ -315,8 +316,7 @@ export function Voice({ onClose }: { onClose?: () => void }) {
   const [working, setWorking] = useState<string | null>(null);
   const [workingSince, setWorkingSince] = useState<number | null>(null);
   const [userDone, setUserDone] = useState(false); // user finished a turn, bot hasn't answered yet
-  const [callStart, setCallStart] = useState<number | null>(null);
-  const [elapsed, setElapsed] = useState(0);
+  const [, setCallStart] = useState<number | null>(null); // still recorded server-side; no on-screen clock in M8
   const speakingUntilRef = useRef(0);
   const [login, setLogin] = useState<LoginState | null>(null);
   const [engine, setEngine] = useState<Engine>('codex'); // codex = gpt-live-1, hermes = gpt-realtime-2.1
@@ -343,7 +343,8 @@ export function Voice({ onClose }: { onClose?: () => void }) {
   const refs = useRef<LiveRefs | null>(null);
   const itemsRef = useRef<TranscriptItem[]>([]);
   const transcriptRef = useRef<HTMLDivElement | null>(null);
-  const levelBarRef = useRef<HTMLDivElement | null>(null);
+  const sessionId = useChatStore((s) => s.sessionId ?? s.storedSessionId);
+  const sessionTitle = useSessionsStore((s) => s.sessions.find((x) => x.id === sessionId)?.title);
   // Tracks an in-progress start() so double-taps can't spawn two peer connections
   // and "Cancel" can unwind a half-built call.
   const startingRef = useRef<{ pc: RTCPeerConnection | null; stream: MediaStream | null; cancelled: boolean } | null>(null);
@@ -406,13 +407,7 @@ export function Voice({ onClose }: { onClose?: () => void }) {
     return () => window.clearInterval(iv);
   }, []);
 
-  // Call clock: ticks once per second while a call is connected.
-  useEffect(() => {
-    if (!callStart) return;
-    setElapsed(0);
-    const iv = window.setInterval(() => setElapsed((Date.now() - callStart) / 1000), 1000);
-    return () => window.clearInterval(iv);
-  }, [callStart]);
+  // M8: per-second call clock removed with the status-bar timer display.
 
   // Keep the screen awake for the whole call; re-acquire when the app returns to
   // foreground (the OS drops the lock when the screen turns off or the tab hides).
@@ -495,7 +490,6 @@ export function Voice({ onClose }: { onClose?: () => void }) {
     setWorkingSince(null);
     setUserDone(false);
     setCallStart(null);
-    setElapsed(0);
     speakingUntilRef.current = 0;
     if (!r) return;
     r.timers.forEach((t) => window.clearInterval(t));
@@ -763,8 +757,7 @@ export function Voice({ onClose }: { onClose?: () => void }) {
         for (let i = 0; i < buf.length; i++) sum += buf[i] ?? 0;
         const lvl = Math.min(1, sum / buf.length / 90);
         micLevelRef.current = lvl;
-        const bar = levelBarRef.current;
-        if (bar) bar.style.opacity = String(0.3 + 0.7 * lvl);
+        // M8: mic level bar removed; orb + waveform carry the visual feedback
         const ra = refs.current?.remoteAnalyser;
         let rl = 0;
         if (ra) {
@@ -983,15 +976,27 @@ export function Voice({ onClose }: { onClose?: () => void }) {
   return (
     <div className="hm-voice">
       {onClose && (
-        <button type="button" className="hm-voice__close" aria-label="Close voice" onClick={onClose}>
-          ✕
-        </button>
+        <header className="hm-voice__top">
+          <button type="button" className="hm-iconbtn" aria-label="Close voice" onClick={onClose}>
+            <Icon name="back" size={20} />
+          </button>
+          <div className="hm-voice__head">
+            <p className="hm-voice__title">Voice · {sessionTitle ?? 'New chat'}</p>
+            <p className="hm-voice__sub">Codex engine · transcript saves to this chat</p>
+          </div>
+        </header>
       )}
       <div className={`hm-voice__stage hm-voice__stage--${callState}`}>
-        <VoiceOrb state={callState} micRef={micLevelRef} remoteRef={remoteLevelRef} />
+        <div className={`hm-voice__orb hm-voice__orb--${callState}`} aria-hidden="true">
+          <VoiceOrb state={callState} micRef={micLevelRef} remoteRef={remoteLevelRef} />
+        </div>
+        <div className={`hm-voice__wave${live ? ' hm-voice__wave--live' : ''}`} aria-hidden="true">
+          {Array.from({ length: 12 }, (_, i) => (
+            <span key={i} />
+          ))}
+        </div>
         <p className="hm-voice__status" aria-live="polite">
           {err || stateLabel[callState]}
-          {connected && <span className="hm-voice__timer"> · {fmtElapsed(elapsed)}</span>}
         </p>
         {working && !err && (
           <p className="hm-voice__working">
@@ -1033,14 +1038,8 @@ export function Voice({ onClose }: { onClose?: () => void }) {
           pinnedRef.current = el.scrollHeight - el.scrollTop - el.clientHeight < 80;
         }}
       >
-        {items.length === 0 && !live && (
-          <div className="hm-empty-state">
-            <div className="hm-empty-state__icon">
-              <Icon name="wave" size={28} />
-            </div>
-            <p>Voice call</p>
-            <p className="hm-muted">Start a call and talk to Hermes. Transcript appears here.</p>
-          </div>
+        {items.length === 0 && (
+          <p className="hm-voice__empty">Say “summarize my notifications” or hold to talk…</p>
         )}
         {items.map((it, i) => (
           <div key={i} className={`hm-voice__bubble hm-voice__bubble--${it.who}`}>
@@ -1050,57 +1049,67 @@ export function Voice({ onClose }: { onClose?: () => void }) {
       </div>
 
       <div className="hm-voice__controls">
-        <div
-          className={`hm-voice__level${live ? ' hm-voice__level--live' : ''}`}
-          ref={levelBarRef}
-          style={{ opacity: live ? 0.3 : 1 }}
-        />
-        {!live && (
-          <button
-            type="button"
-            className="hm-voice__chip"
-            onClick={() => setEngine(engine === 'codex' ? 'hermes' : 'codex')}
-          >
-            Engine: {engine === 'codex' ? 'Codex' : 'Hermes'}
-          </button>
+        {live ? (
+          <>
+            <button
+              type="button"
+              className={`hm-roundbtn${muted ? ' hm-roundbtn--muted' : ''}`}
+              onClick={toggleMute}
+              aria-label={muted ? 'Unmute microphone' : 'Mute microphone'}
+            >
+              <Icon name="mic" size={22} />
+            </button>
+            <button
+              type="button"
+              className="hm-roundbtn hm-roundbtn--end"
+              onClick={() => void stop()}
+              aria-label="End call"
+            >
+              <Icon name="close" size={22} />
+            </button>
+            {/* M8 mockup has a keyboard (text input) button; no text-input mode exists yet */}
+            <button type="button" className="hm-roundbtn" aria-label="Open keyboard" disabled>
+              <Icon name="edit" size={22} />
+            </button>
+          </>
+        ) : (
+          <>
+            <button
+              type="button"
+              className="hm-voice__chip"
+              onClick={() => setEngine(engine === 'codex' ? 'hermes' : 'codex')}
+            >
+              Engine: {engine === 'codex' ? 'Codex' : 'Hermes'}
+            </button>
+            {resume && (
+              <button
+                type="button"
+                className="hm-voice__chip"
+                onClick={() => {
+                  const tid = resume.threadId;
+                  setResume(null);
+                  void start(tid);
+                }}
+              >
+                Continue last call
+              </button>
+            )}
+            {err && !login && (
+              <button type="button" className="hm-voice__chip" onClick={() => void signIn()}>
+                Sign in to Codex
+              </button>
+            )}
+            <button
+              type="button"
+              className="hm-voice__call"
+              onClick={() => (connecting ? void stop() : void start())}
+              aria-label={connecting ? 'Cancel connecting' : 'Start voice call'}
+            >
+              <Icon name={connecting ? 'close' : 'mic'} size={18} />
+              {connecting ? 'Cancel' : 'Start voice'}
+            </button>
+          </>
         )}
-        {!live && resume && (
-          <button
-            type="button"
-            className="hm-voice__chip"
-            onClick={() => {
-              const tid = resume.threadId;
-              setResume(null);
-              void start(tid);
-            }}
-          >
-            Continue last call
-          </button>
-        )}
-        {!live && err && !login && (
-          <button type="button" className="hm-voice__chip" onClick={() => void signIn()}>
-            Sign in to Codex
-          </button>
-        )}
-        {live && (
-          <button
-            type="button"
-            className="hm-voice__chip"
-            onClick={toggleMute}
-            aria-label={muted ? 'Unmute microphone' : 'Mute microphone'}
-          >
-            {muted ? 'Unmute' : 'Mute'}
-          </button>
-        )}
-        <button
-          type="button"
-          className={`hm-voice__call${live ? ' hm-voice__call--end' : ''}`}
-          onClick={() => (live || connecting ? void stop() : void start())}
-          aria-label={live ? 'End call' : connecting ? 'Cancel connecting' : 'Start voice call'}
-        >
-          <Icon name={live || connecting ? 'close' : 'mic'} size={18} />
-          {live ? 'End call' : connecting ? 'Cancel' : 'Start voice'}
-        </button>
       </div>
     </div>
   );
