@@ -14,6 +14,7 @@ import {
 } from '@hermes-pwa/core';
 import { Icon } from '../components/Icon';
 import { BrandMark } from '../components/BrandMark';
+import { usePullToRefresh } from '../components/usePullToRefresh';
 // ponytail: prototype.css's trailing @import of screens/*.css is dropped by Vite
 // (spec: @import must lead the file), so the screen pulls its own styles.
 import '../styles/screens/home.css';
@@ -133,6 +134,7 @@ export function Chats({ rpc, rest, onNavigate, sidebar }: ChatsProps) {
 
 
   const connected = useConnectionStore((s) => s.state === 'connected');
+  const ptr = usePullToRefresh(() => window.location.reload());
 
   return (
     <div className="hm-home">
@@ -155,7 +157,24 @@ export function Chats({ rpc, rest, onNavigate, sidebar }: ChatsProps) {
           </button>
         </header>
       )}
-      <div className="hm-chats">
+      <div
+        className="hm-chats"
+        onTouchStart={ptr.onTouchStart}
+        onTouchMove={ptr.onTouchMove}
+        onTouchEnd={ptr.onTouchEnd}
+      >
+        {(ptr.pull > 8 || ptr.refreshing) && (
+          <div
+            className={`hm-ptr${ptr.refreshing ? ' hm-ptr--refreshing' : ''}`}
+            style={{ transform: `translateX(-50%) translateY(${Math.min(ptr.pull, 64)}px)`, opacity: ptr.refreshing ? 1 : Math.min(ptr.pull / 40, 1) }}
+            aria-hidden="true"
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M21 12a9 9 0 1 1-2.64-6.36" />
+              <polyline points="21 3 21 9 15 9" />
+            </svg>
+          </div>
+        )}
         {!sidebar && pendingApprovals > 0 && (
           <button
             className="hm-banner hm-home__approval-banner"

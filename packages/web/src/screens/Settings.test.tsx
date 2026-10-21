@@ -126,19 +126,30 @@ describe('Settings (M14)', () => {
     expect(window.localStorage.getItem('hermes-pwa.notifyRuns.v1')).toBe('1');
   });
 
-  it('cycles the theme and applies data-theme + localStorage', async () => {
+  it('opens the theme sheet and applies any option', async () => {
     render(<Settings rest={makeRest()} onNavigate={vi.fn()} onLogout={vi.fn()} />);
-    const row = await screen.findByRole('button', { name: /Theme: System/i });
-    fireEvent.click(row);
+    fireEvent.click(await screen.findByRole('button', { name: /Theme: System/i }));
+    // sheet lists all six options
+    for (const label of ['System', 'Light', 'Dark', 'Dark · Indigo', 'Dark · Mocha', 'Dark · Graphite']) {
+      expect(await screen.findByRole('button', { name: `Use ${label} theme` })).toBeInTheDocument();
+    }
+    fireEvent.click(screen.getByRole('button', { name: 'Use Light theme' }));
     await waitFor(() => expect(screen.getByRole('button', { name: /Theme: Light/i })).toBeInTheDocument());
     expect(document.documentElement.dataset.theme).toBe('light');
     expect(window.localStorage.getItem('hermes-pwa.theme.v1')).toBe('light');
 
     fireEvent.click(screen.getByRole('button', { name: /Theme: Light/i }));
-    await waitFor(() => expect(screen.getByRole('button', { name: /Theme: Dark/i })).toBeInTheDocument());
-    expect(document.documentElement.dataset.theme).toBe('dark');
+    fireEvent.click(await screen.findByRole('button', { name: 'Use Dark · Mocha theme' }));
+    await waitFor(() => expect(screen.getByRole('button', { name: /Theme: Dark · Mocha/i })).toBeInTheDocument());
+    expect(document.documentElement.dataset.theme).toBe('dark-mocha');
 
-    fireEvent.click(screen.getByRole('button', { name: /Theme: Dark/i }));
+    fireEvent.click(screen.getByRole('button', { name: /Theme: Dark · Mocha/i }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Use Dark · Indigo theme' }));
+    await waitFor(() => expect(screen.getByRole('button', { name: /Theme: Dark · Indigo/i })).toBeInTheDocument());
+    expect(document.documentElement.dataset.theme).toBe('dark-indigo');
+
+    fireEvent.click(screen.getByRole('button', { name: /Theme: Dark · Indigo/i }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Use System theme' }));
     await waitFor(() => expect(screen.getByRole('button', { name: /Theme: System/i })).toBeInTheDocument());
     expect(document.documentElement.dataset.theme).toBeUndefined();
   });

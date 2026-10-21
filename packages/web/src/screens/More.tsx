@@ -56,7 +56,7 @@ export function More({ rest, onNavigate }: MoreProps) {
     activeProfile?.model?.trim() || 'model not set'
   }`;
 
-  const rows: { key: string; icon: string; label: string; sub: string | undefined }[] = [
+  const rows: { key: string; icon: string; label: string; sub: string | undefined; onClick?: () => void }[] = [
     { key: 'profiles', icon: '👤', label: 'Profiles', sub: profileSub },
     {
       key: 'agents',
@@ -72,6 +72,7 @@ export function More({ rest, onNavigate }: MoreProps) {
     },
     { key: 'command', icon: '🖥', label: 'System', sub: 'gateway, backups, doctor' },
     { key: 'settings', icon: '⚙', label: 'Settings', sub: 'connection, notifications' },
+    { key: 'reload', icon: '↻', label: 'Reload app', sub: 'fetch latest data and updates', onClick: () => window.location.reload() },
   ];
 
   return (
@@ -116,7 +117,7 @@ export function More({ rest, onNavigate }: MoreProps) {
 
       <div className="hm-more-list">
         {rows.map((row) => (
-          <button key={row.key} type="button" className="hm-more-row" onClick={() => onNavigate(row.key)}>
+          <button key={row.key} type="button" className="hm-more-row" onClick={row.onClick ?? (() => onNavigate(row.key))}>
             <span className="hm-more-row__icon" aria-hidden="true">
               {row.icon}
             </span>
