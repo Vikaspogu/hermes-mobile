@@ -4863,3 +4863,21 @@ a {
   color: var(--hm-color-danger);
   margin-right: auto;
 }
+
+/* Loading / boot screen hero brand (avatar + wordmark, stacked) */
+.hm-brand-hero .hm-brand {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+}
+
+.hm-brand-hero .hm-brand__mark {
+  width: 72px;
+  height: 72px;
+}
+
+.hm-brand-hero .hm-wordmark {
+  font-size: 30px;
+  letter-spacing: 0.04em;
+}

@@ -1,6 +1,6 @@
 // I.V.A.N brand mark: dot-constellation avatar (bottts/identicon-inspired) + wordmark.
 // Colors follow the active theme via --hm-color-* tokens.
-export function BrandMark() {
+export function BrandMark({ wordmark = 'I.V.A.N' }: { wordmark?: string }) {
   return (
     <span className="hm-brand">
       <svg className="hm-brand__mark" width="26" height="26" viewBox="0 0 28 28" aria-hidden="true" focusable="false">
@@ -17,7 +17,7 @@ export function BrandMark() {
         <circle cx="9.3" cy="18.7" r="1.15" fill="var(--hm-color-primary)" opacity="0.65" />
         <circle cx="14" cy="14" r="3.1" fill="var(--hm-color-primary)" />
       </svg>
-      <span className="hm-wordmark">I.V.A.N</span>
+      <span className="hm-wordmark">{wordmark}</span>
     </span>
   );
 }
