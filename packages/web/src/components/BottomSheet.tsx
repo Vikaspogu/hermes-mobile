@@ -1,4 +1,6 @@
 import { type KeyboardEvent, type ReactNode, useEffect, useId, useRef } from 'react';
+import { Icon } from './Icon';
+import { registerBackLayer } from '../lib/backLayers';
 
 const FOCUSABLE_SELECTOR = [
   'a[href]',
@@ -17,6 +19,11 @@ function getFocusableElements(root: HTMLElement): HTMLElement[] {
     return true;
   });
 }
+
+// ponytail: a sheet is a modal layer — Android/browser Back must close it
+// before the app-level nav stack pops, or one swipe skips past the screen
+// underneath (schedules detail used to land users straight on Inbox).
+const SHEET_BACK_PRIORITY = 50;
 
 interface BottomSheetProps {
   title: ReactNode;
@@ -64,6 +71,11 @@ export function BottomSheet({
     };
   }, []);
 
+  // Android/browser Back closes the sheet instead of navigating away.
+  useEffect(() => {
+    if (closeDisabled) return undefined;
+    return registerBackLayer({ priority: SHEET_BACK_PRIORITY, dismiss: onClose });
+  }, [closeDisabled, onClose]);
   const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
     if (event.key === 'Escape') {
       if (!closeDisabled) {
@@ -108,9 +120,16 @@ export function BottomSheet({
     >
       <div className="hm-sheet__overlay" onClick={closeDisabled ? undefined : onClose} aria-hidden="true" />
       <div className={contentClassName ? `hm-sheet__content ${contentClassName}` : 'hm-sheet__content'}>
-        <h3 id={titleId} className="hm-sheet__title">
-          {title}
-        </h3>
+        <div className="hm-sheet__header">
+          <h3 id={titleId} className="hm-sheet__title">
+            {title}
+          </h3>
+          {!closeDisabled && (
+            <button type="button" className="hm-sheet__close" onClick={onClose} aria-label="Back">
+              <Icon name="back" size={20} />
+            </button>
+          )}
+        </div>
         {meta}
         <div className="hm-sheet__body">{children}</div>
         {footer}

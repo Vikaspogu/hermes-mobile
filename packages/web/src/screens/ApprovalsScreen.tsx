@@ -26,7 +26,8 @@ function PaperlessCard({ rest }: { rest: RestClient }) {
     void load(rest);
   }, [rest, load]);
 
-  if (!pending) return result ? <p className="hm-muted">{result}</p> : null;
+  // an empty candidate list is not actionable — hide the card entirely
+  if (!pending || pending.candidates.length === 0) return result ? <p className="hm-muted">{result}</p> : null;
   const toggle = (n: number) => setPicked((p) => (p.includes(n) ? p.filter((x) => x !== n) : [...p, n]));
 
   return (

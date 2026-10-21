@@ -35,13 +35,59 @@ describe('BottomSheet', () => {
       </BottomSheet>,
     );
 
+    // the sheet's own Back/close button is the first focusable element
+    const close = screen.getByRole('button', { name: 'Back' });
     const first = screen.getByRole('button', { name: 'First' });
     const last = screen.getByRole('button', { name: 'Last' });
-    first.focus();
+    close.focus();
     fireEvent.keyDown(screen.getByRole('dialog', { name: 'Focus trap' }), { key: 'Tab', shiftKey: true });
     expect(last).toHaveFocus();
 
     fireEvent.keyDown(screen.getByRole('dialog', { name: 'Focus trap' }), { key: 'Tab' });
-    expect(first).toHaveFocus();
+    expect(close).toHaveFocus();
+    void first;
+  });
+});
+
+describe('BottomSheet back behavior', () => {
+  it('renders a back button that closes the sheet', () => {
+    const onClose = vi.fn();
+    render(
+      <BottomSheet title="Detail" onClose={onClose}>
+        <p>body</p>
+      </BottomSheet>,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Back' }));
+    expect(onClose).toHaveBeenCalledTimes(1);
+  });
+
+  it('consumes the app-level Back press instead of navigating away', async () => {
+    const { dismissTopBackLayer, clearBackLayers } = await import('../lib/backLayers');
+    clearBackLayers();
+    const onClose = vi.fn();
+    render(
+      <BottomSheet title="Schedules detail" onClose={onClose}>
+        <p>body</p>
+      </BottomSheet>,
+    );
+
+    expect(dismissTopBackLayer()).toBe(true);
+    expect(onClose).toHaveBeenCalledTimes(1);
+    clearBackLayers();
+  });
+
+  it('does not register a back layer or close button when closing is disabled', async () => {
+    const { dismissTopBackLayer, clearBackLayers } = await import('../lib/backLayers');
+    clearBackLayers();
+    render(
+      <BottomSheet title="Locked" onClose={vi.fn()} closeDisabled>
+        <p>body</p>
+      </BottomSheet>,
+    );
+
+    expect(screen.queryByRole('button', { name: 'Back' })).toBeNull();
+    expect(dismissTopBackLayer()).toBe(false);
+    clearBackLayers();
   });
 });
