@@ -13,6 +13,7 @@ import {
   type RestClient,
 } from '@hermes-pwa/core';
 import { Icon } from '../components/Icon';
+import { BrandMark } from '../components/BrandMark';
 // ponytail: prototype.css's trailing @import of screens/*.css is dropped by Vite
 // (spec: @import must lead the file), so the screen pulls its own styles.
 import '../styles/screens/home.css';
@@ -137,7 +138,7 @@ export function Chats({ rpc, rest, onNavigate, sidebar }: ChatsProps) {
     <div className="hm-home">
       {!sidebar && (
         <header className="hm-app-header hm-home__header" data-testid="home-header">
-          <span className="hm-wordmark">Hermes</span>
+          <BrandMark />
           <span
             className={`hm-dot${connected ? '' : ' hm-dot--faint'} hm-home__header-dot`}
             aria-label={connected ? 'Connected' : 'Not connected'}
