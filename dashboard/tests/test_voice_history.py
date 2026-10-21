@@ -29,7 +29,7 @@ CALL = {
     "endedAt": 1710000100.0,
     "messages": [
         {"who": "user", "text": "qué tiempo hace hoy?", "at": 1710000001.0},
-        {"who": "assistant", "text": "Soleado, 22°C.", "at": 1710000005.0},
+        {"who": "bot", "text": "Soleado, 22°C.", "at": 1710000005.0},  # client sends 'bot', not 'assistant' 
         {"who": "system", "text": "debe ignorarse", "at": 1710000003.0},
     ],
 }
