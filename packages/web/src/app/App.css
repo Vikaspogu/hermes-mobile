@@ -4726,10 +4726,10 @@ a {
 }
 
 .hm-composer__send:disabled {
-  background: var(--hm-color-primary);
-  color: var(--hm-color-on-accent);
-  border-color: transparent;
-  opacity: 0.5;
+  background: var(--hm-color-primary-tint);
+  color: var(--hm-color-primary);
+  border-color: color-mix(in srgb, var(--hm-color-primary) 35%, transparent);
+  opacity: 1;
 }
 
 .hm-profile-actions {
