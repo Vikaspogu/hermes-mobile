@@ -4,6 +4,7 @@ import { connectionStateLabel, useActivityStore, useProfilesStore, useSessionsSt
 import { Chats } from '../screens/Chats';
 import { ConnectionBanner } from '../components/ConnectionBanner';
 import { Icon, type IconName } from '../components/Icon';
+import { BrandMark } from '../components/BrandMark';
 import { UpdateNotification } from '../components/UpdateNotification';
 import { LazyScreenErrorBoundary } from './LazyScreenErrorBoundary';
 import { usePresence } from '../hooks/usePresence';
@@ -576,7 +577,7 @@ export function AppShell({ connectionState, rpc, rest, onRetry, connectionError 
           <Suspense fallback={<p className="hm-muted hm-loading">Loading…</p>}>
         {connectionState === 'offline' ? (
           <div className="hm-offline" data-testid="offline-card">
-            <div className="hm-wordmark">Hermes</div>
+            <BrandMark />
             <div className="hm-offline__icon" aria-hidden="true">📡</div>
             <h2 className="hm-offline__title">Can&rsquo;t reach the gateway</h2>
             <p className="hm-offline__url hm-mono">

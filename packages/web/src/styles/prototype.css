@@ -2235,6 +2235,18 @@ select:focus-visible,
   background: #28303c;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.45);
 }
+:root[data-theme='dark-indigo'] .hm-seg__item--on {
+  background: #232b3f;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.45);
+}
+:root[data-theme='dark-mocha'] .hm-seg__item--on {
+  background: #3f4058;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.45);
+}
+:root[data-theme='dark-graphite'] .hm-seg__item--on {
+  background: #26262e;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.45);
+}
 
 /* mockup: .fab — new-chat floating action button */
 .hm-fab {
@@ -2245,7 +2257,7 @@ select:focus-visible,
   height: 54px;
   border-radius: 50%;
   background: var(--hm-color-primary);
-  color: #fff;
+  color: var(--hm-color-primary-text);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -2303,7 +2315,7 @@ select:focus-visible,
   border: none;
   cursor: pointer;
 }
-.hm-btn--primary { background: var(--hm-color-primary); color: #fff; }
+.hm-btn--primary { background: var(--hm-color-primary); color: var(--hm-color-primary-text); }
 .hm-btn--danger-outline {
   background: var(--hm-color-surface);
   color: var(--hm-color-danger-strong);
@@ -2412,7 +2424,7 @@ select:focus-visible,
   height: 44px;
   border-radius: 50%;
   background: var(--hm-color-primary);
-  color: #fff;
+  color: var(--hm-color-primary-text);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -2486,3 +2498,14 @@ select:focus-visible,
   color: var(--hm-color-text-muted);
 }
 .hm-composer__action--labeled span { display: inline; }
+
+/* I.V.A.N brand mark (home header + offline card) */
+.hm-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+}
+.hm-brand__mark {
+  flex: none;
+  display: block;
+}

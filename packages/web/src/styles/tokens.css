@@ -202,3 +202,96 @@
     scroll-behavior: auto !important;
   }
 }
+
+/* ── Dark · Indigo (Linear-grade near-black, single indigo accent) ────── */
+:root[data-theme='dark-indigo'] {
+  --hm-color-bg:        #0b0e14;
+  --hm-color-surface:   #0f131c;
+  --hm-color-surface-2: #161c29;
+  --hm-color-border:    #252d40;
+
+  --hm-color-text:       #eef1f7;
+  --hm-color-text-2:     #a7b0c2;
+  --hm-color-text-muted: #8b94a6;
+  --hm-color-text-faint: #67707f;
+  --hm-color-text-secondary: #8b94a6;
+  --hm-color-text-subtle: #4a5162;
+
+  --hm-color-primary:      #6d78f0;
+  --hm-color-primary-tint: #1a2040;
+  --hm-color-primary-text: #ffffff;
+
+  --hm-color-success:    #46c58a;
+  --hm-color-warning:    #f0ad55;
+  --hm-color-danger:     #f2637e;
+  --hm-color-running:    #6d78f0;
+  --hm-color-success-strong: #46c58a;
+  --hm-color-warning-strong: #f0ad55;
+  --hm-color-danger-strong:  #f2637e;
+  --hm-color-success-bg: #12241b;
+  --hm-color-warning-bg: #2a2110;
+  --hm-color-danger-bg:  #2a1418;
+  --hm-color-info-bg:    #16203a;
+}
+
+/* ── Dark · Mocha (Catppuccin Mocha, pastel mauve accent) ─────────────── */
+:root[data-theme='dark-mocha'] {
+  --hm-color-bg:        #181825;
+  --hm-color-surface:   #1e1e2e;
+  --hm-color-surface-2: #313244;
+  --hm-color-border:    #45475a;
+
+  --hm-color-text:       #cdd6f4;
+  --hm-color-text-2:     #bac2de;
+  --hm-color-text-muted: #a6adc8;
+  --hm-color-text-faint: #7f849c;
+  --hm-color-text-secondary: #a6adc8;
+  --hm-color-text-subtle: #585b70;
+
+  --hm-color-primary:      #cba6f7;
+  --hm-color-primary-tint: #342d4a;
+  --hm-color-primary-text: #1e1e2e;
+
+  --hm-color-success:    #a6e3a1;
+  --hm-color-warning:    #f9e2af;
+  --hm-color-danger:     #f38ba8;
+  --hm-color-running:    #cba6f7;
+  --hm-color-success-strong: #a6e3a1;
+  --hm-color-warning-strong: #f9e2af;
+  --hm-color-danger-strong:  #f38ba8;
+  --hm-color-success-bg: #243128;
+  --hm-color-warning-bg: #383322;
+  --hm-color-danger-bg:  #3d2832;
+  --hm-color-info-bg:    #28304a;
+}
+
+/* ── Dark · Graphite (iOS-neutral graphite, system cyan accent) ───────── */
+:root[data-theme='dark-graphite'] {
+  --hm-color-bg:        #09090b;
+  --hm-color-surface:   #101013;
+  --hm-color-surface-2: #191920;
+  --hm-color-border:    #2b2b33;
+
+  --hm-color-text:       #f4f4f6;
+  --hm-color-text-2:     #a3a3ac;
+  --hm-color-text-muted: #8a8a92;
+  --hm-color-text-faint: #6d6d76;
+  --hm-color-text-secondary: #8a8a92;
+  --hm-color-text-subtle: #46464e;
+
+  --hm-color-primary:      #4cc3f7;
+  --hm-color-primary-tint: #10262f;
+  --hm-color-primary-text: #06131c;
+
+  --hm-color-success:    #34d17b;
+  --hm-color-warning:    #ffd60a;
+  --hm-color-danger:     #ff6f66;
+  --hm-color-running:    #4cc3f7;
+  --hm-color-success-strong: #34d17b;
+  --hm-color-warning-strong: #ffd60a;
+  --hm-color-danger-strong:  #ff6f66;
+  --hm-color-success-bg: #0f2418;
+  --hm-color-warning-bg: #2a2408;
+  --hm-color-danger-bg:  #2a1512;
+  --hm-color-info-bg:    #0e2230;
+}

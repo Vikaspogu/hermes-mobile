@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hermes PWA — Dark theme options</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:opsz,wght@6..96,600&family=Hanken+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Hanken Grotesk', -apple-system, sans-serif;
+    background: #ececf1; color: #17181d; padding: 40px 24px 80px;
+  }
+  .wrap { max-width: 1340px; margin: 0 auto; }
+  h1 { font-size: 26px; font-weight: 700; letter-spacing: -0.02em; }
+  .sub { color: #5b5e6b; margin-top: 8px; font-size: 15px; max-width: 760px; line-height: 1.5; }
+  .sub code { background: #fff; border: 1px solid #d9d9e0; border-radius: 5px; padding: 1px 6px; font-family: 'JetBrains Mono', monospace; font-size: 12.5px; }
+
+  .themes { display: flex; gap: 40px; margin-top: 36px; flex-wrap: wrap; }
+  .theme-col { width: 400px; }
+  .theme-name { font-size: 20px; font-weight: 700; letter-spacing: -0.01em; }
+  .theme-src { font-size: 13px; color: #5b5e6b; margin-top: 3px; margin-bottom: 14px; line-height: 1.45; }
+
+  /* ---------- phone frame ---------- */
+  .phone {
+    width: 400px; border-radius: 44px; overflow: hidden;
+    border: 1px solid #c9c9d2; box-shadow: 0 22px 60px rgba(20,20,40,.22);
+  }
+  .scr { display: flex; flex-direction: column; height: 800px; }
+
+  /* theme: Midnight Indigo */
+  .t1 { --bg:#0b0e14; --surface:#0f131c; --card:#161c29; --card2:#1b2232; --line:#252d40;
+        --ink:#eef1f7; --ink2:#a7b0c2; --muted:#67707f;
+        --accent:#6d78f0; --accent2:#8b93ff; --accent-ink:#ffffff;
+        --link:#93a0ff; --ok:#46c58a; --warn:#f0ad55; --danger:#f2637e; --danger-bg:rgba(242,99,126,.13); }
+  /* theme: Mocha Mauve (Catppuccin Mocha) */
+  .t2 { --bg:#181825; --surface:#1e1e2e; --card:#313244; --card2:#3a3b52; --line:#45475a;
+        --ink:#cdd6f4; --ink2:#a6adc8; --muted:#7f849c;
+        --accent:#cba6f7; --accent2:#dcb9ff; --accent-ink:#1e1e2e;
+        --link:#89b4fa; --ok:#a6e3a1; --warn:#f9e2af; --danger:#f38ba8; --danger-bg:rgba(243,139,168,.16); }
+  /* theme: Graphite Cyan (iOS dark) */
+  .t3 { --bg:#09090b; --surface:#101013; --card:#191920; --card2:#20202a; --line:#2b2b33;
+        --ink:#f4f4f6; --ink2:#a3a3ac; --muted:#6d6d76;
+        --accent:#4cc3f7; --accent2:#7cd6ff; --accent-ink:#06131c;
+        --link:#7cd6ff; --ok:#34d17b; --warn:#ffd60a; --danger:#ff6f66; --danger-bg:rgba(255,111,102,.13); }
+
+  .scr { background: var(--bg); color: var(--ink); font-size: 14.5px; }
+
+  /* header */
+  .hdr { background: var(--surface); border-bottom: 1px solid var(--line); padding: 14px 18px; display:flex; align-items:center; gap:10px; }
+  .wordmark { font-family:'Bodoni Moda', serif; font-size: 25px; font-weight: 600; letter-spacing:-0.01em; }
+  .hdr .dotp { width:9px; height:9px; border-radius:50%; background: var(--ok); margin-left:auto; }
+  .hdr .prof { color: var(--ink2); font-size: 13.5px; }
+  .hdr .gear { color: var(--ink2); font-size: 16px; margin-left: 8px; }
+
+  .body { flex:1; overflow:hidden; padding: 12px 14px 8px; display:flex; flex-direction:column; gap:10px; }
+
+  /* approval card */
+  .appr { background: var(--card); border:1px solid var(--line); border-left: 3px solid var(--danger); border-radius: 14px; padding: 11px 13px; }
+  .appr .row1 { display:flex; align-items:center; gap:7px; }
+  .appr .tname { font-family:'JetBrains Mono', monospace; font-size:13px; font-weight:600; }
+  .appr .risk { margin-left:auto; font-size:10.5px; font-weight:700; letter-spacing:.05em; padding:3px 8px; border-radius:7px; }
+  .appr .risk.low { color: var(--ok); background: color-mix(in srgb, var(--ok) 16%, transparent); }
+  .appr .meta { color: var(--ink2); font-size:12px; margin-top:4px; }
+  .appr .cmd { font-family:'JetBrains Mono', monospace; font-size:12px; background: var(--card2); border:1px solid var(--line); border-radius:9px; padding:6px 9px; margin-top:8px; color: var(--ink); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .appr .btns { display:flex; gap:8px; margin-top:9px; }
+  .btn-reject { flex:1; padding:8px; border-radius:10px; border:1px solid color-mix(in srgb, var(--danger) 45%, transparent); background: color-mix(in srgb, var(--danger) 13%, transparent); color: var(--danger); font:600 13px 'Hanken Grotesk'; }
+  .btn-approve { flex:1; padding:8px; border-radius:10px; border:none; background: var(--accent); color: var(--accent-ink); font:600 13px 'Hanken Grotesk'; }
+
+  /* composer */
+  .composer { display:flex; align-items:center; gap:8px; background: var(--card); border:1px solid var(--line); border-radius: 999px; padding: 7px 8px 7px 16px; }
+  .composer .ph { color: var(--muted); font-size:14px; flex:1; }
+  .cbtn { width:34px; height:34px; border-radius:50%; background: var(--card2); border:1px solid var(--line); color: var(--ink2); font-size:15px; display:grid; place-items:center; }
+  .cbtn.send { background: var(--accent); border-color: transparent; color: var(--accent-ink); font-weight:700; }
+
+  /* chips */
+  .chips { display:flex; gap:6px; }
+  .chip { font:600 11.5px 'Hanken Grotesk'; padding:5px 11px; border-radius:999px; border:1px solid var(--line); background: var(--card); color: var(--ink2); display:flex; gap:5px; align-items:center; }
+  .chip.on { background: color-mix(in srgb, var(--accent) 20%, transparent); border-color: color-mix(in srgb, var(--accent) 50%, transparent); color: var(--accent2); }
+  .chip .cdot { width:6px; height:6px; border-radius:50%; background: var(--ok); }
+
+  /* thread rows */
+  .grp { font:700 10.5px 'Hanken Grotesk'; letter-spacing:.09em; color: var(--muted); margin: 2px 0 -2px 4px; }
+  .thr { display:flex; align-items:center; gap:10px; background: var(--card); border:1px solid var(--line); border-radius:14px; padding:11px 13px; }
+  .thr .sdot { width:8px; height:8px; border-radius:50%; background: var(--muted); flex:none; }
+  .thr.live .sdot { background: var(--accent2); box-shadow: 0 0 6px color-mix(in srgb, var(--accent) 70%, transparent); }
+  .thr .tt { flex:1; min-width:0; }
+  .thr .tt b { display:block; font-size:14px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .thr .tt span { display:block; font-size:12px; color: var(--ink2); margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .thr .time { font-size:11.5px; color: var(--muted); }
+  .thr .liveb { font:700 11px 'Hanken Grotesk'; color: var(--accent2); }
+
+  .linkrow { font-size:13px; font-weight:600; color: var(--link); padding: 0 4px; }
+
+  /* tabbar */
+  .tabbar { background: var(--surface); border-top:1px solid var(--line); display:flex; padding: 8px 6px 14px; }
+  .tab { flex:1; text-align:center; font-size:11px; color: var(--muted); position:relative; }
+  .tab .ic { font-size:17px; display:block; margin-bottom:2px; }
+  .tab.on { color: var(--accent2); font-weight:600; }
+  .tab .badge { position:absolute; top:-2px; left:56%; background: var(--danger); color:#fff; font:700 9.5px 'Hanken Grotesk'; border-radius:999px; min-width:16px; padding:1px 4px; }
+
+  /* swatches */
+  .sw { margin-top: 18px; background:#fff; border:1px solid #d9d9e0; border-radius: 14px; padding: 14px 16px; }
+  .sw h3 { font-size: 13px; font-weight:700; margin-bottom: 10px; letter-spacing:.02em; }
+  .swgrid { display:grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+  .swi { font-family:'JetBrains Mono', monospace; font-size: 10px; color:#5b5e6b; }
+  .swi .box { height: 30px; border-radius: 7px; border:1px solid rgba(0,0,0,.12); margin-bottom: 3px; }
+  .contrast { margin-top: 12px; font-size: 12px; color:#33353d; line-height: 1.8; }
+  .contrast b { font-family:'JetBrains Mono', monospace; font-size:11px; }
+  .pass { color:#0e7a3d; font-weight:700; }
+
+  .verdict { margin-top: 40px; background:#fff; border:1px solid #d9d9e0; border-radius:14px; padding: 20px 24px; max-width: 1340px; }
+  .verdict h2 { font-size: 17px; margin-bottom: 10px; }
+  .verdict li { margin: 6px 0 6px 18px; font-size: 14px; line-height: 1.55; color:#33353d; }
+  .verdict code { background:#f2f2f6; border-radius:5px; padding:1px 6px; font-family:'JetBrains Mono',monospace; font-size:12px; }
+</style>
+<meta name="artifact-kind" content="html">
+<meta name="artifact-generated" content="1792588113939">
+<meta name="artifact-project" content="/home/agent/git-repos/hermes-mobile">
+</head>
+<body>
+<div class="wrap">
+  <h1>Three dark theme candidates for Hermes PWA</h1>
+  <p class="sub">Same home screen, same content, three palettes. Each is grounded in a battle-tested dark system (Linear, Catppuccin Mocha, iOS dark). Contrast ratios below each frame are computed live (WCAG). Semantic colors stay distinct from the accent in every scheme: success green, warning amber/yellow, danger red never double as the brand accent.</p>
+
+  <div class="themes" id="themes"></div>
+
+  <div class="verdict">
+    <h2>Recommendation</h2>
+    <ul>
+      <li><b>T1 Midnight Indigo</b> — the professional default. Linear-grade near-black with a single indigo accent; closest to the current theme so it reads as an upgrade, not a change. Best contrast discipline.</li>
+      <li><b>T2 Mocha Mauve</b> — the rich one. Catppuccin Mocha's warm purple-black with pastel accents; buttons use light mauve with dark text, which pops hardest on a phone. Dev-tool personality.</li>
+      <li><b>T3 Graphite Cyan</b> — the mobile-native one. True-neutral graphite (no color cast) with iOS-style cyan; feels the most like a first-party iOS app.</li>
+      <li>Implementation: each scheme is one <code>[data-theme="…"]</code> token block in <code>packages/web/src/styles/tokens.css</code> (semantic tokens already in place — the accents/ink/bg swap per theme) plus a picker under <b>More → Settings → Appearance → Theme</b>: <code>System / Light / Dark · Indigo / Dark · Mocha / Dark · Graphite</code>. Light theme and M8 voice screen stay untouched.</li>
+    </ul>
+  </div>
+</div>
+
+<script>
+const SCREENS = [
+  { cls:'t1', name:'T1 · Midnight Indigo', src:'Linear dark system — near-black luminance steps, one indigo accent (#6d78f0), semi-transparent borders. Professional, lowest-risk evolution of the current dark theme.' },
+  { cls:'t2', name:'T2 · Mocha Mauve', src:'Catppuccin Mocha — warm purple-black (#181825 base) with pastel mauve accent (#cba6f7) and dark text on buttons. Rich, premium dev-tool feel; 360+ ports prove the palette.' },
+  { cls:'t3', name:'T3 · Graphite Cyan', src:'iOS dark-mode grammar — true-neutral graphite (#09090b) with system cyan (#4cc3f7). No color cast in surfaces; reads like a first-party iOS app.' },
+];
+
+function frameHTML(cls){
+  return `
+  <div class="phone"><div class="scr ${cls}">
+    <div class="hdr"><span class="wordmark">Hermes</span><span class="dotp"></span><span class="prof">default</span><span class="gear">⚙</span></div>
+    <div class="body">
+      <div class="appr">
+        <div class="row1"><span>🛡</span><span class="tname">shell.exec</span><span class="risk low">LOW RISK</span></div>
+        <div class="meta">Refactor WS gateway reconnect · 2m ago</div>
+        <div class="cmd">git commit -am "ws: heartbeat + ticket refresh"</div>
+        <div class="btns"><button class="btn-reject">Reject</button><button class="btn-approve">Approve once</button></div>
+      </div>
+      <div class="composer"><span class="ph">Message Hermes…</span><span class="cbtn">+</span><span class="cbtn">◉</span><span class="cbtn send">↑</span></div>
+      <div class="chips">
+        <span class="chip on">gpt-6-sol</span>
+        <span class="chip"><span class="cdot"></span>active</span>
+        <span class="chip">Chats</span>
+      </div>
+      <div class="grp">TODAY</div>
+      <div class="thr live"><span class="sdot"></span><div class="tt"><b>Refactor WS gateway reconnect</b><span>Plan: 20s heartbeat ping, refresh ticket before…</span></div><span class="liveb">● live</span></div>
+      <div class="thr"><span class="sdot"></span><div class="tt"><b>Investigate web_server traceback</b><span>Fixed — missing await on ticket refresh</span></div><span class="time">10:32</span></div>
+      <div class="thr"><span class="sdot"></span><div class="tt"><b>OpenAPI → TypeScript pipeline</b><span>Generated 142 types from gateway spec</span></div><span class="time">08:15</span></div>
+      <div class="linkrow">Open chat to review →</div>
+    </div>
+    <div class="tabbar">
+      <div class="tab on"><span class="ic">💬</span>Chats</div>
+      <div class="tab"><span class="ic">🛡<span class="badge">2</span></span>Inbox</div>
+      <div class="tab"><span class="ic">☰</span>Work</div>
+      <div class="tab"><span class="ic">⋯</span>More</div>
+    </div>
+  </div></div>`;
+}
+
+function swatchesHTML(cls, colors){
+  return `<div class="sw"><h3>Palette</h3><div class="swgrid ${cls}">` +
+    colors.map(c => `<div class="swi"><div class="box" style="background:var(${c.v})"></div>${c.n}<br>${c.v.replace('--','')}</div>`).join('') +
+    `</div><div class="contrast" data-contrast="${cls}"></div></div>`;
+}
+
+const COLORS = [
+  {n:'page bg', v:'--bg'}, {n:'surface', v:'--surface'}, {n:'card', v:'--card'}, {n:'border', v:'--line'},
+  {n:'text', v:'--ink'}, {n:'secondary', v:'--ink2'}, {n:'muted', v:'--muted'}, {n:'accent', v:'--accent'},
+  {n:'accent ink', v:'--accent-ink'}, {n:'link', v:'--link'}, {n:'success', v:'--ok'}, {n:'danger', v:'--danger'},
+];
+
+const host = document.getElementById('themes');
+host.innerHTML = SCREENS.map(s => `
+  <div class="theme-col">
+    <div class="theme-name">${s.name}</div>
+    <div class="theme-src">${s.src}</div>
+    ${frameHTML(s.cls)}
+    ${swatchesHTML(s.cls, COLORS)}
+  </div>`).join('');
+
+// --- live WCAG contrast computation ---
+function hexToRgb(h){ h=h.trim(); const m=h.match(/#([0-9a-f]{6})/i); if(!m) return null;
+  const n=parseInt(m[1],16); return [(n>>16)&255,(n>>8)&255,n&255]; }
+function lum(rgb){ const f=c=>{c/=255; return c<=0.03928?c/12.92:Math.pow((c+0.055)/1.055,2.4);};
+  return 0.2126*f(rgb[0])+0.7152*f(rgb[1])+0.0722*f(rgb[2]); }
+function ratio(a,b){ const l1=lum(a),l2=lum(b); const hi=Math.max(l1,l2),lo=Math.min(l1,l2); return (hi+0.05)/(lo+0.05); }
+
+document.querySelectorAll('[data-contrast]').forEach(el => {
+  const scope = el.closest('.sw');
+  const cs = getComputedStyle(scope.querySelector('.swgrid'));
+  const g = name => hexToRgb(cs.getPropertyValue(name));
+  const pairs = [
+    ['body text on page', '--ink', '--bg', 7],
+    ['secondary on card', '--ink2', '--card', 4.5],
+    ['button ink on accent', '--accent-ink', '--accent', 4.5],
+    ['link on page', '--link', '--bg', 4.5],
+    ['live badge on card', '--accent2', '--card', 4.5],
+    ['danger on page', '--danger', '--bg', 4.5],
+  ];
+  el.innerHTML = pairs.map(([label, fg, bg, min]) => {
+    const r = ratio(g(fg), g(bg));
+    const ok = r >= min;
+    return `<div>${label}: <b>${r.toFixed(1)}:1</b> ${ok?`<span class="pass">✓ AA</span>`:`<span style="color:#b3261e;font-weight:700">✗ below ${min}</span>`}</div>`;
+  }).join('');
+});
+</script>
+
+<script>
+(function () {
+  var slug = "hermes-pwa-dark-theme-options-3-schemes";
+  var es = new EventSource("/events");
+  es.addEventListener("reload", function (e) {
+    try { if (e.data === slug || e.data === "*") location.reload(); } catch (_) {}
+  });
+})();
+</script></body>
+</html>

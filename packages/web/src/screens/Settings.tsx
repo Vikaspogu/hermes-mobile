@@ -3,7 +3,8 @@ import { useProfilesStore, useModelStore } from '@hermes-pwa/core';
 import type { RestClient, SystemStats, PushStatus } from '@hermes-pwa/core';
 import { HERMES_PWA_VERSION_LABEL } from '../app/version';
 import { currentPushSubscriptionId, disablePushNotifications, enablePushNotifications, getPushCapability } from '../pwa/push';
-import '../styles/screens/settings.css'; // ponytail: prototype.css's trailing @import of screens/*.css is dropped by Vite
+import '../styles/screens/settings.css';
+import { BottomSheet } from '../components/BottomSheet'; // ponytail: prototype.css's trailing @import of screens/*.css is dropped by Vite
 
 interface SettingsProps {
   rest: RestClient;
@@ -16,14 +17,28 @@ const THEME_STORAGE_KEY = 'hermes-pwa.theme.v1';
 const NOTIFY_APPROVALS_STORAGE_KEY = 'hermes-pwa.notifyApprovals.v1';
 const NOTIFY_RUNS_STORAGE_KEY = 'hermes-pwa.notifyRuns.v1';
 
-type ThemeSetting = 'system' | 'light' | 'dark';
-const THEME_ORDER: readonly ThemeSetting[] = ['system', 'light', 'dark'];
-const THEME_LABELS: Record<ThemeSetting, string> = { system: 'System', light: 'Light', dark: 'Dark' };
+type ThemeSetting = 'system' | 'light' | 'dark' | 'dark-indigo' | 'dark-mocha' | 'dark-graphite';
+const THEME_OPTIONS: readonly { id: ThemeSetting; label: string }[] = [
+  { id: 'system', label: 'System' },
+  { id: 'light', label: 'Light' },
+  { id: 'dark', label: 'Dark' },
+  { id: 'dark-indigo', label: 'Dark · Indigo' },
+  { id: 'dark-mocha', label: 'Dark · Mocha' },
+  { id: 'dark-graphite', label: 'Dark · Graphite' },
+];
+const THEME_LABELS: Record<ThemeSetting, string> = {
+  system: 'System',
+  light: 'Light',
+  dark: 'Dark',
+  'dark-indigo': 'Dark · Indigo',
+  'dark-mocha': 'Dark · Mocha',
+  'dark-graphite': 'Dark · Graphite',
+};
 
 function readTheme(): ThemeSetting {
   try {
     const raw = window.localStorage.getItem(THEME_STORAGE_KEY);
-    return raw === 'light' || raw === 'dark' ? raw : 'system';
+    return raw && raw !== 'system' && THEME_OPTIONS.some((o) => o.id === raw) ? (raw as ThemeSetting) : 'system';
   } catch {
     return 'system';
   }
@@ -120,6 +135,7 @@ export function Settings({ rest, onNavigate, onLogout }: SettingsProps) {
   const [pushBusy, setPushBusy] = useState(false);
   const [localPushId, setLocalPushId] = useState<string | null>(null);
   const [theme, setTheme] = useState<ThemeSetting>(readTheme);
+  const [themeSheetOpen, setThemeSheetOpen] = useState(false);
   const [notifyApprovals, setNotifyApprovals] = useState(() => readStoredBool(NOTIFY_APPROVALS_STORAGE_KEY, true));
   const [notifyRuns, setNotifyRuns] = useState(() => readStoredBool(NOTIFY_RUNS_STORAGE_KEY, false));
 
@@ -188,9 +204,9 @@ export function Settings({ rest, onNavigate, onLogout }: SettingsProps) {
     }
   }
 
-  function handleThemeChange() {
-    const next = THEME_ORDER[(THEME_ORDER.indexOf(theme) + 1) % THEME_ORDER.length] ?? 'system';
+  function selectTheme(next: ThemeSetting) {
     setTheme(next);
+    setThemeSheetOpen(false);
     try {
       window.localStorage.setItem(THEME_STORAGE_KEY, next);
     } catch {
@@ -271,7 +287,7 @@ export function Settings({ rest, onNavigate, onLogout }: SettingsProps) {
         title="Theme"
         sub={THEME_LABELS[theme]}
         right={<Chevron />}
-        onClick={handleThemeChange}
+        onClick={() => setThemeSheetOpen(true)}
         ariaLabel={`Theme: ${THEME_LABELS[theme]}. Tap to change.`}
       />
 
@@ -284,6 +300,20 @@ export function Settings({ rest, onNavigate, onLogout }: SettingsProps) {
       <button type="button" className="hm-btn hm-btn--danger-outline hm-settings__logout" onClick={onLogout}>
         Log out
       </button>
+
+      {themeSheetOpen && (
+        <BottomSheet title="Theme" onClose={() => setThemeSheetOpen(false)}>
+          {THEME_OPTIONS.map((option) => (
+            <Row
+              key={option.id}
+              title={option.label}
+              right={theme === option.id ? <span className="hm-set-row__link">✓</span> : undefined}
+              onClick={() => selectTheme(option.id)}
+              ariaLabel={`Use ${option.label} theme`}
+            />
+          ))}
+        </BottomSheet>
+      )}
     </div>
   );
 }
