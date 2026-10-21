@@ -106,7 +106,9 @@ def _dedupe_messages(messages: list[dict]) -> list[tuple[str, str, float]]:
     out: list[tuple[str, str, float]] = []
     for item in messages[:_MAX_MESSAGES]:
         who = str(item.get("who") or "").strip().lower()
-        role = "user" if who == "user" else "assistant" if who == "assistant" else ""
+        # the PWA voice client labels model turns 'bot', not 'assistant' —
+        # accepting only 'assistant' silently dropped every model reply
+        role = "user" if who == "user" else "assistant" if who in ("assistant", "bot") else ""
         text = str(item.get("text") or "").strip()[:_MAX_TEXT]
         if not role or not text:
             continue
