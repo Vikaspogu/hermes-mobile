@@ -505,7 +505,7 @@ export function Composer({
               disabled={!hasPayload || (busy && !onSteer)}
               aria-label={busy ? busySubmitLabel : 'Send message'}
             >
-              <Icon name="arrowUp" size={20} />
+              <Icon name="messaging" size={19} />
             </button>
           )}
         </div>
