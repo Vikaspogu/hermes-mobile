@@ -710,10 +710,11 @@ export function makeRestClient(http: Http): RestClient {
       // otherwise they fill the 100-row page and push real chats out (P1-S2 regression).
       const [localRaw, cronRaw] = await Promise.all([
         http<Record<string, unknown>>(profileSessionsPath(profile, [...PWA_NON_LOCAL_SESSION_SOURCES, 'cron'])),
-        // Plugin route drops [SILENT] runs server-side, so frequent silent jobs can't push real results out.
+        // Silent runs included: the Chats screen gates cron visibility behind
+        // filter chips (Threads default), so they can't flood the main list.
         // Fail soft: an older plugin without this route must not break the main list.
         http<{ runs?: Record<string, unknown>[] }>(
-          `/api/plugins/hermes-pwa/cron-runs?profile=${encodeURIComponent(profile)}&limit=50`,
+          `/api/plugins/hermes-pwa/cron-runs?profile=${encodeURIComponent(profile)}&limit=50&include_silent=1`,
         ).catch(() => ({ runs: [] })),
       ]);
       const cron = asArray<Record<string, unknown>>(cronRaw.runs).map(cronRunToSession(profile));

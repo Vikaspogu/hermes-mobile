@@ -298,6 +298,43 @@ describe('AppShell', () => {
     expect(screen.queryByText('CLI case')).not.toBeInTheDocument();
   });
 
+  it('filters chats with the Threads / Cron / All chips', () => {
+    render(<AppShell connectionState="connected" rpc={rpcMock} rest={restMock} />);
+    act(() => {
+      useSessionsStore.setState({
+        sessions: [
+          { id: 'cli-1', title: 'CLI case', messageCount: 3, updatedAt: Date.now(), profile: 'default' },
+          {
+            id: 'cron_abc_20261021_060000',
+            title: 'daily-lessons · 6:00 AM',
+            source: 'cron',
+            messageCount: 2,
+            updatedAt: Date.now(),
+            profile: 'default',
+          },
+        ],
+        loading: false,
+        error: undefined,
+        pinnedIds: [],
+      });
+    });
+
+    // Default chip is Threads: cron runs stay hidden.
+    expect(screen.getByText('CLI case')).toBeInTheDocument();
+    expect(screen.queryByText('daily-lessons · 6:00 AM')).not.toBeInTheDocument();
+
+    // Cron chip shows only cron runs, with a Cron tag on the row.
+    fireEvent.click(screen.getByTestId('chats-filter-cron'));
+    expect(screen.queryByText('CLI case')).not.toBeInTheDocument();
+    const cronRow = screen.getByText('daily-lessons · 6:00 AM').closest('[data-testid="thread-row"]')!;
+    expect(cronRow).toHaveTextContent('Cron');
+
+    // All shows both kinds.
+    fireEvent.click(screen.getByTestId('chats-filter-all'));
+    expect(screen.getByText('CLI case')).toBeInTheDocument();
+    expect(screen.getByText('daily-lessons · 6:00 AM')).toBeInTheDocument();
+  });
+
   it('navigates via the tab bar and updates title', async () => {
     render(<AppShell connectionState="connected" rpc={rpcMock} rest={restMock} />);
     fireEvent.click(screen.getByRole('button', { name: 'Inbox' }));

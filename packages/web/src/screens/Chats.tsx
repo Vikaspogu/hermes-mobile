@@ -109,12 +109,20 @@ export function Chats({ rpc, rest, onNavigate, sidebar }: ChatsProps) {
     void load(rest);
   }, [load, rest]);
 
+  const [filter, setFilter] = useState<'threads' | 'cron' | 'all'>('threads');
+
   const threads = useMemo(() => {
-    const visible = sessions.filter((s) => !s.archived && sessionSourceId(s) !== 'cron');
+    const visible = sessions.filter((s) => {
+      if (s.archived) return false;
+      const isCron = sessionSourceId(s) === 'cron';
+      if (filter === 'threads') return !isCron;
+      if (filter === 'cron') return isCron;
+      return true;
+    });
     const q = query.trim().toLowerCase();
     const filtered = q ? visible.filter((s) => (s.title ?? '').toLowerCase().includes(q)) : visible;
     return groupThreads(filtered);
-  }, [sessions, query]);
+  }, [sessions, query, filter]);
 
   async function openThread(session: Session) {
     await resumeSessionIntoChat(rest, rpc, session.id, session.profile ?? activeName);
@@ -198,10 +206,31 @@ export function Chats({ rpc, rest, onNavigate, sidebar }: ChatsProps) {
           </div>
         )}
 
+        {sessions.length > 0 && (
+          <div className="hm-chats__filters" role="group" aria-label="Filter conversations">
+            {(['threads', 'cron', 'all'] as const).map((f) => (
+              <button
+                key={f}
+                type="button"
+                className={`hm-pill${filter === f ? ' hm-pill--on' : ''}`}
+                aria-pressed={filter === f}
+                onClick={() => setFilter(f)}
+                data-testid={`chats-filter-${f}`}
+              >
+                {f === 'threads' ? 'Threads' : f === 'cron' ? 'Cron' : 'All'}
+              </button>
+            ))}
+          </div>
+        )}
+
         <div className="hm-chats__list">
           {threads.length === 0 && (
             <p className="hm-muted hm-home-empty">
-              {query ? 'No chats match your search.' : 'No conversations yet. Tap + to start one.'}
+              {query
+                ? 'No chats match your search.'
+                : filter === 'cron'
+                  ? 'No cron runs yet.'
+                  : 'No conversations yet. Tap + to start one.'}
             </p>
           )}
           {threads.map((group) => (
@@ -214,10 +243,16 @@ export function Chats({ rpc, rest, onNavigate, sidebar }: ChatsProps) {
                   onClick={() => void openThread(s)}
                   data-testid="thread-row"
                 >
-                  <span
-                    className={`hm-thread-row__dot ${isLive(s) ? 'hm-thread-row__dot--live' : 'hm-thread-row__dot--idle'}`}
-                    aria-hidden="true"
-                  />
+                  {sessionSourceId(s) === 'cron' ? (
+                    <span className="hm-thread-row__cronicon" aria-hidden="true">
+                      <Icon name="cron" size={16} />
+                    </span>
+                  ) : (
+                    <span
+                      className={`hm-thread-row__dot ${isLive(s) ? 'hm-thread-row__dot--live' : 'hm-thread-row__dot--idle'}`}
+                      aria-hidden="true"
+                    />
+                  )}
                   <span className="hm-thread-row__body">
                     <span className="hm-thread-row__title">{s.title?.trim() || 'Untitled'}</span>
                     <span className="hm-thread-row__preview">
@@ -230,6 +265,9 @@ export function Chats({ rpc, rest, onNavigate, sidebar }: ChatsProps) {
                           .join(' · ') ||
                           'Session')}
                     </span>
+                    {sessionSourceId(s) === 'cron' && (
+                      <span className="hm-chip hm-thread-row__crontag">Cron</span>
+                    )}
                   </span>
                   <span className="hm-thread-row__meta">
                     {fmtAge(freshness(s))}
