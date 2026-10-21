@@ -1346,6 +1346,30 @@ textarea {
   animation: hm-sheet-down 0.22s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
 }
 
+.hm-sheet__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.hm-sheet__close {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border: 0;
+  border-radius: 50%;
+  background: var(--hm-color-bg);
+  color: var(--hm-color-text-secondary);
+  cursor: pointer;
+}
+
+.hm-sheet__close:active {
+  transform: scale(0.94);
+}
+
 /* ── Mobile containment hardening ───────────────────────────────────── */
 html,
 body,
@@ -2250,9 +2274,13 @@ select:focus-visible,
 
 /* mockup: .fab — new-chat floating action button */
 .hm-fab {
-  position: absolute;
+  /* fixed, not absolute: the FAB must float over the scrolling list — an
+     absolute FAB re-anchors to .hm-chats (position:relative for the PTR
+     indicator) and scrolls away with the content */
+  position: fixed;
   right: 18px;
-  bottom: 96px;
+  bottom: calc(64px + env(safe-area-inset-bottom, 0px) + 16px);
+  z-index: 30;
   width: 54px;
   height: 54px;
   border-radius: 50%;
