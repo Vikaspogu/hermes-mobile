@@ -241,7 +241,14 @@ export function AppShell({ connectionState, rpc, rest, onRetry, connectionError 
   // History-backed navigation: each screen change pushes a history entry so
   // Android/browser Back moves within the app instead of exiting it.
   useEffect(() => {
-    window.history.replaceState({ hmNav: navStackRef.current.length - 1 }, '');
+    // A cold start can restore straight into a deep screen (e.g. a chat), but
+    // the fresh document has a single history entry, so history.back() is a
+    // silent no-op and the header back button looks dead. Rebuild the entries
+    // the restored stack implies: mark this entry as the root, then push one
+    // dummy per level so Back has somewhere to land.
+    const depth = navStackRef.current.length;
+    window.history.replaceState({ hmNav: 0 }, '');
+    for (let i = 1; i < depth; i += 1) window.history.pushState({ hmNav: i }, '');
     const onPopState = () => {
       if (dismissTopBackLayer()) {
         // An open layer (menu, sheet, keyboard) consumed the back press;
