@@ -91,8 +91,13 @@ textarea {
 }
 
 .hm-header__title {
-  flex: 1;
-  min-width: 0;
+  /* absolutely centered: a flex title centers in the space LEFT of the back
+     button, which reads off-center; anchor to the header (it is sticky, so
+     already positioned) and center on the viewport instead */
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  max-width: calc(100% - 120px); /* stay clear of back button + status chip */
   text-align: center;
   font-size: 15.5px;
   font-weight: var(--hm-fw-semibold);

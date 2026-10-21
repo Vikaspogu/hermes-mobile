@@ -10,6 +10,7 @@ import { Login } from '../screens/Login';
 import { AppShell } from './AppShell';
 import { AppPreview } from './AppPreview';
 import { useNativeViewportLock } from './useNativeViewportLock';
+import { BrandMark } from '../components/BrandMark';
 import './App.css';
 import '../styles/prototype.css';
 
@@ -54,7 +55,7 @@ export function App() {
     return (
       <div className="hm-app-shell">
         <div className="hm-empty-state">
-          <h1>Hermes Mobile</h1>
+          <div className="hm-brand-hero"><BrandMark wordmark="Ivan" /></div>
           <p className="hm-muted">Connecting…</p>
         </div>
       </div>
@@ -86,7 +87,7 @@ export function App() {
     return (
       <div className="hm-app-shell">
         <div className="hm-empty-state">
-          <h1>Hermes Mobile</h1>
+          <div className="hm-brand-hero"><BrandMark wordmark="Ivan" /></div>
           <p className="hm-muted">{connection.error ?? fallback}</p>
           {canRetry ? (
             <button
