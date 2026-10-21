@@ -97,6 +97,21 @@ describe('AppShell', () => {
     expect(screen.getByRole('heading', { name: 'Chats' })).toBeInTheDocument();
   });
 
+  it('header back button works after a cold-start restore into a thread', async () => {
+    // Cold start straight into a restored chat: the fresh document has one
+    // history entry, so without the mount-time history rebuild the back
+    // button (window.history.back()) is a silent no-op.
+    window.localStorage.setItem('hermes-mobile-screen', 'chat');
+    window.localStorage.setItem('hermes-pwa.activeSession.v3', JSON.stringify({ storedSessionId: 'sess-1' }));
+    render(<AppShell connectionState="connected" rpc={rpcMock} rest={restMock} />);
+    const back = await screen.findByRole('button', { name: /back to chats/i });
+    fireEvent.click(back);
+    await waitFor(() => {
+      expect(screen.getByRole('heading', { name: 'Chats' })).toBeInTheDocument();
+    });
+    expect(screen.queryByRole('button', { name: /back to/i })).not.toBeInTheDocument();
+  });
+
   it('shows update notification when backend reports a newer version', async () => {
     vi.mocked(restMock.updateCheck).mockResolvedValue({
       ok: true,
