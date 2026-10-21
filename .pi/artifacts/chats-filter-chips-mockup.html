@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Chats filter chips — proposal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:opsz,wght@6..96,600&family=Hanken+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:#f4f6fc; --surface:#ffffff; --surface2:#f5f7fd; --border:#e7eaf3;
+    --text:#161a27; --text2:#2b3346; --muted:#6b7384; --faint:#9aa2b4;
+    --primary:#2540ff; --primary-tint:#eef1ff;
+    --radius:16px;
+  }
+  * { box-sizing:border-box; margin:0; }
+  body { background:#e9edf7; font-family:'Hanken Grotesk',system-ui,sans-serif; color:var(--text); padding:28px 16px; }
+  .gallery { display:flex; gap:36px; justify-content:center; flex-wrap:wrap; }
+  .frame { width:390px; background:var(--bg); border-radius:44px; overflow:hidden; box-shadow:0 18px 50px rgba(20,30,60,.18); display:flex; flex-direction:column; }
+  .caption { text-align:center; margin-top:14px; font-weight:700; font-size:15px; color:#3a4358; }
+  .caption small { display:block; font-weight:500; color:var(--muted); font-size:12.5px; margin-top:3px; }
+
+  header.h { background:var(--surface); padding:16px 18px; display:flex; align-items:center; gap:10px; border-bottom:1px solid var(--border); }
+  .wordmark { font-family:'Bodoni Moda',serif; font-weight:600; font-size:24px; }
+  .dot { width:9px; height:9px; border-radius:50%; background:#15a06a; margin-left:auto; }
+  .prof { color:var(--muted); font-size:14px; }
+  .gear { color:var(--muted); font-size:19px; margin-left:8px; }
+
+  .body { padding:14px 14px 0; flex:1; }
+  .search { display:flex; align-items:center; gap:9px; background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:11px 14px; color:var(--faint); font-size:14.5px; }
+
+  /* NEW: chip row */
+  .chips { display:flex; gap:8px; margin:12px 0 4px; }
+  .chip { padding:7px 14px; border-radius:999px; border:1px solid var(--border); background:var(--surface); color:var(--muted); font-size:13px; font-weight:600; font-family:inherit; }
+  .chip.on { background:var(--primary-tint); border-color:#ccd6ff; color:var(--primary); }
+
+  .group { font-size:11px; letter-spacing:.6px; font-weight:700; color:var(--faint); margin:16px 6px 8px; }
+  .row { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:13px 14px; margin-bottom:10px; display:flex; gap:11px; align-items:flex-start; }
+  .sdot { width:9px; height:9px; border-radius:50%; margin-top:7px; flex-shrink:0; }
+  .sdot.live { background:var(--primary); }
+  .sdot.idle { background:#c9d1e4; }
+  .rt { flex:1; min-width:0; }
+  .rt b { font-size:15px; font-weight:700; display:block; }
+  .rt span { font-size:13.5px; color:var(--muted); display:block; margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .time { font-size:12px; color:var(--faint); flex-shrink:0; margin-top:2px; }
+  .livebadge { color:var(--primary); font-size:12px; font-weight:700; display:block; text-align:right; margin-top:2px; }
+  .crontag { display:inline-block; font-size:10.5px; font-weight:700; letter-spacing:.3px; color:var(--muted); background:var(--surface2); border:1px solid var(--border); border-radius:6px; padding:2px 6px; margin-top:5px; }
+  .cronicon { width:32px; height:32px; border-radius:9px; background:var(--surface2); border:1px solid var(--border); display:flex; align-items:center; justify-content:center; font-size:15px; flex-shrink:0; }
+  .note { text-align:center; color:var(--muted); font-size:13px; padding:18px 30px 26px; line-height:1.55; }
+  .tabbar { background:var(--surface); border-top:1px solid var(--border); display:flex; padding:10px 0 14px; }
+  .tab { flex:1; text-align:center; font-size:11.5px; color:var(--faint); font-weight:600; }
+  .tab.on { color:var(--primary); }
+  .tab .ico { font-size:18px; display:block; margin-bottom:3px; }
+  .new { background:#fff7e6; border:1px dashed #e3b34c; border-radius:10px; color:#8a6414; font-size:12px; font-weight:700; padding:3px 8px; display:inline-block; margin-left:6px; vertical-align:2px; }
+</style>
+<meta name="artifact-kind" content="html">
+<meta name="artifact-generated" content="1792586510536">
+<meta name="artifact-project" content="/home/agent/git-repos/hermes-mobile">
+</head>
+<body>
+<div class="gallery">
+
+  <div>
+    <div class="frame">
+      <header class="h"><span class="wordmark">Hermes</span><span class="dot"></span><span class="prof">default</span><span class="gear">⚙</span></header>
+      <div class="body">
+        <div class="search">🔍&nbsp; Search chats</div>
+        <div class="chips">
+          <button class="chip on">Threads</button>
+          <button class="chip">Cron</button>
+          <button class="chip">All</button>
+          <span class="new">NEW</span>
+        </div>
+        <div class="group">TODAY</div>
+        <div class="row"><span class="sdot live"></span><div class="rt"><b>Refactor WS gateway reconnect</b><span>Plan: 20s heartbeat ping, refresh ticket before…</span></div><div><span class="time">12:04</span><span class="livebadge">● live</span></div></div>
+        <div class="row"><span class="sdot idle"></span><div class="rt"><b>Investigate web_server traceback</b><span>Fixed — missing await on ticket refresh</span></div><span class="time">10:32</span></div>
+        <div class="row"><span class="sdot idle"></span><div class="rt"><b>Best app to learn piano notes?</b><span>Simply Piano vs Skoove — keep one…</span></div><span class="time">09:18</span></div>
+        <div class="group">YESTERDAY</div>
+        <div class="row"><span class="sdot idle"></span><div class="rt"><b>Kanban dispatch flakiness</b><span>Retry logic behind flag, tests green</span></div><span class="time">1d</span></div>
+      </div>
+      <div class="tabbar"><div class="tab on"><span class="ico">💬</span>Chats</div><div class="tab"><span class="ico">🛡️</span>Inbox</div><div class="tab"><span class="ico">☰</span>More</div></div>
+    </div>
+    <div class="caption">1 · Threads (default)<small>Exactly what you see today — no cron runs mixed in</small></div>
+  </div>
+
+  <div>
+    <div class="frame">
+      <header class="h"><span class="wordmark">Hermes</span><span class="dot"></span><span class="prof">default</span><span class="gear">⚙</span></header>
+      <div class="body">
+        <div class="search">🔍&nbsp; Search chats</div>
+        <div class="chips">
+          <button class="chip">Threads</button>
+          <button class="chip on">Cron</button>
+          <button class="chip">All</button>
+        </div>
+        <div class="group">TODAY</div>
+        <div class="row"><span class="cronicon">🕐</span><div class="rt"><b>daily-lessons · 6:00 AM</b><span>Piano day 3: reading treble clef, C–G…</span><span class="crontag">CRON</span></div><span class="time">6:00</span></div>
+        <div class="row"><span class="cronicon">🕐</span><div class="rt"><b>news-digest · 12:02</b><span>Claude Code 2.1.304 adds /auto-mode-setup…</span><span class="crontag">CRON</span></div><span class="time">12:02</span></div>
+        <div class="row"><span class="cronicon">🕐</span><div class="rt"><b>pretrip-schedule-requests · Oct 20</b><span>Result ready — 3 requests summarized</span><span class="crontag">CRON</span></div><span class="time">1d</span></div>
+        <div class="note">Silent cron runs appear here too —<br>including the one your notification opened.</div>
+      </div>
+      <div class="tabbar"><div class="tab on"><span class="ico">💬</span>Chats</div><div class="tab"><span class="ico">🛡️</span>Inbox</div><div class="tab"><span class="ico">☰</span>More</div></div>
+    </div>
+    <div class="caption">2 · Cron chip selected<small>All cron runs, silent included — clock icon + CRON tag instead of a status dot</small></div>
+  </div>
+
+  <div>
+    <div class="frame">
+      <header class="h"><span class="wordmark">Hermes</span><span class="dot"></span><span class="prof">default</span><span class="gear">⚙</span></header>
+      <div class="body">
+        <div class="search">🔍&nbsp; Search chats</div>
+        <div class="chips">
+          <button class="chip">Threads</button>
+          <button class="chip">Cron</button>
+          <button class="chip on">All</button>
+        </div>
+        <div class="group">TODAY</div>
+        <div class="row"><span class="sdot live"></span><div class="rt"><b>Refactor WS gateway reconnect</b><span>Plan: 20s heartbeat ping…</span></div><div><span class="time">12:04</span><span class="livebadge">● live</span></div></div>
+        <div class="row"><span class="cronicon">🕐</span><div class="rt"><b>news-digest · 12:02</b><span>Claude Code 2.1.304 adds…</span><span class="crontag">CRON</span></div><span class="time">12:02</span></div>
+        <div class="row"><span class="sdot idle"></span><div class="rt"><b>Best app to learn piano notes?</b><span>Simply Piano vs Skoove…</span></div><span class="time">09:18</span></div>
+        <div class="row"><span class="cronicon">🕐</span><div class="rt"><b>daily-lessons · 6:00 AM</b><span>Piano day 3: treble clef…</span><span class="crontag">CRON</span></div><span class="time">6:00</span></div>
+      </div>
+      <div class="tabbar"><div class="tab on"><span class="ico">💬</span>Chats</div><div class="tab"><span class="ico">🛡️</span>Inbox</div><div class="tab"><span class="ico">☰</span>More</div></div>
+    </div>
+    <div class="caption">3 · All<small>Both kinds merged into one timeline, cron rows tagged</small></div>
+  </div>
+
+</div>
+
+<script>
+(function () {
+  var slug = "chats-filter-chips-mockup";
+  var es = new EventSource("/events");
+  es.addEventListener("reload", function (e) {
+    try { if (e.data === slug || e.data === "*") location.reload(); } catch (_) {}
+  });
+})();
+</script></body>
+</html>

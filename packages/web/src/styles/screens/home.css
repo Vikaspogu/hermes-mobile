@@ -110,6 +110,33 @@
   color: var(--hm-color-text-faint);
 }
 
+/* filter chips row (Threads / Cron / All) — chips reuse .hm-pill */
+.hm-chats__filters {
+  flex: none;
+  display: flex;
+  gap: 8px;
+  margin: 10px 0 2px;
+}
+/* cron row: clock icon tile replaces the status dot */
+.hm-screen .hm-thread-row__cronicon {
+  width: 30px;
+  height: 30px;
+  border-radius: 9px;
+  background: var(--hm-color-surface-2);
+  border: 1px solid var(--hm-color-border);
+  color: var(--hm-color-text-muted);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+}
+.hm-screen .hm-thread-row__crontag {
+  display: inline-flex;
+  margin-top: 5px;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
 /* mockup .thread — status dot + body + right meta (overrides prototype.css base) */
 .hm-screen .hm-thread-row {
   align-items: flex-start;

@@ -132,8 +132,10 @@ describe('makeRestClient', () => {
     // Cron would fill the 100-row page, so the main query excludes it...
     expect(queryForCall(0).get('exclude_sources')).toContain('cron');
     expect(queryForCall(0).get('limit')).toBe('100');
-    // ...and the plugin route returns cron runs with [SILENT] ones already dropped.
+    // ...and the plugin route returns cron runs, silent included (the Chats
+    // screen gates them behind filter chips instead of dropping them here).
     expect(String(httpMock.mock.calls[1]?.[0])).toMatch(/^\/api\/plugins\/hermes-pwa\/cron-runs\?/);
+    expect(queryForCall(1).get('include_silent')).toBe('1');
     expect(queryForCall(1).get('limit')).toBe('50');
     expect(sessions.map((s) => s.id)).toEqual(['cron_abc_20261017_080000', 'local-chat']);
     expect(sessions[0]?.source).toBe('cron');
