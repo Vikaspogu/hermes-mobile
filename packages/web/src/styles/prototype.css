@@ -2509,3 +2509,25 @@ select:focus-visible,
   flex: none;
   display: block;
 }
+
+/* pull-to-refresh indicator (standalone PWA has no reload gesture) */
+.hm-chats { position: relative; }
+.hm-ptr {
+  position: absolute;
+  top: 6px;
+  left: 50%;
+  z-index: 6;
+  pointer-events: none;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--hm-color-card);
+  border: 1px solid var(--hm-color-border);
+  color: var(--hm-color-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: var(--hm-shadow-card);
+}
+.hm-ptr--refreshing svg { animation: hm-ptr-spin 0.8s linear infinite; }
+@keyframes hm-ptr-spin { to { transform: rotate(360deg); } }
