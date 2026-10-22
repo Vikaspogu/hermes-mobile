@@ -1178,4 +1178,42 @@ describe('Chat', () => {
     await screen.findByText(/previous chat ended/i);
     expect(screen.queryByText('stale cached line')).not.toBeInTheDocument();
   });
+
+  it('keeps a message sent while the dead-session probe was in flight', async () => {
+    core.useChatStore.setState({
+      sessionId: undefined,
+      storedSessionId: 'gone-session',
+      messages: [],
+      streaming: false,
+      error: undefined,
+    });
+    core.useSessionsStore.setState({
+      sessions: [{ id: 'other-session', title: 'Other', profile: 'default', lastActiveAt: 1 } as unknown as core.Session],
+      loading: false,
+      error: undefined,
+      pinnedIds: [],
+    });
+    let rejectProbe: (err: unknown) => void = () => undefined;
+    const probe = new Promise((_resolve, reject) => {
+      rejectProbe = reject;
+    });
+    restMock = makeRestMock({ sessionMessages: vi.fn(() => probe) });
+
+    render(<Chat rpc={rpcMock} rest={restMock} />);
+    await waitFor(() => expect(restMock.sessionMessages).toHaveBeenCalledWith('gone-session', 'default'));
+
+    // The user sends a message while the probe is still in flight (submit's optimistic update).
+    core.useChatStore.setState({
+      sessionId: 'new-live',
+      storedSessionId: 'gone-session',
+      messages: [{ id: 'u-1', role: 'user', text: 'hello', createdAt: undefined }],
+      streaming: true,
+      error: undefined,
+    });
+    rejectProbe(new core.HermesHttpError(404, 'Not Found', 'session not found'));
+
+    await waitFor(() => expect(screen.getByText('hello')).toBeInTheDocument());
+    expect(screen.queryByText(/previous chat ended/i)).not.toBeInTheDocument();
+    expect(core.useChatStore.getState().sessionId).toBe('new-live');
+  });
 });

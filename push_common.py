@@ -318,7 +318,8 @@ def turn_complete_push_payload(**kwargs: Any) -> dict[str, Any]:
     lets the OS replace older "answer ready" notifications instead of stacking
     one banner per queued turn.
     """
-    session_id = sanitize_notification_text(kwargs.get("session_id") or "session", limit=80)
+    raw_session_id = kwargs.get("session_id")
+    session_id = sanitize_notification_text(raw_session_id or "session", limit=80)
     turn_id = sanitize_notification_text(kwargs.get("turn_id") or "", limit=80)
     dedupe_seed = turn_id or endpoint_hash(json.dumps({
         "session_id": session_id,
@@ -330,7 +331,7 @@ def turn_complete_push_payload(**kwargs: Any) -> dict[str, Any]:
         "body": "Answer ready.",
         "tag": f"hermes-turn:{session_id}",
         "dedupe_key": ":".join(part for part in ("turn", session_id, dedupe_seed) if part),
-        "url": "./index.html#/chat",
+        "url": f"./index.html#/chat?session={quote(session_id, safe='')}" if raw_session_id else "./index.html#/chat",
         "profile": sanitize_notification_text(kwargs.get("profile") or "default", limit=80),
     }
 

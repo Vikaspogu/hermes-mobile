@@ -518,6 +518,7 @@ export function Chat({ rpc, rest, onOpenVoice }: ChatProps) {
   const [autoRestarted, setAutoRestarted] = useState(false);
   useEffect(() => {
     if (!storedSessionEnded || autoRestarted || !storedSessionId) return undefined;
+    const messagesAtProbeStart = useChatStore.getState().messages;
     let cancelled = false;
     rest
       .sessionMessages(storedSessionId, activeName ?? undefined)
@@ -526,6 +527,9 @@ export function Chat({ rpc, rest, onOpenVoice }: ChatProps) {
       })
       .catch((err) => {
         if (cancelled || !(err instanceof HermesHttpError) || err.status !== 404) return;
+        // A submit that landed while the probe was in flight already put real
+        // messages in this chat — wiping now would erase what the user just sent.
+        if (useChatStore.getState().messages !== messagesAtProbeStart) return;
         setAutoRestarted(true);
         useChatStore.getState().startNewSession(activeName ?? undefined);
       });
