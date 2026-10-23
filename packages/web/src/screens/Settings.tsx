@@ -5,6 +5,7 @@ import { HERMES_PWA_VERSION_LABEL } from '../app/version';
 import { currentPushSubscriptionId, disablePushNotifications, enablePushNotifications, getPushCapability } from '../pwa/push';
 import '../styles/screens/settings.css';
 import { BottomSheet } from '../components/BottomSheet'; // ponytail: prototype.css's trailing @import of screens/*.css is dropped by Vite
+import { applyTheme, readTheme, THEME_OPTIONS, THEME_STORAGE_KEY, type ThemeSetting } from '../lib/theme';
 
 interface SettingsProps {
   rest: RestClient;
@@ -13,44 +14,11 @@ interface SettingsProps {
 }
 
 // M14 local preferences — no server-side setting exists for these yet.
-const THEME_STORAGE_KEY = 'hermes-pwa.theme.v1';
+// NOTIFY_* storage keys are local-only for now (THEME_STORAGE_KEY comes from ../lib/theme).
 const NOTIFY_APPROVALS_STORAGE_KEY = 'hermes-pwa.notifyApprovals.v1';
 const NOTIFY_RUNS_STORAGE_KEY = 'hermes-pwa.notifyRuns.v1';
 
-type ThemeSetting = 'system' | 'light' | 'dark' | 'dark-indigo' | 'dark-mocha' | 'dark-graphite';
-const THEME_OPTIONS: readonly { id: ThemeSetting; label: string }[] = [
-  { id: 'system', label: 'System' },
-  { id: 'light', label: 'Light' },
-  { id: 'dark', label: 'Dark' },
-  { id: 'dark-indigo', label: 'Dark · Indigo' },
-  { id: 'dark-mocha', label: 'Dark · Mocha' },
-  { id: 'dark-graphite', label: 'Dark · Graphite' },
-];
-const THEME_LABELS: Record<ThemeSetting, string> = {
-  system: 'System',
-  light: 'Light',
-  dark: 'Dark',
-  'dark-indigo': 'Dark · Indigo',
-  'dark-mocha': 'Dark · Mocha',
-  'dark-graphite': 'Dark · Graphite',
-};
-
-function readTheme(): ThemeSetting {
-  try {
-    const raw = window.localStorage.getItem(THEME_STORAGE_KEY);
-    return raw && raw !== 'system' && THEME_OPTIONS.some((o) => o.id === raw) ? (raw as ThemeSetting) : 'system';
-  } catch {
-    return 'system';
-  }
-}
-
-function applyTheme(theme: ThemeSetting) {
-  if (theme === 'system') {
-    delete document.documentElement.dataset.theme;
-  } else {
-    document.documentElement.dataset.theme = theme;
-  }
-}
+const THEME_LABELS = Object.fromEntries(THEME_OPTIONS.map((o) => [o.id, o.label])) as Record<ThemeSetting, string>;
 
 function readStoredBool(key: string, fallback: boolean): boolean {
   try {

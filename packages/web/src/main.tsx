@@ -6,8 +6,12 @@ import './styles/tokens.css';
 import './pwa/install';
 import { installVitePreloadErrorReload } from './pwa/preloadError';
 import { registerServiceWorker } from './pwa/registerSW';
+import { applyTheme, readTheme } from './lib/theme';
 
 installVitePreloadErrorReload();
+// Apply the stored theme before first render, otherwise the app flashes the
+// system theme until the Settings screen mounts.
+applyTheme(readTheme());
 void registerServiceWorker();
 
 const root = document.getElementById('root');
