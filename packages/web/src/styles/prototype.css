@@ -1510,7 +1510,7 @@ body,
   flex: 1;
   min-width: 0;
   min-height: var(--hm-tap-min);
-  max-height: 96px;
+  max-height: 50vh;
   border: 0;
   outline: 0;
   background: none;
@@ -1668,7 +1668,7 @@ body,
 
   .hm-composer textarea {
     min-height: var(--hm-tap-min);
-    max-height: 88px;
+    max-height: 50vh;
     padding: 7px 0;
   }
 

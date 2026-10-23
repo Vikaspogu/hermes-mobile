@@ -1637,7 +1637,7 @@ a {
   flex: 1;
   box-sizing: border-box;
   min-height: var(--hm-tap-min);
-  max-height: 96px;
+  max-height: 50vh;
   resize: none;
   padding: 7px 0;
   border: 0;

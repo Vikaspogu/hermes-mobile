@@ -242,4 +242,29 @@ describe('Composer', () => {
       }
     }
   });
+
+  it('caps the textarea height at half the viewport for long drafts', async () => {
+    const originalScrollHeight = Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, 'scrollHeight');
+    Object.defineProperty(HTMLTextAreaElement.prototype, 'scrollHeight', {
+      configurable: true,
+      get() {
+        return this.value.length > 20 ? 10000 : 36;
+      },
+    });
+    const { unmount } = render(<Composer onSend={vi.fn()} onStop={vi.fn()} busy={false} />);
+    try {
+      const input = screen.getByLabelText('Message input');
+      fireEvent.change(input, { target: { value: 'a very long pasted draft that exceeds the cap' } });
+      await waitFor(() =>
+        expect(input).toHaveStyle({ height: `${Math.round(window.innerHeight * 0.5)}px` }),
+      );
+    } finally {
+      unmount();
+      if (originalScrollHeight) {
+        Object.defineProperty(HTMLTextAreaElement.prototype, 'scrollHeight', originalScrollHeight);
+      } else {
+        delete (HTMLTextAreaElement.prototype as unknown as { scrollHeight?: number }).scrollHeight;
+      }
+    }
+  });
 });

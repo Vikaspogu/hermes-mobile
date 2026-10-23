@@ -178,7 +178,7 @@ export function Composer({
     const el = textareaRef.current;
     if (!el) return;
     el.style.height = 'auto';
-    const maxHeight = 124;
+    const maxHeight = Math.round((window.visualViewport?.height ?? window.innerHeight) * 0.5); // Telegram-style: grow to half the visible area, then scroll
     const nextHeight = `${Math.min(el.scrollHeight, maxHeight)}px`;
     el.style.height = nextHeight;
     if (textareaHeightRef.current !== nextHeight) {
@@ -190,6 +190,16 @@ export function Composer({
   useEffect(() => {
     resize();
   }, [text, resize]);
+
+  // Re-clamp when the viewport changes (device rotation, on-screen keyboard).
+  useEffect(() => {
+    window.addEventListener('resize', resize);
+    window.visualViewport?.addEventListener('resize', resize);
+    return () => {
+      window.removeEventListener('resize', resize);
+      window.visualViewport?.removeEventListener('resize', resize);
+    };
+  }, [resize]);
 
   useEffect(() => {
     if (!slashPaletteOpen || !slashCommandsRpc) {
