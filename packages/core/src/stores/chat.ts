@@ -20,6 +20,7 @@ const MAX_ALIAS_DISPATCH_DEPTH = 8;
 const PROMPT_SUBMIT_TIMEOUT_MS = 90_000;
 let assistantMessageSequence = 0;
 let systemMessageSequence = 0;
+let userMessageSequence = 0;
 const submitInFlightKeys = new Set<string>();
 const interruptInFlightKeys = new Set<string>();
 const aliasDispatchStack: string[] = [];
@@ -27,6 +28,11 @@ const aliasDispatchStack: string[] = [];
 function nextAssistantMessageId(): string {
   assistantMessageSequence += 1;
   return `a-${Date.now()}-${assistantMessageSequence}`;
+}
+
+function nextUserMessageId(): string {
+  userMessageSequence += 1;
+  return `u-${Date.now()}-${userMessageSequence}`;
 }
 
 function nextSystemMessageId(): string {
@@ -1368,10 +1374,9 @@ export const useChatStore = create<ChatStore>((set, get) => ({
           durableId = replacement.storedSessionId;
         }
 
-        const now = Date.now();
         const nextMessages = [
           ...messages,
-          { id: `u-${now}`, role: 'user' as const, text, createdAt: undefined },
+          { id: nextUserMessageId(), role: 'user' as const, text, createdAt: undefined },
           { id: nextAssistantMessageId(), role: 'assistant' as const, text: '', createdAt: undefined },
         ];
 
@@ -1453,7 +1458,24 @@ export const useChatStore = create<ChatStore>((set, get) => ({
       const raw = await rpc.request('session.steer', { session_id: sessionId, text });
       const status = raw && typeof raw === 'object' ? (raw as Record<string, unknown>).status : undefined;
       const accepted = status === undefined || status === 'queued';
-      set({ error: accepted ? undefined : 'Steer rejected — message queued for next turn.' });
+      if (accepted) {
+        set((state) => {
+          // Echo the steered message locally; no WS event carries user messages,
+          // so without this the text only appears after a history refresh.
+          if (state.sessionId !== sessionId) return { error: undefined }; // session switched mid-RPC; don't echo into the wrong chat
+          const echo = { id: nextUserMessageId(), role: 'user' as const, text, createdAt: undefined };
+          const messages = [...state.messages];
+          const last = messages[messages.length - 1];
+          // While streaming, keep the live assistant message last so appendDelta keeps growing it.
+          if (state.streaming && last?.role === 'assistant') messages.splice(messages.length - 1, 0, echo);
+          else messages.push(echo);
+          const next = { error: undefined, messages };
+          persistActiveSession({ ...state, ...next });
+          return next;
+        });
+      } else {
+        set({ error: 'Steer rejected — message queued for next turn.' });
+      }
       return accepted;
     } catch (err) {
       set({ error: userFacingChatError(err, 'Steer failed.') });

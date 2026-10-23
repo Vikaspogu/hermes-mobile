@@ -480,12 +480,12 @@ export function Composer({
           {onOpenVoice && (
             <button
               type="button"
-              className="hm-composer__action hm-composer__action--labeled"
+              className="hm-composer__action"
               onClick={onOpenVoice}
               aria-label="Open voice call"
+              title="Voice call"
             >
               <Icon name="mic" size={19} />
-              <span>Voice</span>
             </button>
           )}
 

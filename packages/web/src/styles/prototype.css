@@ -2519,19 +2519,6 @@ select:focus-visible,
 
 /* Screen styles are imported directly by their owning components. */
 
-/* Voice entry: keep the text label visible (icon-only buttons hide what voice is) */
-.hm-composer__action--labeled {
-  width: auto;
-  padding: 0 12px;
-  gap: 6px;
-  display: inline-flex;
-  align-items: center;
-  font-size: 13px;
-  font-weight: 500;
-  color: var(--hm-color-text-muted);
-}
-.hm-composer__action--labeled span { display: inline; }
-
 /* I.V.A.N brand mark (home header + offline card) */
 .hm-brand {
   display: inline-flex;

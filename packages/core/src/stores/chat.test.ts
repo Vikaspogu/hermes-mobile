@@ -1336,4 +1336,70 @@ describe('useChatStore', () => {
     expect(state.messages).toEqual([]);
     expect(state.streaming).toBe(false);
   });
+
+  it('steer echoes the user message and keeps a streaming assistant last', async () => {
+    useChatStore.setState({
+      sessionId: 's-1',
+      streaming: true,
+      messages: [
+        { id: '1', role: 'user', text: 'first', createdAt: undefined },
+        { id: '2', role: 'assistant', text: 'partial reply', createdAt: undefined },
+      ],
+    });
+    vi.mocked(rpcMock.request).mockResolvedValue({ status: 'queued' });
+    const accepted = await useChatStore.getState().steer(rpcMock, 'steer this');
+    expect(accepted).toBe(true);
+    expect(rpcMock.request).toHaveBeenCalledWith('session.steer', { session_id: 's-1', text: 'steer this' });
+    const messages = useChatStore.getState().messages;
+    expect(messages.map((m) => [m.role, m.text])).toEqual([
+      ['user', 'first'],
+      ['user', 'steer this'],
+      ['assistant', 'partial reply'],
+    ]);
+    // The streaming assistant stays last, so live deltas keep growing it.
+    useChatStore.getState().appendDelta(' continues');
+    expect(useChatStore.getState().messages[2]?.text).toBe('partial reply continues');
+    expect(useChatStore.getState().error).toBeUndefined();
+  });
+
+  it('steer does not echo when rejected', async () => {
+    useChatStore.setState({
+      sessionId: 's-1',
+      messages: [{ id: '1', role: 'user', text: 'hi', createdAt: undefined }],
+    });
+    vi.mocked(rpcMock.request).mockResolvedValue({ status: 'rejected' });
+    const accepted = await useChatStore.getState().steer(rpcMock, 'nope');
+    expect(accepted).toBe(false);
+    expect(useChatStore.getState().messages).toHaveLength(1);
+    expect(useChatStore.getState().error).toContain('Steer rejected');
+  });
+
+  it('steer appends after a completed assistant when not streaming', async () => {
+    useChatStore.setState({
+      sessionId: 's-1',
+      streaming: false,
+      messages: [
+        { id: '1', role: 'user', text: 'first', createdAt: undefined },
+        { id: '2', role: 'assistant', text: 'done reply', createdAt: undefined },
+      ],
+    });
+    vi.mocked(rpcMock.request).mockResolvedValue({ status: 'queued' });
+    await useChatStore.getState().steer(rpcMock, 'follow up');
+    expect(useChatStore.getState().messages.map((m) => [m.role, m.text])).toEqual([
+      ['user', 'first'],
+      ['assistant', 'done reply'],
+      ['user', 'follow up'],
+    ]);
+  });
+
+  it('steer does not echo into a session switched mid-request', async () => {
+    useChatStore.setState({ sessionId: 's-1', messages: [] });
+    vi.mocked(rpcMock.request).mockImplementation(async () => {
+      useChatStore.setState({ sessionId: 's-2', messages: [] });
+      return { status: 'queued' };
+    });
+    const accepted = await useChatStore.getState().steer(rpcMock, 'lost');
+    expect(accepted).toBe(true);
+    expect(useChatStore.getState().messages).toHaveLength(0);
+  });
 });
