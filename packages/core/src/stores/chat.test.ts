@@ -1019,6 +1019,82 @@ describe('useChatStore', () => {
     expect(useChatStore.getState().streaming).toBe(false);
   });
 
+  it('refreshHistory keeps the just-sent echo when the runtime id resolves to a durable alias', async () => {
+    // Regression: send on a fresh chat creates a runtime-only session id. Once
+    // the sessions list picks up the durable row (lineage-matched to the
+    // runtime id), a focus-triggered refresh resolves the alias and must still
+    // merge local messages — dropping them blanks the chat mid-turn.
+    Object.defineProperty(document, 'visibilityState', { configurable: true, value: 'visible' });
+    useSessionsStore.setState({
+      sessions: [{ id: 'durable-new', lineageRootId: 'live-new', title: 'can you add these transa…', updatedAt: 2, messageCount: 0, profile: 'default' }],
+      loading: false,
+      error: undefined,
+      pinnedIds: [],
+    });
+    useChatStore.setState({
+      sessionId: 'live-new',
+      storedSessionId: undefined,
+      messages: [
+        { id: 'user-1', role: 'user', text: 'can you add these transactions', createdAt: undefined },
+        { id: 'asst-1', role: 'assistant', text: '', createdAt: undefined },
+      ],
+      streaming: true,
+      error: undefined,
+    });
+    vi.mocked(restMock.sessionMessages).mockResolvedValue({
+      session_id: 'durable-new',
+      messages: [],
+    });
+
+    await useChatStore.getState().refreshHistory(restMock, 'default');
+
+    expect(restMock.sessionMessages).toHaveBeenCalledWith('durable-new', 'default');
+    expect(useChatStore.getState().storedSessionId).toBe('durable-new');
+    expect(useChatStore.getState().messages.map((m) => `${m.role}:${m.text}`)).toEqual([
+      'user:can you add these transactions',
+      'assistant:',
+    ]);
+    expect(useChatStore.getState().streaming).toBe(false);
+  });
+
+  it('refreshHistory does not merge locals when a durable parent id resolves to a different lineage row', async () => {
+    // Boundary for the echo fix: a stored parent id aliasing to a compression
+    // child must keep server history only — appending the parent's unmatched
+    // locals would duplicate stale messages after the child's history.
+    Object.defineProperty(document, 'visibilityState', { configurable: true, value: 'visible' });
+    useSessionsStore.setState({
+      sessions: [{ id: 'child-2', lineageRootId: 'parent-1', title: 'Continued', updatedAt: 3, messageCount: 1, profile: 'default' }],
+      loading: false,
+      error: undefined,
+      pinnedIds: [],
+    });
+    useChatStore.setState({
+      sessionId: 'live-parent',
+      storedSessionId: 'parent-1',
+      messages: [
+        { id: 'p-user', role: 'user', text: 'old parent question', createdAt: 1 },
+        { id: 'p-asst', role: 'assistant', text: 'old parent answer', createdAt: 2 },
+      ],
+      streaming: true,
+      error: undefined,
+    });
+    vi.mocked(restMock.sessionMessages).mockResolvedValue({
+      session_id: 'child-2',
+      messages: [
+        { id: 'c-sum', role: 'assistant', text: 'Summary of earlier conversation…', created_at: 3 },
+      ],
+    });
+
+    await useChatStore.getState().refreshHistory(restMock, 'default');
+
+    expect(restMock.sessionMessages).toHaveBeenCalledWith('child-2', 'default');
+    expect(useChatStore.getState().storedSessionId).toBe('child-2');
+    expect(useChatStore.getState().messages.map((m) => `${m.role}:${m.text}`)).toEqual([
+      'assistant:Summary of earlier conversation…',
+    ]);
+    expect(useChatStore.getState().streaming).toBe(false);
+  });
+
   it('restore does not open most recent durable session when no active cache exists', async () => {
     vi.mocked(rpcMock.request).mockResolvedValue({ session_id: 'stored-recent' });
 

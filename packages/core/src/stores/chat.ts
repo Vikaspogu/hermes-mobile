@@ -952,12 +952,18 @@ async function openDurableSession(rest: RestClient, rpc: RpcClient, durableSessi
   }
 }
 
-async function refreshDurableHistory(rest: RestClient, durableSessionId: string, localMessages: Message[], profile?: string) {
+async function refreshDurableHistory(rest: RestClient, durableSessionId: string, localMessages: Message[], profile?: string, mergeLocalsOnAlias = false) {
   const openableSessionId = resolveOpenableStoredSessionId(durableSessionId);
   const raw = await rest.sessionMessages(openableSessionId, profile);
   const storedSessionId = storedSessionIdFromMessagesResult(raw, openableSessionId);
   const history = messagesFromResult(raw);
-  const merged = openableSessionId === durableSessionId
+  // Merge locals when the id resolves to itself, or when the caller passed a
+  // runtime-only id (mergeLocalsOnAlias): the alias is then that session's own
+  // durable row, so merging is safe and keeps a just-sent echo. With a durable
+  // parent id the alias may be a different lineage row (compression child),
+  // where appending unmatched locals would duplicate stale messages — keep the
+  // server history only.
+  const merged = openableSessionId === durableSessionId || mergeLocalsOnAlias
     ? mergeHistoryWithLocal(history, localMessages)
     : { messages: history, preservedLocalTail: [] };
   return { storedSessionId, messages: merged.messages };
@@ -1021,7 +1027,9 @@ export const useChatStore = create<ChatStore>((set, get) => ({
     if (!durableSessionId) return;
     const anchor = get();
     try {
-      const refreshed = await refreshDurableHistory(rest, durableSessionId, before.messages, cacheProfile);
+      // !before.storedSessionId means durableSessionId is a runtime-only id, so an
+      // alias can only resolve to this session's own durable row — safe to merge.
+      const refreshed = await refreshDurableHistory(rest, durableSessionId, before.messages, cacheProfile, !before.storedSessionId);
       if (!isSameChatState(get(), anchor)) return;
       const next = {
         storedSessionId: refreshed.storedSessionId,
