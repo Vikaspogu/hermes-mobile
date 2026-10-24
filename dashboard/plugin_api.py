@@ -17,17 +17,14 @@ from fastapi.responses import FileResponse, JSONResponse, RedirectResponse, Resp
 
 router = APIRouter()
 
-_PLUGIN_ROOT = Path(__file__).resolve().parent.parent
-if str(_PLUGIN_ROOT) not in sys.path:
-    sys.path.insert(0, str(_PLUGIN_ROOT))
-
 # Hermes mounts this file via importlib without the plugin dirs on sys.path,
 # so sibling modules (push_common at the plugin root, voice_* here) need the
 # paths appended first — otherwise the whole plugin API fails to import and
 # every /api/plugins/hermes-pwa/* call 404s.
+# _PLUGIN_ROOT must stay a Path: _read_package_version/_read_install_marker use `/`.
 _DASHBOARD_DIR = str(Path(__file__).resolve().parent)
-_PLUGIN_ROOT = str(Path(__file__).resolve().parent.parent)
-for _p in (_DASHBOARD_DIR, _PLUGIN_ROOT):
+_PLUGIN_ROOT = Path(__file__).resolve().parent.parent
+for _p in (_DASHBOARD_DIR, str(_PLUGIN_ROOT)):
     if _p not in sys.path:
         sys.path.insert(0, _p)
 

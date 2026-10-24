@@ -26,5 +26,24 @@ class PluginApiMountTest(unittest.TestCase):
         self.assertEqual(resp.status_code, 401, resp.text)
 
 
+    def test_update_check_and_health_do_not_crash(self):
+        # Regression: PR #5's sys.path fix reassigned _PLUGIN_ROOT from Path to str,
+        # so _read_package_version/_read_install_marker crashed with
+        # "TypeError: unsupported operand type(s) for /: 'str' and 'str'"
+        # and /update/check + /health answered 500 in production.
+        app = FastAPI()
+        app.include_router(m.router, prefix="/api/plugins/hermes-pwa")
+        client = TestClient(app)
+        resp = client.get("/api/plugins/hermes-pwa/health")
+        self.assertEqual(resp.status_code, 200, resp.text)
+        self.assertRegex(resp.json()["version"], r"^\d+\.\d+\.\d+(?:-.+)?$")
+        resp = client.get(
+            "/api/plugins/hermes-pwa/update/check",
+            headers={"Authorization": "Bearer test"},
+        )
+        # 200 when the gateway token guard is absent/disabled, 401 when it rejects
+        # the dummy bearer — both prove the handler no longer crashes with a 500.
+        self.assertIn(resp.status_code, (200, 401), resp.text)
+
 if __name__ == "__main__":
     unittest.main()
