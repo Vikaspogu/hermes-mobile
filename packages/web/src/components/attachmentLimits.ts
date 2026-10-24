@@ -1,6 +1,11 @@
 export const MAX_ATTACHMENT_BYTES = 16 * 1024 * 1024;
 export const MAX_ATTACHMENTS_PER_SELECTION = 5;
 
+/** Upstream image.attach_bytes silently truncates base64 payloads past 600k chars; 450,000 raw bytes is the largest size that fits. */
+export const MAX_IMAGE_ATTACHMENT_BYTES = 450_000;
+export const MAX_IMAGE_ATTACHMENT_MIB = Math.round((MAX_IMAGE_ATTACHMENT_BYTES / (1024 * 1024)) * 100) / 100;
+
+
 const MAX_ATTACHMENT_MIB = Math.floor(MAX_ATTACHMENT_BYTES / (1024 * 1024));
 
 const SAFE_ATTACHMENT_FALLBACK = 'attachment';
@@ -19,8 +24,8 @@ const ALLOWED_ATTACHMENT_MIME_TYPES = new Set([
 
 const ALLOWED_ATTACHMENT_MIME_PREFIXES = ['text/'];
 
-export function attachmentTooLargeMessage(name: string): string {
-  return `${name} is too large to upload (max ${MAX_ATTACHMENT_MIB} MB).`;
+export function attachmentTooLargeMessage(name: string, maxMiB: number = MAX_ATTACHMENT_MIB): string {
+  return `${name} is too large to upload (max ${maxMiB} MB).`;
 }
 
 export function tooManyAttachmentsMessage(): string {

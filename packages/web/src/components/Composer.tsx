@@ -16,6 +16,10 @@ export interface AttachmentDraft {
   id: string;
   name: string;
   path: string;
+  /** Image attachments ride on the session (image.attach_bytes) and are not inlined as @file: refs. */
+  skipRef?: boolean;
+  /** Sanitized basename used for the [Image: …] marker and server-side filename. */
+  markerName?: string;
   uploading?: boolean;
   error?: string;
 }
@@ -137,7 +141,7 @@ interface ComposerProps {
   placeholder?: string;
   messages?: Message[];
   onOpenVoice?: (() => void) | undefined;
-  onUploadFile?: (file: File) => Promise<{ path: string } | string | undefined>;
+  onUploadFile?: (file: File) => Promise<{ path?: string; skipRef?: boolean; markerName?: string } | string | undefined>;
   onLayoutChange?: () => void;
 }
 
@@ -169,7 +173,7 @@ export function Composer({
   const textareaHeightRef = useRef<string>('');
 
   const hasText = text.trim().length > 0;
-  const hasPayload = hasText || attachments.some((a) => !a.uploading && !a.error && a.path);
+  const hasPayload = hasText || attachments.some((a) => !a.uploading && !a.error && (a.path || a.skipRef));
   const slashPaletteOpen = shouldShowSlashPalette(text) && Boolean(slashCommandsRpc) && slashSuppressedText !== text;
 
 
@@ -304,8 +308,11 @@ export function Composer({
 
     const trimmed = text.trim();
     const refs = attachments
-      .filter((a) => !a.uploading && !a.error && a.path)
-      .map((a) => `@file:${a.path}`);
+      .filter((a) => !a.uploading && !a.error)
+      // skipRef images already reached the agent via image.attach_bytes; the marker
+      // keeps the sent image visible in the chat bubble and in durable history.
+      .map((a) => (a.skipRef ? `[Image: ${a.markerName ?? a.name}]` : a.path ? `@file:${a.path}` : ''))
+      .filter(Boolean);
     const finalText = [trimmed, ...refs].filter(Boolean).join('\n\n');
     if (!finalText) return;
     if (busy) {
@@ -376,6 +383,16 @@ export function Composer({
         .map(async ({ file, draft }) => {
           try {
             const result = await onUploadFile(file);
+            if (typeof result === 'object' && result?.skipRef) {
+              setAttachments((prev) =>
+                prev.map((a) =>
+                  a.id === draft.id
+                    ? { ...a, skipRef: true, uploading: false, ...(result.markerName ? { markerName: result.markerName } : {}) }
+                    : a,
+                ),
+              );
+              return;
+            }
             const path = typeof result === 'string' ? result : result?.path;
             if (!path) throw new Error('Upload did not return a path.');
             setAttachments((prev) =>

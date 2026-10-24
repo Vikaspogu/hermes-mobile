@@ -18,6 +18,8 @@ import { Composer } from '../components/Composer';
 import '../styles/screens/thread.css'; // ponytail: prototype.css's trailing @import of screens/*.css is dropped by Vite
 import {
   MAX_ATTACHMENT_BYTES,
+  MAX_IMAGE_ATTACHMENT_BYTES,
+  MAX_IMAGE_ATTACHMENT_MIB,
   attachmentTooLargeMessage,
   isAllowedAttachmentMime,
   safeAttachmentBasename,
@@ -597,8 +599,13 @@ export function Chat({ rpc, rest, onOpenVoice }: ChatProps) {
 
   const handleUploadFile = useCallback(
     async (file: File) => {
-      if (file.size > MAX_ATTACHMENT_BYTES) {
-        throw new Error(attachmentTooLargeMessage(file.name));
+      const isImage = file.type.startsWith('image/');
+      // Upstream image.attach_bytes caps the base64 payload at 600k chars
+      // (450,000 raw bytes) and silently truncates beyond it, so images get a
+      // stricter limit than other attachments.
+      const maxBytes = isImage ? MAX_IMAGE_ATTACHMENT_BYTES : MAX_ATTACHMENT_BYTES;
+      if (file.size > maxBytes) {
+        throw new Error(attachmentTooLargeMessage(file.name, isImage ? MAX_IMAGE_ATTACHMENT_MIB : undefined));
       }
       if (!isAllowedAttachmentMime(file)) {
         throw new Error(unsupportedAttachmentTypeMessage(file.name, file.type));
@@ -611,6 +618,21 @@ export function Chat({ rpc, rest, onOpenVoice }: ChatProps) {
         reader.readAsDataURL(file);
       });
       const { sessionId } = await ensureLiveSession(rpc, profileForSubmit);
+      if (file.type.startsWith('image/')) {
+        // Images attach to the session itself; the server relays them to the model
+        // with the next prompt, so no @file: ref belongs in the submitted text.
+        const commaIndex = dataUrl.indexOf(',');
+        if (commaIndex === -1) throw new Error('Could not read the image data.');
+        const attachResult = await rpc.request<{ attached?: boolean; message?: string }>('image.attach_bytes', {
+          session_id: sessionId,
+          filename: safeName,
+          content_base64: dataUrl.slice(commaIndex + 1),
+        });
+        if (!attachResult.attached) {
+          throw new Error(attachResult.message ?? `Could not attach ${file.name}.`);
+        }
+        return { skipRef: true, markerName: safeName };
+      }
       const result = await rpc.request<{
         path?: string;
         ref_path?: string;

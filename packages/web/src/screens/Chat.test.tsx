@@ -664,6 +664,44 @@ describe('Chat', () => {
     });
   });
 
+  it('routes image attachments through image.attach_bytes and submits an [Image: name] marker', async () => {
+    vi.mocked(rpcMock.request).mockImplementation(async (method: string) => {
+      if (method === 'session.create') return { session_id: 's-1', stored_session_id: 'stored-1' };
+      if (method === 'image.attach_bytes') return { attached: true, path: '/data/attachments/x.jpg', bytes: 3 };
+      if (method === 'session.most_recent') return {};
+      return { status: 'ok' };
+    });
+    const { container } = render(<Chat rpc={rpcMock} rest={restMock} />);
+
+    fireEvent.click(screen.getByRole('button', { name: /Add attachment/i }));
+    const input = container.querySelector('input[type="file"]')!;
+    const file = new File(['img'], 'photo.jpg', { type: 'image/jpeg' });
+    fireEvent.change(input, { target: { files: [file] } });
+
+    await waitFor(() => {
+      expect(rpcMock.request).toHaveBeenCalledWith(
+        'image.attach_bytes',
+        expect.objectContaining({
+          session_id: 's-1',
+          filename: 'photo.jpg',
+          content_base64: 'aW1n',
+        }),
+      );
+    });
+    expect(rpcMock.request).not.toHaveBeenCalledWith('file.attach', expect.anything());
+    expect(screen.getByText('photo.jpg')).toBeInTheDocument();
+
+    fireEvent.change(screen.getByPlaceholderText(/Reply or steer/i), { target: { value: 'what is this?' } });
+    fireEvent.click(screen.getByRole('button', { name: /Send/i }));
+    await waitFor(() => {
+      expect(rpcMock.request).toHaveBeenCalledWith(
+        'prompt.submit',
+        { session_id: 's-1', text: 'what is this?\n\n[Image: photo.jpg]' },
+        { timeoutMs: 90_000 },
+      );
+    });
+  });
+
   it('sanitizes attachment names before file.attach', async () => {
     vi.mocked(rpcMock.request).mockImplementation(async (method: string) => {
       if (method === 'session.create') return { session_id: 's-1', stored_session_id: 'stored-1' };

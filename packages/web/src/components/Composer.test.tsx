@@ -156,6 +156,27 @@ describe('Composer', () => {
     expect(onSend).toHaveBeenCalledWith('@file:.hermes/desktop-attachments/note.txt');
   });
 
+  it('enables send for an image-only attachment (skipRef, no text)', async () => {
+    const onSend = vi.fn();
+    const onUploadFile = vi.fn(async () => ({ skipRef: true, markerName: 'photo.jpg' }));
+    const { container } = render(
+      <Composer onSend={onSend} onStop={vi.fn()} busy={false} onUploadFile={onUploadFile} />,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: /Add attachment/i }));
+    const input = container.querySelector('input[type="file"]')!;
+    const file = new File(['fake-image-bytes'], 'photo.jpg', { type: 'image/jpeg' });
+    fireEvent.change(input, { target: { files: [file] } });
+
+    await waitFor(() => expect(onUploadFile).toHaveBeenCalledWith(file));
+    await waitFor(() => expect(screen.getByText('photo.jpg')).toBeInTheDocument());
+
+    const send = screen.getByRole('button', { name: /Send/i });
+    expect(send).not.toBeDisabled();
+    fireEvent.click(send);
+    expect(onSend).toHaveBeenCalledWith('[Image: photo.jpg]');
+  });
+
   it('rejects oversized files before upload', async () => {
     const onUploadFile = vi.fn(async () => ({ path: '.hermes/desktop-attachments/huge.csv' }));
     const { container } = render(

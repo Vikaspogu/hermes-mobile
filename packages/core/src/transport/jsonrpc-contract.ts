@@ -52,6 +52,12 @@ export interface FileAttachParams extends SessionIdParams {
   data_url?: string;
   name?: string;
 }
+export interface ImageAttachBytesParams extends SessionIdParams {
+  filename?: string;
+  /** Base64 payload only — no data: URL prefix (matches upstream tui_gateway.server). */
+  content_base64: string;
+}
+
 
 // ---------------------------------------------------------------------------
 // Responses
@@ -99,6 +105,14 @@ export interface FileAttachResult {
   ref_path?: string;
   ref_text?: string;
   uploaded?: boolean;
+}
+
+export interface ImageAttachBytesResult {
+  attached?: boolean;
+  path?: string;
+  bytes?: number;
+  text?: string;
+  message?: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -207,6 +221,7 @@ export interface RpcContract {
 
   'prompt.submit'(params: PromptSubmitParams): Promise<PromptSubmitResult>;
   'file.attach'(params: FileAttachParams): Promise<FileAttachResult>;
+  'image.attach_bytes'(params: ImageAttachBytesParams): Promise<ImageAttachBytesResult>;
 
   'approval.respond'(params: ApprovalRespondParams): Promise<Record<string, unknown>>;
   'clarify.respond'(params: ClarifyRespondParams): Promise<Record<string, unknown>>;
