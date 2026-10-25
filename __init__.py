@@ -20,7 +20,6 @@ logger = logging.getLogger(__name__)
 _PWA_TURN_COMPLETE_PLATFORMS = {"tui", "pwa", "desktop", "web"}
 _APPROVAL_PUSH_TTL_SECONDS = 10 * 60
 _TURN_COMPLETE_TTL_SECONDS = 6 * 60 * 60
-_TURN_COMPLETE_SESSION_COOLDOWN_SECONDS = 90
 _CRON_COMPLETE_TTL_SECONDS = 6 * 60 * 60
 # Upstream cron session ids: cron_<job_id>_<YYYYmmdd_HHMMSS> (cron/scheduler.py run_job).
 _CRON_SESSION_RE = re.compile(r"^cron_([0-9A-Za-z]+)_\d{8}_\d{6}$")
@@ -149,19 +148,6 @@ def _on_post_llm_call(**kwargs: Any) -> None:
         payload = turn_complete_push_payload(**{**kwargs, "profile": profile})
         dedupe_key = str(payload.get("dedupe_key") or "")
         if not claim_push_dedupe(dedupe_key, ttl_seconds=_TURN_COMPLETE_TTL_SECONDS):
-            return
-        session_cooldown_key = ":".join(
-            part for part in ("turn-session", profile, str(payload.get("tag") or "")) if part
-        )
-        if not claim_push_dedupe(
-            session_cooldown_key,
-            ttl_seconds=_TURN_COMPLETE_SESSION_COOLDOWN_SECONDS,
-        ):
-            logger.debug(
-                "Hermes PWA turn-complete push suppressed by session cooldown: tag=%s profile=%s",
-                payload.get("tag"),
-                profile,
-            )
             return
         sent = send_web_push_to_enabled(payload, profile=profile)
         logger.debug(

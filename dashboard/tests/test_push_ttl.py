@@ -19,6 +19,7 @@ class PushTtlTest(unittest.TestCase):
         ):
             push_common.send_web_push_record({"endpoint": "https://push.example/x", "keys": {"p256dh": "a", "auth": "b"}}, {})
         self.assertGreater(send.call_args.kwargs["ttl"], 0)
+        self.assertEqual(send.call_args.kwargs["headers"].get("Urgency"), "high")
 
 
 if __name__ == "__main__":

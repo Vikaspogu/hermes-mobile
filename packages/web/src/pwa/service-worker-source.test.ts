@@ -59,6 +59,7 @@ describe('service worker source', () => {
     expect(serviceWorkerSource).toContain("data.url.startsWith('./')");
     expect(serviceWorkerSource).toContain("'./index.html'");
     expect(serviceWorkerSource).toContain("requireInteraction: data.type === 'approval.request'");
+    expect(serviceWorkerSource).toContain('renotify: true');
   });
 
   it('routes notification clicks to existing PWA clients or opens a safe app window', () => {

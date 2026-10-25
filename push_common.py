@@ -438,6 +438,7 @@ def send_web_push_record(record: dict[str, Any], payload: dict[str, Any]) -> Non
         vapid_claims={"sub": vapid_subject()},
         # pywebpush defaults TTL to 0: the push service drops the message if the phone is asleep.
         ttl=_PUSH_TTL_SECONDS,
+        headers={"Urgency": "high"},
     )
 
 

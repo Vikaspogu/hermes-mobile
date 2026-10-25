@@ -93,6 +93,7 @@ function safeNotificationPayload(event) {
     options: {
       body: body.slice(0, 180),
       tag,
+      renotify: true,
       data: { url },
       icon: './icons/icon-192.png',
       badge: './icons/icon-192.png',
