@@ -97,6 +97,43 @@ describe('AppShell', () => {
     expect(screen.getByRole('heading', { name: 'Chats' })).toBeInTheDocument();
   });
 
+  it('restarts forward and back transitions without remounting the tab bar', async () => {
+    render(<AppShell connectionState="connected" rpc={rpcMock} rest={restMock} />);
+    const initialMain = screen.getByRole('main');
+    const tabs = screen.getByRole('navigation', { name: 'Primary' });
+    expect(initialMain).not.toHaveClass('hm-screen-enter-forward');
+
+    fireEvent.click(screen.getByRole('button', { name: 'More' }));
+    expect(screen.getByRole('main')).toBe(initialMain);
+    fireEvent.click(within(screen.getByRole('dialog', { name: 'More' })).getByRole('button', { name: /Settings/ }));
+    const forwardMain = screen.getByRole('main');
+    expect(forwardMain).toHaveClass('hm-screen-enter-forward');
+    expect(forwardMain).not.toBe(initialMain);
+    await screen.findByRole('heading', { name: 'Settings' });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Back to Chats' }));
+    await waitFor(() => expect(screen.getByRole('main')).toHaveClass('hm-screen-enter-back'));
+    const backMain = screen.getByRole('main');
+    expect(backMain).not.toBe(forwardMain);
+    expect(screen.getByRole('navigation', { name: 'Primary' })).toBe(tabs);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Inbox' }));
+    expect(screen.getByRole('main')).toHaveClass('hm-screen-enter-forward');
+    expect(screen.getByRole('main')).not.toBe(backMain);
+  });
+
+  it('keeps the current screen mounted when a back press dismisses the More sheet', async () => {
+    window.localStorage.setItem('hermes-mobile-screen', 'settings');
+    render(<AppShell connectionState="connected" rpc={rpcMock} rest={restMock} />);
+    await screen.findByRole('heading', { name: 'Settings' });
+    const main = screen.getByRole('main');
+    fireEvent.click(screen.getByRole('button', { name: 'More' }));
+    fireEvent.popState(window);
+    await waitFor(() => expect(screen.getByRole('button', { name: 'More' })).toHaveAttribute('aria-expanded', 'false'));
+    expect(screen.getByRole('main')).toBe(main);
+    expect(main).not.toHaveClass('hm-screen-enter-back');
+  });
+
   it('header back button works after a cold-start restore into a thread', async () => {
     // Cold start straight into a restored chat: the fresh document has one
     // history entry, so without the mount-time history rebuild the back

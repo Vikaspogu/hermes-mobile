@@ -1,13 +1,17 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import type { RpcClient } from '@hermes-pwa/core';
 import { Composer } from './Composer';
+import { haptic } from '../pwa/haptics';
+
 import {
   MAX_ATTACHMENTS_PER_SELECTION,
   MAX_ATTACHMENT_BYTES,
   attachmentTooLargeMessage,
   unsupportedAttachmentTypeMessage,
 } from './attachmentLimits';
+
+vi.mock('../pwa/haptics', () => ({ haptic: vi.fn() }));
 
 function makeRpc(result: unknown): RpcClient {
   return {
@@ -29,10 +33,22 @@ function makeSizedFile(name: string, size: number): File {
 }
 
 describe('Composer', () => {
+  beforeEach(() => {
+    vi.mocked(haptic).mockClear();
+  });
+
   it('renders input and send button', () => {
     render(<Composer onSend={vi.fn()} onStop={vi.fn()} busy={false} />);
     expect(screen.getByPlaceholderText(/Message Hermes/i)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Send/i })).toBeInTheDocument();
+  });
+
+  it('keeps both idle placeholder lines visible', () => {
+    const placeholder = 'Ask Hermes anything\nAttach a file to get started';
+    render(<Composer onSend={vi.fn()} onStop={vi.fn()} busy={false} placeholder={placeholder} />);
+    expect(screen.getByLabelText('Message input')).toHaveAttribute('rows', '2');
+    fireEvent.change(screen.getByLabelText('Message input'), { target: { value: 'hello' } });
+    expect(screen.getByLabelText('Message input')).toHaveAttribute('rows', '1');
   });
 
   it('calls onSend with trimmed text', () => {
@@ -41,6 +57,8 @@ describe('Composer', () => {
     fireEvent.change(screen.getByPlaceholderText(/Message Hermes/i), { target: { value: '  hello  ' } });
     fireEvent.click(screen.getByRole('button', { name: /Send/i }));
     expect(onSend).toHaveBeenCalledWith('hello');
+    expect(haptic).toHaveBeenCalledTimes(1);
+    expect(haptic).toHaveBeenCalledWith('tap');
   });
 
   it('does not send when input is empty', () => {
@@ -48,6 +66,7 @@ describe('Composer', () => {
     render(<Composer onSend={onSend} onStop={vi.fn()} busy={false} />);
     fireEvent.click(screen.getByRole('button', { name: /Send/i }));
     expect(onSend).not.toHaveBeenCalled();
+    expect(haptic).not.toHaveBeenCalled();
   });
 
   it('shows stop button when busy', () => {
@@ -60,6 +79,8 @@ describe('Composer', () => {
     render(<Composer onSend={vi.fn()} onStop={onStop} busy={true} />);
     fireEvent.click(screen.getByRole('button', { name: /Stop/i }));
     expect(onStop).toHaveBeenCalled();
+    expect(haptic).toHaveBeenCalledTimes(1);
+    expect(haptic).toHaveBeenCalledWith('tap');
   });
 
   it('submits on enter via form', () => {
@@ -126,6 +147,8 @@ describe('Composer', () => {
 
     fireEvent.click(screen.getByRole('button', { name: /Add attachment/i }));
 
+    expect(haptic).toHaveBeenCalledTimes(1);
+    expect(haptic).toHaveBeenCalledWith('tap');
     expect(screen.getByRole('menuitem', { name: /File/i })).toBeInTheDocument();
     expect(screen.queryByText(/Take photo/i)).not.toBeInTheDocument();
     expect(screen.queryByText(/Photo or video/i)).not.toBeInTheDocument();
@@ -135,6 +158,14 @@ describe('Composer', () => {
     expect(input).toHaveAttribute('multiple');
     expect(input).not.toHaveAttribute('accept');
     expect(input).not.toHaveAttribute('capture');
+  });
+
+  it('opens the same attachment menu from the screenshot file control', () => {
+    render(<Composer onSend={vi.fn()} onStop={vi.fn()} busy={false} onUploadFile={vi.fn()} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Attach file' }));
+    expect(screen.getByRole('menuitem', { name: 'File' })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Close attachment menu' }));
+    expect(screen.queryByRole('menuitem', { name: 'File' })).not.toBeInTheDocument();
   });
 
   it('uploads a selected file and submits the returned file reference', async () => {

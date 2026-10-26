@@ -73,9 +73,11 @@ export function ToolGroup({ tools, rpc, streaming }: ToolGroupProps) {
         <span className="hm-tool-group__header-icon">
           <Icon name="settings" size={12} />
         </span>
-        <span className="hm-tool-group__header-title">Tool actions</span>
-        <span className="hm-tool-group__header-meta">
-          {tools.length} {tools.length === 1 ? 'step' : 'steps'} · {stateLabel}
+        <span className="hm-tool-group__header-text">
+          <span className="hm-tool-group__header-meta">
+            {tools.length} {tools.length === 1 ? 'step' : 'steps'} · {stateLabel}
+          </span>
+          <span className="hm-tool-group__header-title">Tool actions</span>
         </span>
         {runningCount > 0 && <span className="hm-tool-group__header-running" aria-label="running" />}
         <span className="hm-tool-group__chevron" aria-hidden="true">›</span>

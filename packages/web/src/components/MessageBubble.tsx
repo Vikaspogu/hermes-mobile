@@ -1,10 +1,14 @@
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { memo, useState } from 'react';
+import { memo, useEffect, useRef, useState } from 'react';
 import type { Approval, Message, ToolCall } from '@hermes-pwa/core';
 import { ToolGroup } from './ToolGroup';
 import { TodoPanel } from './TodoPanel';
 import { ThinkingDisclosure } from './ThinkingDisclosure';
+import { Icon } from './Icon';
+import { copyText } from '../pwa/copy-text';
+import { haptic } from '../pwa/haptics';
+import '../styles/message-feed.css';
 import {
   MARKDOWN_COMPONENTS,
   areMessageBubblePropsEqual,
@@ -15,17 +19,56 @@ import {
 const USER_CLAMP_CHARS = 400;
 const USER_CLAMP_LINES = 6;
 
-function UserMessage({ text }: { text: string }) {
+function MessageMeta({ message }: { message: Message }) {
+  const [copyState, setCopyState] = useState<'idle' | 'copied' | 'failed'>('idle');
+  const resetTimer = useRef<number>();
+  useEffect(() => () => window.clearTimeout(resetTimer.current), []);
+  const timestamp = message.createdAt;
+  const date = typeof timestamp === 'number' && Number.isFinite(timestamp)
+    ? new Date(timestamp < 1_000_000_000_000 ? timestamp * 1000 : timestamp)
+    : undefined;
+  const validDate = date && Number.isFinite(date.getTime()) ? date : undefined;
+  return (
+    <div className="hm-message__meta">
+      {validDate && <time dateTime={validDate.toISOString()}>{validDate.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}</time>}
+      <button
+        type="button"
+        className="hm-message__copy"
+        aria-label={copyState === 'copied' ? 'Message copied' : 'Copy message'}
+        onClick={async () => {
+          haptic('tap');
+          try {
+            await copyText(message.text);
+            setCopyState('copied');
+          } catch {
+            setCopyState('failed');
+          }
+          window.clearTimeout(resetTimer.current);
+          resetTimer.current = window.setTimeout(() => setCopyState('idle'), 1500);
+        }}
+      >
+        <Icon name={copyState === 'copied' ? 'check' : 'copy'} size={14} />
+      </button>
+      {copyState === 'failed' && <span role="status">Could not copy. Select the message text to copy it.</span>}
+    </div>
+  );
+}
+
+function UserMessage({ message }: { message: Message }) {
+  const text = message.text;
   const [expanded, setExpanded] = useState(false);
   const long = text.length > USER_CLAMP_CHARS || text.split('\n').length > USER_CLAMP_LINES;
   return (
     <div className="hm-message hm-message--user">
+      <div className="hm-message__bubble">
       <p className={long && !expanded ? 'hm-message__clamp' : undefined}>{text}</p>
       {long && (
         <button type="button" className="hm-message__more" aria-expanded={expanded} onClick={() => setExpanded((v) => !v)}>
           {expanded ? 'Show less' : 'Show more'}
         </button>
       )}
+      </div>
+      <MessageMeta message={message} />
     </div>
   );
 }
@@ -113,7 +156,7 @@ function MessageBubbleView({
   const isUser = message.role === 'user';
 
   if (isUser) {
-    return <UserMessage text={message.text} />;
+    return <UserMessage message={message} />;
   }
 
   const active = Boolean(streaming && isLast !== false);
@@ -135,7 +178,7 @@ function MessageBubbleView({
   const actionsOnly = hasActions && !message.text && !active;
 
   return (
-    <div className={`hm-message hm-message--assistant${actionsOnly ? ' hm-message--actions-only' : ''}`}>
+    <div className={`hm-message hm-message--assistant${active ? ' hm-message--tail' : ''}${actionsOnly ? ' hm-message--actions-only' : ''}`}>
       {active && (
         <div className="hm-message__header">
           <span className="hm-message__avatar">
@@ -202,6 +245,7 @@ function MessageBubbleView({
           {showCaret && <span className="hm-message__caret" />}
         </div>
       ) : null}
+      {!active && !silent && message.text && <MessageMeta message={message} />}
     </div>
   );
 }

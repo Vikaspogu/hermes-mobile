@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { haptic } from '../pwa/haptics';
 import type { Approval, RpcClient } from '@hermes-pwa/core';
 import { useActivityStore } from '@hermes-pwa/core';
 import { SlideToApprove } from './SlideToApprove';
@@ -39,6 +40,7 @@ export function ApprovalDock({ rpc, approval, sessionTitle, cwd, fallbackSession
       );
       if (!ok) return;
     }
+    haptic('confirm');
     setSubmitting(choice);
     setMoreOpen(false);
     try {

@@ -5,6 +5,7 @@ import { ApprovalCard } from '../components/ApprovalCard';
 import { ClarifyCard } from '../components/ClarifyCard';
 // ponytail: prototype.css's trailing @import of screens/*.css is dropped by Vite
 import '../styles/screens/inbox.css';
+import '../styles/approval-loading.css';
 
 interface ApprovalsScreenProps {
   rpc: RpcClient;
@@ -137,7 +138,13 @@ export function ApprovalsScreen({ rpc, rest }: ApprovalsScreenProps) {
     <div className="hm-inbox hm-scroll">
       {error && <div className="hm-warning-banner hm-warning-banner--error">{error}</div>}
 
-      {loading && items.length === 0 && <p className="hm-muted hm-loading">Loading…</p>}
+      {loading && items.length === 0 && (
+        <div className="hm-inbox__loading" role="status" aria-label="Loading approvals">
+          <span className="hm-inbox__skeleton" aria-hidden="true" />
+          <span className="hm-inbox__skeleton" aria-hidden="true" />
+          <span className="hm-inbox__skeleton" aria-hidden="true" />
+        </div>
+      )}
 
       {rest && <PaperlessCard rest={rest} />}
 

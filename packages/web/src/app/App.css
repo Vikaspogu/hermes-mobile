@@ -1141,8 +1141,14 @@ a {
   color: var(--hm-color-text);
 }
 
+.hm-tool-group__header-text {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: var(--hm-space-1);
+}
+
 .hm-tool-group__header-meta {
-  margin-left: auto;
   font-size: 11px;
   text-transform: lowercase;
 }
@@ -1492,7 +1498,7 @@ a {
 }
 
 /* Composer */
-.hm-composer {
+.hm-chat .hm-composer {
   position: relative;
   flex: 0 0 auto;
   z-index: 30;
@@ -1500,9 +1506,9 @@ a {
   flex-direction: column;
   gap: 6px;
   padding: 6px 10px max(10px, env(safe-area-inset-bottom));
-  background: var(--hm-color-surface);
-  border-top: 1px solid var(--hm-color-border);
-  box-shadow: 0 -10px 28px rgba(15, 23, 42, 0.06);
+  background: transparent;
+  border-top: 0;
+  box-shadow: none;
 }
 
 .hm-attach-overlay {
@@ -1625,20 +1631,48 @@ a {
   cursor: pointer;
 }
 
-.hm-composer__pill {
-  display: flex;
+.hm-composer .hm-composer__pill {
+  display: grid;
+  grid-template-columns: var(--hm-tap-min) 1fr auto;
   align-items: flex-end;
   gap: 6px;
   width: 100%;
+  padding: var(--hm-space-2);
+  border: 1px solid var(--hm-color-border);
+  border-radius: 24px;
+  background: var(--hm-color-surface-2);
+  box-shadow: none;
 }
 
-.hm-composer textarea {
+.hm-composer .hm-composer__pill svg { color: currentColor; }
+
+.hm-composer__model {
+  grid-column: 1 / -1;
+  justify-self: start;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  padding: 3px 9px;
+  border-radius: var(--hm-radius-full);
+  color: var(--hm-color-text-muted);
+  font-size: var(--hm-fs-label);
+}
+
+.hm-composer__pill > .hm-composer__action { grid-column: 1; }
+.hm-composer__toolbar { grid-column: 3; display: flex; gap: 6px; }
+
+.hm-chat .hm-composer textarea {
+  grid-column: 1 / -1;
+  grid-row: 2;
+  width: 100%;
+  min-width: 0;
   flex: 1;
   box-sizing: border-box;
   min-height: var(--hm-tap-min);
-  max-height: 96px;
+  max-height: 50dvh;
   resize: none;
-  padding: 7px 0;
+  padding: 7px 8px;
   border: 0;
   border-radius: 0;
   background: transparent;
@@ -1648,9 +1682,13 @@ a {
   line-height: 1.25;
 }
 
-.hm-composer textarea:focus {
-  outline: 0;
+.hm-chat .hm-composer textarea:focus {
+  outline: 2px solid var(--hm-color-primary);
+  outline-offset: 2px;
+  border-radius: var(--hm-radius-sm);
 }
+
+.hm-chat .hm-composer textarea::placeholder { color: var(--hm-color-text-muted); white-space: pre-line; }
 
 .hm-composer textarea:disabled {
   opacity: 0.7;
@@ -1677,9 +1715,9 @@ a {
   flex-shrink: 0;
   width: var(--hm-tap-min);
   height: var(--hm-tap-min);
-  border: 1px solid var(--hm-color-border);
+  border: 0;
   border-radius: 50%;
-  background: var(--hm-color-surface);
+  background: transparent;
   color: var(--hm-color-text-2);
   cursor: pointer;
   transition: background var(--hm-duration-fast), color var(--hm-duration-fast), border-color var(--hm-duration-fast);

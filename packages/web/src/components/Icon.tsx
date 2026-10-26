@@ -5,6 +5,7 @@ export type IconName =
   | 'home'
   | 'chat'
   | 'check'
+  | 'copy'
   | 'sessions'
   | 'profiles'
   | 'kanban'
@@ -52,6 +53,7 @@ const ICONS: Record<IconName, IconPart[]> = {
   home: ['M3 10.6 12 3l9 7.6', 'M5.4 9.4V20h13.2V9.4'],
   chat: ['M3 5.5a1.5 1.5 0 0 1 1.5-1.5h15A1.5 1.5 0 0 1 21 5.5v9A1.5 1.5 0 0 1 19.5 16H9l-5 4z'],
   check: [['circle', { cx: 12, cy: 12, r: 9 }], 'M8.3 12.3l2.4 2.4 4.8-5.2'],
+  copy: [['rect', { x: 8, y: 8, width: 12, height: 12, rx: 2 }], 'M16 8V4H4v12h4'],
   sessions: ['M12 3 3 7.5l9 4.5 9-4.5z', 'M3 12l9 4.5 9-4.5', 'M3 16.5l9 4.5 9-4.5'],
   profiles: [
     ['circle', { cx: 9, cy: 8, r: 3 }],

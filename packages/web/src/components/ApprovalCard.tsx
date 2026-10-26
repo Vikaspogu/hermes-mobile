@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { haptic } from '../pwa/haptics';
 import type { Approval } from '@hermes-pwa/core';
 import { Icon } from './Icon';
 
@@ -27,6 +28,7 @@ export function ApprovalCard({ item, onRespond }: ApprovalCardProps) {
 
   function respond(choice: ApprovalChoice) {
     if (busy) return;
+    haptic('confirm');
     setSubmitting(choice);
     onRespond(item.id, choice);
   }

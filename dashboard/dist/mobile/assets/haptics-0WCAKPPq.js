@@ -1,0 +1,1 @@
+function t(e){try{if(typeof navigator>"u"||typeof navigator.vibrate!="function"||typeof window<"u"&&window.matchMedia&&(window.matchMedia("(prefers-reduced-motion: reduce)").matches||!window.matchMedia("(pointer: coarse)").matches))return;navigator.vibrate(e==="tap"?10:e==="confirm"?[10,40,10]:20)}catch{}}export{t as h};

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { MessageBubble } from './MessageBubble';
 import { areMessageBubblePropsEqual } from './MessageBubble.helpers';
 import { useActivityStore, useChatStore, type Approval, type RpcClient } from '@hermes-pwa/core';
@@ -43,6 +43,47 @@ describe('MessageBubble', () => {
   it('renders user message', () => {
     render(<MessageBubble rpc={rpcMock} message={{ id: '1', role: 'user', text: 'Hello', createdAt: undefined }} />);
     expect(screen.getByText('Hello')).toBeInTheDocument();
+  });
+
+  it('copies the complete prompt and shows the supplied message timestamp', async () => {
+    const original = Object.getOwnPropertyDescriptor(navigator, 'clipboard');
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText } });
+    try {
+      const text = 'Full prompt '.repeat(80);
+      const { container } = render(<MessageBubble rpc={rpcMock} message={{ id: 'copy-user', role: 'user', text, createdAt: 1_700_000_000 }} />);
+      expect(container.querySelector('time')).toHaveAttribute('datetime', '2023-11-14T22:13:20.000Z');
+      fireEvent.click(screen.getByRole('button', { name: 'Copy message' }));
+      await screen.findByRole('button', { name: 'Message copied' });
+      expect(writeText).toHaveBeenCalledWith(text);
+    } finally {
+      if (original) Object.defineProperty(navigator, 'clipboard', original);
+      else Reflect.deleteProperty(navigator, 'clipboard');
+    }
+  });
+
+  it('reports clipboard failure without claiming the message was copied', async () => {
+    const original = Object.getOwnPropertyDescriptor(navigator, 'clipboard');
+    Object.defineProperty(navigator, 'clipboard', { configurable: true, value: undefined });
+    try {
+      render(<MessageBubble rpc={rpcMock} message={{ id: 'copy-error', role: 'assistant', text: 'Answer', createdAt: undefined }} />);
+      fireEvent.click(screen.getByRole('button', { name: 'Copy message' }));
+      await waitFor(() => expect(screen.getByRole('status')).toHaveTextContent('Could not copy'));
+      expect(screen.queryByRole('button', { name: 'Message copied' })).not.toBeInTheDocument();
+    } finally {
+      if (original) Object.defineProperty(navigator, 'clipboard', original);
+      else Reflect.deleteProperty(navigator, 'clipboard');
+    }
+  });
+
+  it('keeps only the live assistant tail outside message containment', () => {
+    const message = { id: 'tail', role: 'assistant' as const, text: 'Streaming answer', createdAt: undefined };
+    const { container, rerender } = render(<MessageBubble rpc={rpcMock} message={message} streaming isLast />);
+    expect(container.querySelector('.hm-message')).toHaveClass('hm-message--tail');
+    expect(screen.queryByRole('button', { name: 'Copy message' })).not.toBeInTheDocument();
+    rerender(<MessageBubble rpc={rpcMock} message={message} streaming isLast={false} />);
+    expect(container.querySelector('.hm-message')).not.toHaveClass('hm-message--tail');
+    expect(screen.getByRole('button', { name: 'Copy message' })).toBeInTheDocument();
   });
 
   it('renders assistant message with markdown', () => {

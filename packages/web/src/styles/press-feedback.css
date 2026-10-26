@@ -1,0 +1,42 @@
+:is(
+  .hm-iconbtn,
+  .hm-btn,
+  .hm-tab,
+  .hm-session-row__open,
+  .hm-row-action,
+  .hm-set-row--link,
+  .hm-composer__action,
+  .hm-composer__send,
+  .hm-composer__stop,
+  .hm-composer__chip-remove,
+  .hm-approval-inline__actions button,
+  .hm-approval-dock__menu button
+):not(:disabled):not([aria-disabled='true']):active {
+  opacity: 0.65;
+}
+
+.hm-composer__chip-remove,
+.hm-approval-inline__actions button,
+.hm-approval-dock__menu button {
+  min-width: var(--hm-tap-min);
+  min-height: var(--hm-tap-min);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :is(
+    .hm-iconbtn,
+    .hm-btn,
+    .hm-tab,
+    .hm-session-row__open,
+    .hm-row-action,
+    .hm-set-row--link,
+    .hm-composer__action,
+    .hm-composer__send,
+    .hm-composer__stop,
+    .hm-composer__chip-remove,
+    .hm-approval-inline__actions button,
+    .hm-approval-dock__menu button
+  ) {
+    transition: none;
+  }
+}

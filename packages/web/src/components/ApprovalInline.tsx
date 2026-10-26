@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { haptic } from '../pwa/haptics';
 import type { RpcClient, Approval, ToolCall } from '@hermes-pwa/core';
 import { useActivityStore, useChatStore } from '@hermes-pwa/core';
 import { Icon } from './Icon';
@@ -93,6 +94,7 @@ export function ApprovalInline({ rpc, toolName, tool }: ApprovalInlineProps) {
       );
       if (!ok) return;
     }
+    haptic('confirm');
     setSubmitting(choice);
     try {
       await respondApproval(

@@ -3,6 +3,7 @@ import type { Message, RpcClient } from '@hermes-pwa/core';
 import { Icon } from './Icon';
 import { AttachMenu } from './AttachMenu';
 import { registerBackLayer } from '../lib/backLayers';
+import { haptic } from '../pwa/haptics';
 import {
   MAX_ATTACHMENT_BYTES,
   MAX_ATTACHMENTS_PER_SELECTION,
@@ -139,6 +140,7 @@ interface ComposerProps {
   onStop: () => void;
   busy: boolean;
   placeholder?: string;
+  modelLabel?: string | undefined;
   messages?: Message[];
   onOpenVoice?: (() => void) | undefined;
   onUploadFile?: (file: File) => Promise<{ path?: string; skipRef?: boolean; markerName?: string } | string | undefined>;
@@ -157,6 +159,7 @@ export function Composer({
   onStop,
   busy,
   placeholder = 'Message Hermes…',
+  modelLabel,
   onOpenVoice,
   onUploadFile,
   onLayoutChange,
@@ -193,7 +196,7 @@ export function Composer({
 
   useEffect(() => {
     resize();
-  }, [text, resize]);
+  }, [text, placeholder, resize]);
 
   // Re-clamp when the viewport changes (device rotation, on-screen keyboard).
   useEffect(() => {
@@ -317,8 +320,10 @@ export function Composer({
     if (!finalText) return;
     if (busy) {
       if (!onSteer) return;
+      haptic('tap');
       onSteer(finalText);
     } else {
+      haptic('tap');
       onSend(finalText);
     }
     setText('');
@@ -474,10 +479,14 @@ export function Composer({
       )}
 
       <div className="hm-composer__pill">
+        {modelLabel && <span className="hm-composer__model">{modelLabel}</span>}
           <button
             type="button"
             className="hm-composer__action"
-            onClick={() => setAttachMenuOpen((v) => !v)}
+            onClick={() => {
+              haptic('tap');
+              setAttachMenuOpen((v) => !v);
+            }}
             disabled={!onUploadFile}
             aria-label="Add attachment"
           >
@@ -499,10 +508,19 @@ export function Composer({
           onBlur={handleTextareaBlur}
           placeholder={placeholder}
           aria-label="Message input"
-          rows={1}
+          rows={text ? 1 : placeholder.split('\n').length}
         />
 
         <div className="hm-composer__toolbar">
+
+          {onUploadFile && (
+            <button type="button" className="hm-composer__action" aria-label="Attach file" onClick={() => {
+              haptic('tap');
+              setAttachMenuOpen((v) => !v);
+            }}>
+              <Icon name="file" size={19} />
+            </button>
+          )}
 
           {onOpenVoice && (
             <button
@@ -520,7 +538,10 @@ export function Composer({
             <button
               type="button"
               className="hm-composer__stop"
-              onClick={onStop}
+              onClick={() => {
+                haptic('tap');
+                onStop();
+              }}
               aria-label="Stop generating"
             >
               <Icon name="close" size={16} />
@@ -532,7 +553,7 @@ export function Composer({
               disabled={!hasPayload || (busy && !onSteer)}
               aria-label={busy ? busySubmitLabel : 'Send message'}
             >
-              <Icon name="messaging" size={19} />
+              <Icon name="arrowUp" size={19} />
             </button>
           )}
         </div>
