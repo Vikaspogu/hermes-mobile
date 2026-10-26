@@ -550,7 +550,7 @@ export function AppShell({ connectionState, rpc, rest, onRetry, connectionError 
   return (
     <div className="hm-app-shell">
       {/* ── Header ───────────────────────────────────────────────── */}
-      <header className="hm-header" data-testid="app-header">
+      <header className={`hm-header${navStack.length > 1 ? ' hm-header--sub' : ''}`} data-testid="app-header">
         {navStack.length > 1 && (
           <button
             type="button"

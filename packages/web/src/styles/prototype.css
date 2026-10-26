@@ -109,7 +109,32 @@ textarea {
   margin: 0;
 }
 
+/* Ghost chevron back button — no box, keeps the 44px tap target. */
+.hm-header__back {
+  width: var(--hm-tap-min);
+  height: var(--hm-tap-min);
+  flex-shrink: 0;
+  border: none;
+  background: transparent;
+  color: var(--hm-color-text);
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  cursor: pointer;
+}
+
+/* On sub-screens the title sits next to the chevron, left-aligned. */
+.hm-header--sub .hm-header__title {
+  position: static;
+  transform: none;
+  max-width: none;
+  flex: 1;
+  min-width: 0;
+  text-align: left;
+}
+
 .hm-header__status {
+  margin-left: auto; /* the absolute-centered title leaves this the only flex item */
   flex-shrink: 0;
   display: flex;
   align-items: center;

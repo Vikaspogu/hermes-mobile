@@ -246,12 +246,12 @@ a {
 }
 
 .hm-badge--pass {
-  background: var(--hm-color-success-bg);
+  background: var(--hm-color-surface-2);
   color: var(--hm-color-success);
 }
 
 .hm-badge--warn {
-  background: var(--hm-color-warning-bg);
+  background: var(--hm-color-surface-2);
   color: var(--hm-color-warning);
 }
 
@@ -261,13 +261,13 @@ a {
 }
 
 .hm-badge--danger {
-  background: var(--hm-color-danger-bg);
+  background: var(--hm-color-surface-2);
   color: var(--hm-color-danger);
 }
 
 .hm-badge--info {
-  background: var(--hm-color-accent-weak);
-  color: var(--hm-color-accent);
+  background: var(--hm-color-surface-2);
+  color: var(--hm-color-text-2);
 }
 
 .hm-auth-required {
