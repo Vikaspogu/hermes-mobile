@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { Activity } from './Activity';
 import { useActivityStore, useConnectionStore, usePaperlessStore, makeRpcEvents } from '@hermes-pwa/core';
 import type { RestClient } from '@hermes-pwa/core';
@@ -21,6 +21,38 @@ describe('Activity', () => {
   it('renders empty state when no items', async () => {
     render(<Activity rpc={rpcMock} />);
     await waitFor(() => expect(screen.getByText(/All clear/i)).toBeInTheDocument());
+  });
+
+  it('shows skeleton feedback while initially loading approvals, then the empty state', () => {
+    useActivityStore.setState({ loading: true });
+    render(<Activity rpc={rpcMock} />);
+
+    expect(screen.getByRole('status', { name: 'Loading approvals' })).toBeInTheDocument();
+    expect(screen.queryByText(/All clear/i)).not.toBeInTheDocument();
+
+    act(() => useActivityStore.setState({ loading: false }));
+    expect(screen.queryByRole('status', { name: 'Loading approvals' })).not.toBeInTheDocument();
+    expect(screen.getByText(/All clear/i)).toBeInTheDocument();
+  });
+
+  it('keeps cached approvals and errors visible during a refresh', () => {
+    useActivityStore.setState({
+      loading: true, error: 'Could not refresh. Try again.',
+      items: [{ id: 'a-1', kind: 'approval', status: 'needs_you', title: 'Cached approval', createdAt: 1 }],
+    });
+    render(<Activity rpc={rpcMock} />);
+
+    expect(screen.getByText('Cached approval')).toBeInTheDocument();
+    expect(screen.getByText('Could not refresh. Try again.')).toBeInTheDocument();
+    expect(screen.queryByRole('status', { name: 'Loading approvals' })).not.toBeInTheDocument();
+  });
+
+  it('keeps errors visible while initially loading approvals', () => {
+    useActivityStore.setState({ loading: true, error: 'Could not refresh. Try again.' });
+    render(<Activity rpc={rpcMock} />);
+
+    expect(screen.getByRole('status', { name: 'Loading approvals' })).toBeInTheDocument();
+    expect(screen.getByText('Could not refresh. Try again.')).toBeInTheDocument();
   });
 
   it('renders pending approval items', () => {

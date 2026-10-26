@@ -1,0 +1,24 @@
+.hm-screen-enter-forward {
+  animation: hm-screen-forward 180ms ease-out;
+}
+
+.hm-screen-enter-back {
+  animation: hm-screen-back 180ms ease-out;
+}
+
+@keyframes hm-screen-forward {
+  from { opacity: 0; transform: translateX(16px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes hm-screen-back {
+  from { opacity: 0; transform: translateX(-16px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hm-screen-enter-forward,
+  .hm-screen-enter-back {
+    animation: none;
+  }
+}

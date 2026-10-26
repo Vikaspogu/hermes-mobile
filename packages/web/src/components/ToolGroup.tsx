@@ -59,16 +59,9 @@ export function ToolGroup({ tools, rpc, streaming }: ToolGroupProps) {
   const runningCount = tools.filter((t) => t.output === undefined).length;
   const stateLabel = runningCount > 0 ? 'running' : 'done';
   const [open, setOpen] = useState(false);
-  // Collapsed by default; only running tools stay visible so live progress and approvals are never hidden.
+  // Collapsed by default; running tools stay visible so live progress and approvals are never hidden.
   const showRows = open || runningCount > 0;
-  const visibleTools = open ? tools : tools.filter((t) => t.output === undefined);
-  // Mockup-style collapsed summary: "Read 2 files · Bash +2" instead of a generic label.
-  const summary = useMemo(() => {
-    const titles = tools.slice(0, 2).map((t) => buildToolView(t).title);
-    const rest = tools.length - titles.length;
-    const text = titles.join(' · ') + (rest > 0 ? ` · +${rest} more` : '');
-    return truncate(text || 'Tool actions', 60);
-  }, [tools]);
+
   return (
     <div className="hm-tool-group">
       <button
@@ -80,15 +73,17 @@ export function ToolGroup({ tools, rpc, streaming }: ToolGroupProps) {
         <span className="hm-tool-group__header-icon">
           <Icon name="settings" size={12} />
         </span>
-        <span className="hm-tool-group__header-title">{summary}</span>
-        <span className="hm-tool-group__header-meta">
-          {tools.length} {tools.length === 1 ? 'step' : 'steps'} · {stateLabel}
+        <span className="hm-tool-group__header-text">
+          <span className="hm-tool-group__header-meta">
+            {tools.length} {tools.length === 1 ? 'step' : 'steps'} · {stateLabel}
+          </span>
+          <span className="hm-tool-group__header-title">Tool actions</span>
         </span>
         {runningCount > 0 && <span className="hm-tool-group__header-running" aria-label="running" />}
         <span className="hm-tool-group__chevron" aria-hidden="true">›</span>
       </button>
       {showRows &&
-        visibleTools.map((tool) => <ToolRow key={tool.id} tool={tool} rpc={rpc} streaming={streaming} />)}
+        tools.map((tool) => <ToolRow key={tool.id} tool={tool} rpc={rpc} streaming={streaming} />)}
     </div>
   );
 }

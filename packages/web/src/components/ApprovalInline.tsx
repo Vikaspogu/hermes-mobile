@@ -1,9 +1,10 @@
 import { useState } from 'react';
+import { haptic } from '../pwa/haptics';
 import type { RpcClient, Approval, ToolCall } from '@hermes-pwa/core';
 import { useActivityStore, useChatStore } from '@hermes-pwa/core';
 import { Icon } from './Icon';
 import { firstStringField } from '../lib/toolView';
-import { selectDockApproval } from '../lib/pendingApprovals';
+// approvalClaimedByToolRow in lib/pendingApprovals decides dock-vs-inline ownership.
 
 interface ApprovalInlineProps {
   rpc: RpcClient;
@@ -79,13 +80,7 @@ export function ApprovalInline({ rpc, toolName, tool }: ApprovalInlineProps) {
 
   if (!pending) return null;
 
-  // The M2/M3 approval dock is the canonical surface for the thread's
-  // current approval — don't duplicate it inline on the tool row.
-  const dockApproval = selectDockApproval(
-    items.filter(isPendingApproval),
-    [...activeSessionIds],
-  );
-  if (dockApproval?.id === pending.id) return null;
+  // Claimed inline: the dock hides for this approval (see approvalClaimedByToolRow).
   const approval = pending;
   const risk = approval.highImpact ? 'high' : 'low';
   const style = riskStyle(risk);
@@ -99,6 +94,7 @@ export function ApprovalInline({ rpc, toolName, tool }: ApprovalInlineProps) {
       );
       if (!ok) return;
     }
+    haptic('confirm');
     setSubmitting(choice);
     try {
       await respondApproval(

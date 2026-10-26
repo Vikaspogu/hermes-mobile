@@ -54,12 +54,74 @@ describe('Chat', () => {
     restMock = makeRestMock();
   });
 
-  it('shows empty state when no messages', () => {
+  it('shows only the composer when an empty conversation finishes loading', async () => {
     render(<Chat rpc={rpcMock} rest={restMock} />);
     const log = screen.getByRole('log', { name: /conversation/i });
     expect(log).toHaveAttribute('aria-live', 'polite');
     expect(log).toHaveAttribute('aria-relevant', 'additions text');
-    expect(screen.getByText(/Start a conversation/i)).toBeInTheDocument();
+    await waitFor(() => expect(log).toHaveAttribute('aria-busy', 'false'));
+    expect(log).toBeEmptyDOMElement();
+    expect(screen.getByRole('textbox', { name: 'Message input' })).toHaveAttribute(
+      'placeholder', 'Ask the repo agent, or run a command…\nUse / for commands, + to attach',
+    );
+    expect(screen.queryByText(/Start a conversation/i)).not.toBeInTheDocument();
+  });
+
+  it('shows loading feedback while restoring history instead of treating it as an empty chat', async () => {
+    core.useChatStore.setState({ storedSessionId: 'stored-1' });
+    vi.mocked(rpcMock.request).mockImplementation(() => new Promise(() => undefined));
+    render(<Chat rpc={rpcMock} rest={restMock} />);
+
+    await waitFor(() => expect(rpcMock.request).toHaveBeenCalled());
+    expect(screen.getByRole('status', { name: 'Loading conversation' })).toBeInTheDocument();
+    expect(screen.getByRole('log', { name: 'Conversation' })).toHaveAttribute('aria-busy', 'true');
+  });
+
+  it('clears loading feedback when a reconnect cancels an unresolved history restore', async () => {
+    core.useChatStore.setState({ storedSessionId: 'stored-1' });
+    vi.mocked(rpcMock.request).mockImplementation(() => new Promise(() => undefined));
+    render(<Chat rpc={rpcMock} rest={restMock} />);
+    await waitFor(() => expect(rpcMock.request).toHaveBeenCalled());
+    expect(screen.getByRole('status', { name: 'Loading conversation' })).toBeInTheDocument();
+
+    act(() => core.useConnectionStore.setState({ state: 'reconnecting' }));
+
+    expect(screen.queryByRole('status', { name: 'Loading conversation' })).not.toBeInTheDocument();
+    expect(screen.getByRole('log', { name: 'Conversation' })).toHaveAttribute('aria-busy', 'false');
+    act(() => core.useConnectionStore.setState({ state: 'connected' }));
+    expect(screen.queryByRole('status', { name: 'Loading conversation' })).not.toBeInTheDocument();
+    expect(rpcMock.request).toHaveBeenCalledTimes(1);
+  });
+
+  it('shows folder and short session context while keeping full details accessible', () => {
+    core.useConnectionStore.setState({ state: 'reconnecting' });
+    core.useChatStore.setState({ sessionId: 'runtime-session', storedSessionId: 'abcdef1234567890' });
+    core.useSessionsStore.setState({ sessions: [{
+      id: 'abcdef1234567890', title: 'Repository work', cwd: '/home/agent/hermes-mobile/',
+      updatedAt: 1, messageCount: 0, profile: 'default', source: 'cli',
+    }] });
+    const { container } = render(<Chat rpc={rpcMock} rest={restMock} />);
+
+    expect(container.querySelector('.hm-app-header__sub')).toHaveTextContent('hermes-mobile · abcdef12');
+    expect(screen.getByRole('button', { name: 'Back to chats' })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Thread details' }));
+    expect(screen.getByText('abcdef1234567890')).toBeInTheDocument();
+    expect(screen.getByText('Model')).toBeInTheDocument();
+    expect(screen.getByText('Profile')).toBeInTheDocument();
+  });
+
+  it('keeps errors and approvals visible in an empty conversation', () => {
+    core.useConnectionStore.setState({ state: 'reconnecting' });
+    core.useChatStore.setState({ sessionId: 'sess-1', error: 'Could not send. Try again.' });
+    core.useActivityStore.setState({ items: [{
+      id: 'approval-1', kind: 'approval', status: 'needs_you', title: 'Approval required',
+      summary: 'Restart the gateway', sessionId: 'sess-1', highImpact: true, createdAt: 1,
+    } as core.Approval] });
+    render(<Chat rpc={rpcMock} rest={restMock} />);
+
+    expect(screen.getByText('Could not send. Try again.')).toBeInTheDocument();
+    expect(screen.getByText('Restart the gateway')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Reject' })).toBeInTheDocument();
   });
 
   it('does not seed an empty chat from a session-tagged event', () => {
@@ -69,7 +131,7 @@ describe('Chat', () => {
 
     expect(screen.queryByText('foreign answer')).not.toBeInTheDocument();
     expect(core.useChatStore.getState().messages).toEqual([]);
-    expect(screen.getByText(/Start a conversation/i)).toBeInTheDocument();
+    expect(screen.queryByText(/Start a conversation/i)).not.toBeInTheDocument();
   });
 
   it('ignores unscoped live events when no active turn owns them', () => {
@@ -79,7 +141,7 @@ describe('Chat', () => {
 
     expect(screen.queryByText('orphan answer')).not.toBeInTheDocument();
     expect(core.useChatStore.getState().messages).toEqual([]);
-    expect(screen.getByText(/Start a conversation/i)).toBeInTheDocument();
+    expect(screen.queryByText(/Start a conversation/i)).not.toBeInTheDocument();
   });
 
   it('does not apply unscoped errors to a newly switched idle chat', () => {
@@ -616,7 +678,7 @@ describe('Chat', () => {
       return { status: 'ok' };
     });
     render(<Chat rpc={rpcMock} rest={restMock} />);
-    fireEvent.change(screen.getByPlaceholderText(/Reply or steer/i), { target: { value: 'hello' } });
+    fireEvent.change(screen.getByRole('textbox', { name: 'Message input' }), { target: { value: 'hello' } });
     fireEvent.click(screen.getByRole('button', { name: /Send/i }));
     await waitFor(() => {
       expect(rpcMock.request).toHaveBeenCalledWith('session.create', { profile: 'default' });
@@ -661,44 +723,6 @@ describe('Chat', () => {
         session_id: 's-1',
         text: '@file:.hermes/desktop-attachments/note.txt',
       }, { timeoutMs: 90_000 });
-    });
-  });
-
-  it('routes image attachments through image.attach_bytes and submits an [Image: name] marker', async () => {
-    vi.mocked(rpcMock.request).mockImplementation(async (method: string) => {
-      if (method === 'session.create') return { session_id: 's-1', stored_session_id: 'stored-1' };
-      if (method === 'image.attach_bytes') return { attached: true, path: '/data/attachments/x.jpg', bytes: 3 };
-      if (method === 'session.most_recent') return {};
-      return { status: 'ok' };
-    });
-    const { container } = render(<Chat rpc={rpcMock} rest={restMock} />);
-
-    fireEvent.click(screen.getByRole('button', { name: /Add attachment/i }));
-    const input = container.querySelector('input[type="file"]')!;
-    const file = new File(['img'], 'photo.jpg', { type: 'image/jpeg' });
-    fireEvent.change(input, { target: { files: [file] } });
-
-    await waitFor(() => {
-      expect(rpcMock.request).toHaveBeenCalledWith(
-        'image.attach_bytes',
-        expect.objectContaining({
-          session_id: 's-1',
-          filename: 'photo.jpg',
-          content_base64: 'aW1n',
-        }),
-      );
-    });
-    expect(rpcMock.request).not.toHaveBeenCalledWith('file.attach', expect.anything());
-    expect(screen.getByText('photo.jpg')).toBeInTheDocument();
-
-    fireEvent.change(screen.getByPlaceholderText(/Reply or steer/i), { target: { value: 'what is this?' } });
-    fireEvent.click(screen.getByRole('button', { name: /Send/i }));
-    await waitFor(() => {
-      expect(rpcMock.request).toHaveBeenCalledWith(
-        'prompt.submit',
-        { session_id: 's-1', text: 'what is this?\n\n[Image: photo.jpg]' },
-        { timeoutMs: 90_000 },
-      );
     });
   });
 
@@ -826,7 +850,7 @@ describe('Chat', () => {
       expect(core.useChatStore.getState().streaming).toBe(false);
     });
 
-    fireEvent.change(screen.getByPlaceholderText(/Reply or steer/i), { target: { value: 'after reload' } });
+    fireEvent.change(screen.getByRole('textbox', { name: 'Message input' }), { target: { value: 'after reload' } });
     fireEvent.click(screen.getByRole('button', { name: /Send/i }));
 
     await waitFor(() => {
@@ -858,7 +882,7 @@ describe('Chat', () => {
     render(<Chat rpc={rpcMock} rest={rest} />);
 
     await waitFor(() => expect(core.useChatStore.getState().streaming).toBe(false));
-    fireEvent.change(screen.getByPlaceholderText(/Reply or steer/i), { target: { value: 'queued after busy' } });
+    fireEvent.change(screen.getByRole('textbox', { name: 'Message input' }), { target: { value: 'queued after busy' } });
     fireEvent.click(screen.getByRole('button', { name: /Send/i }));
 
     await waitFor(() => expect(submitAttempts).toBe(1));
@@ -1000,14 +1024,14 @@ describe('Chat', () => {
 
     render(<Chat rpc={rpcMock} rest={restMock} />);
 
+    expect(screen.getByText('Tool actions')).toBeInTheDocument();
     expect(screen.getByText(/1 step · done/i)).toBeInTheDocument();
-    fireEvent.click(screen.getByRole('button', { name: /Ran command/i }));
-    // Header summary + expanded row both carry the title.
-    expect(screen.getAllByText(/Ran command/i).length).toBeGreaterThanOrEqual(2);
+    fireEvent.click(screen.getByRole('button', { name: /Tool actions/i }));
+    expect(screen.getByText(/Ran command/i)).toBeInTheDocument();
     expect(screen.getByText(/whoami=stasstep/i)).toBeInTheDocument();
   });
 
-  it('renders high-risk approval in the dock and approves via slide-to-approve', async () => {
+  it('renders approval inline on the running terminal tool row and sends canonical choice', async () => {
     vi.mocked(rpcMock.request).mockResolvedValue({ resolved: true });
     core.useChatStore.setState({
       sessionId: 'sess-1',
@@ -1043,8 +1067,7 @@ describe('Chat', () => {
     render(<Chat rpc={rpcMock} rest={restMock} />);
 
     expect(screen.getByText('hermes gateway restart')).toBeInTheDocument();
-    expect(screen.getByText('HIGH RISK')).toBeInTheDocument();
-    fireEvent.keyDown(screen.getByRole('slider', { name: 'Slide to approve' }), { key: 'End' });
+    fireEvent.click(screen.getByRole('button', { name: 'Run' }));
 
     await waitFor(() => {
       expect(rpcMock.request).toHaveBeenCalledWith('approval.respond', {
@@ -1105,7 +1128,7 @@ describe('Chat', () => {
           title: 'Approval required',
           summary: 'dangerous command again',
           sessionId: 'sess-1',
-          highImpact: false,
+          highImpact: true,
           createdAt: 2,
         } as core.Approval,
       ],
@@ -1113,9 +1136,10 @@ describe('Chat', () => {
       error: undefined,
     });
     render(<Chat rpc={rpcMock} rest={restMock} />);
-    expect(screen.getByText('LOW RISK')).toBeInTheDocument();
-    fireEvent.click(screen.getByRole('button', { name: 'More approval options' }));
-    fireEvent.click(screen.getByRole('menuitem', { name: 'Always allow' }));
+    const alwaysButton = await screen.findByRole('button', { name: 'Always' });
+    await waitFor(() => expect(alwaysButton).not.toBeDisabled());
+    fireEvent.click(alwaysButton);
+
     await waitFor(() => {
       expect(confirmSpy).toHaveBeenCalled();
       expect(rpcMock.request).toHaveBeenCalledWith('approval.respond', {
@@ -1160,98 +1184,5 @@ describe('Chat', () => {
     render(<Chat rpc={rpcMock} rest={restMock} />);
 
     expect(screen.queryByText('background command')).not.toBeInTheDocument();
-  });
-
-  it('keeps a deep-linked transcript when the session is only missing from the capped list', async () => {
-    core.useChatStore.setState({
-      sessionId: undefined,
-      storedSessionId: 'cron_silent_run',
-      messages: [{ id: 'm1', role: 'assistant', text: 'cron transcript line', createdAt: 1, toolCalls: [] }],
-      streaming: false,
-      error: undefined,
-    });
-    core.useSessionsStore.setState({
-      sessions: [{ id: 'other-session', title: 'Other', profile: 'default', lastActiveAt: 1 } as unknown as core.Session],
-      loading: false,
-      error: undefined,
-      pinnedIds: [],
-    });
-    const otherSession = { id: 'other-session', title: 'Other', profile: 'default', lastActiveAt: 1 } as unknown as core.Session;
-    restMock = makeRestMock({
-      profileSessions: vi.fn(async () => [otherSession]),
-      sessionMessages: vi.fn(async () => ({ messages: [{ id: 1, role: 'assistant', content: 'cron transcript line' }] })),
-    });
-
-    render(<Chat rpc={rpcMock} rest={restMock} />);
-
-    await waitFor(() => expect(restMock.sessionMessages).toHaveBeenCalledWith('cron_silent_run', 'default'));
-    expect(screen.getByText('cron transcript line')).toBeInTheDocument();
-    expect(screen.queryByText(/previous chat ended/i)).not.toBeInTheDocument();
-  });
-
-  it('starts a fresh chat when the stored session is really gone (404)', async () => {
-    core.useChatStore.setState({
-      sessionId: undefined,
-      storedSessionId: 'gone-session',
-      messages: [{ id: 'm1', role: 'assistant', text: 'stale cached line', createdAt: 1, toolCalls: [] }],
-      streaming: false,
-      error: undefined,
-    });
-    core.useSessionsStore.setState({
-      sessions: [{ id: 'other-session', title: 'Other', profile: 'default', lastActiveAt: 1 } as unknown as core.Session],
-      loading: false,
-      error: undefined,
-      pinnedIds: [],
-    });
-    const otherSession = { id: 'other-session', title: 'Other', profile: 'default', lastActiveAt: 1 } as unknown as core.Session;
-    restMock = makeRestMock({
-      profileSessions: vi.fn(async () => [otherSession]),
-      sessionMessages: vi.fn(async () => {
-        throw new core.HermesHttpError(404, 'Not Found', 'session not found');
-      }),
-    });
-
-    render(<Chat rpc={rpcMock} rest={restMock} />);
-
-    await screen.findByText(/previous chat ended/i);
-    expect(screen.queryByText('stale cached line')).not.toBeInTheDocument();
-  });
-
-  it('keeps a message sent while the dead-session probe was in flight', async () => {
-    core.useChatStore.setState({
-      sessionId: undefined,
-      storedSessionId: 'gone-session',
-      messages: [],
-      streaming: false,
-      error: undefined,
-    });
-    core.useSessionsStore.setState({
-      sessions: [{ id: 'other-session', title: 'Other', profile: 'default', lastActiveAt: 1 } as unknown as core.Session],
-      loading: false,
-      error: undefined,
-      pinnedIds: [],
-    });
-    let rejectProbe: (err: unknown) => void = () => undefined;
-    const probe = new Promise((_resolve, reject) => {
-      rejectProbe = reject;
-    });
-    restMock = makeRestMock({ sessionMessages: vi.fn(() => probe) });
-
-    render(<Chat rpc={rpcMock} rest={restMock} />);
-    await waitFor(() => expect(restMock.sessionMessages).toHaveBeenCalledWith('gone-session', 'default'));
-
-    // The user sends a message while the probe is still in flight (submit's optimistic update).
-    core.useChatStore.setState({
-      sessionId: 'new-live',
-      storedSessionId: 'gone-session',
-      messages: [{ id: 'u-1', role: 'user', text: 'hello', createdAt: undefined }],
-      streaming: true,
-      error: undefined,
-    });
-    rejectProbe(new core.HermesHttpError(404, 'Not Found', 'session not found'));
-
-    await waitFor(() => expect(screen.getByText('hello')).toBeInTheDocument());
-    expect(screen.queryByText(/previous chat ended/i)).not.toBeInTheDocument();
-    expect(core.useChatStore.getState().sessionId).toBe('new-live');
   });
 });

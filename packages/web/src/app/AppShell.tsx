@@ -15,6 +15,7 @@ import { HERMES_PWA_VERSION_LABEL } from './version';
 import { syncPushSubscription } from '../pwa/push';
 import '../styles/screens/more.css';
 import '../styles/screens/offline.css';
+import '../styles/screen-transitions.css';
 
 export type Screen =
   | 'home'
@@ -170,6 +171,7 @@ export function AppShell({ connectionState, rpc, rest, onRetry, connectionError 
     return initial === 'home' ? ['home'] : ['home', initial];
   });
   const navStackRef = useRef(navStack);
+  const [screenEntry, setScreenEntry] = useState<{ id: number; direction: 'forward' | 'back' | undefined }>({ id: 0, direction: undefined });
   const screen: Screen = navStack[navStack.length - 1] ?? 'home';
   const [moreOpen, setMoreOpen] = useState(false);
   const [moreStats, setMoreStats] = useState<SystemStats | null>(null);
@@ -263,6 +265,7 @@ export function AppShell({ connectionState, rpc, rest, onRetry, connectionError 
       const next = stack.slice(0, -1);
       navStackRef.current = next;
       setNavStack(next);
+      setScreenEntry((entry) => ({ id: entry.id + 1, direction: 'back' }));
       persistScreen(next[next.length - 1] ?? 'home');
     };
     window.addEventListener('popstate', onPopState);
@@ -506,6 +509,7 @@ export function AppShell({ connectionState, rpc, rest, onRetry, connectionError 
       const next = s === 'home' || s === 'approvals' ? [s] : [...navStackRef.current, s];
       navStackRef.current = next;
       setNavStack(next);
+      setScreenEntry((entry) => ({ id: entry.id + 1, direction: 'forward' }));
       window.history.pushState({ hmNav: next.length - 1 }, '');
     }
     persistScreen(s);
@@ -579,7 +583,7 @@ export function AppShell({ connectionState, rpc, rest, onRetry, connectionError 
       ) : null}
 
       {/* ── Screen ───────────────────────────────────────────────── */}
-      <main className="hm-screen">
+      <main key={screenEntry.id} className={`hm-screen${screenEntry.direction ? ` hm-screen-enter-${screenEntry.direction}` : ''}`}>
         <LazyScreenErrorBoundary key={screen}>
           <Suspense fallback={<p className="hm-muted hm-loading">Loading…</p>}>
         {connectionState === 'offline' ? (

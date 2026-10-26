@@ -1,5 +1,5 @@
 name: hermes-pwa
-version: 0.2.0-beta
+version: 0.1.2-beta
 description: Installable mobile PWA client for Hermes Dashboard (includes the Live Voice lanes vendored from talk-desktop)
 requires_auth:
   - openai-codex

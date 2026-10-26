@@ -1,0 +1,18 @@
+.hm-chat__history-loading {
+  display: flex;
+  flex-direction: column;
+  gap: var(--hm-space-4);
+}
+
+.hm-chat__history-skeleton {
+  width: 78%;
+  height: 64px;
+  border-radius: var(--hm-radius-card);
+  background: var(--hm-color-surface-2);
+}
+
+.hm-chat__history-skeleton:nth-child(2) {
+  align-self: flex-end;
+  width: 55%;
+  height: 44px;
+}

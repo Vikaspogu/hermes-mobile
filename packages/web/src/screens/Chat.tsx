@@ -15,6 +15,7 @@ import {
 } from '@hermes-pwa/core';
 import { MessageBubble } from '../components/MessageBubble';
 import { Composer } from '../components/Composer';
+import '../styles/empty-chat.css';
 import '../styles/screens/thread.css'; // ponytail: prototype.css's trailing @import of screens/*.css is dropped by Vite
 import {
   MAX_ATTACHMENT_BYTES,
@@ -27,7 +28,7 @@ import {
 } from '../components/attachmentLimits';
 import { Icon } from '../components/Icon';
 import { parseMaybeObject } from '../lib/toolView';
-import { selectDockApproval, selectPendingApprovals } from '../lib/pendingApprovals';
+import { approvalClaimedByToolRow, selectDockApproval, selectPendingApprovals } from '../lib/pendingApprovals';
 import { ApprovalDock } from '../components/ApprovalDock';
 
 interface ChatProps {
@@ -139,9 +140,13 @@ export function Chat({ rpc, rest, onOpenVoice }: ChatProps) {
     [sessionId, storedSessionId],
   );
   const dockApproval = useMemo(
-    () => selectDockApproval(pendingApprovals, activeSessionIds),
-    [pendingApprovals, activeSessionIds],
+    () => {
+      const candidate = selectDockApproval(pendingApprovals, activeSessionIds);
+      return candidate && approvalClaimedByToolRow(candidate, messages, activeSessionIds) ? undefined : candidate;
+    },
+    [pendingApprovals, activeSessionIds, messages],
   );
+  const [historyLoading, setHistoryLoading] = useState(connection.state === 'connected');
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [approvalRecords, setApprovalRecords] = useState<ApprovalRecord[]>([]);
 
@@ -182,8 +187,12 @@ export function Chat({ rpc, rest, onOpenVoice }: ChatProps) {
   }, [enqueuePrompt, markLocalInputShouldScroll, rpc, submit, profileForSubmit]);
 
   useEffect(() => {
-    if (connection.state !== 'connected' || restoredRef.current) return;
+    if (connection.state !== 'connected' || restoredRef.current) {
+      setHistoryLoading(false);
+      return;
+    }
     restoredRef.current = true;
+    setHistoryLoading(true);
     void loadConfig(rest);
     if (activeName && activeName !== currentName) {
       // The gateway is running a different profile; avoid auto-restoring a session
@@ -191,23 +200,23 @@ export function Chat({ rpc, rest, onOpenVoice }: ChatProps) {
       useChatStore.getState().clear(activeName);
       void load(rest);
       initialRestoreDoneRef.current = true;
+      setHistoryLoading(false);
       return;
     }
 
     let cancelled = false;
     void (async () => {
-      // Restore depends on the session list for openable-head resolution. Loading
-      // first lets the chat resolve the current compressed head instead of stale
-      // cached/tool-only history.
-      await load(rest);
-      if (cancelled) return;
-      // Cached messages are only a visual fallback. The cached live session_id can
-      // be stale after dashboard/gateway reload, so always reconcile it against
-      // the backend before the next prompt.submit.
       try {
+        // Load sessions first to resolve the current compressed history head.
+        await load(rest);
+        if (cancelled) return;
+        // Reconcile cached runtime ids before the next prompt.submit.
         await useChatStore.getState().restore(rest, rpc, activeName);
       } finally {
-        if (!cancelled) initialRestoreDoneRef.current = true;
+        if (!cancelled) {
+          initialRestoreDoneRef.current = true;
+          setHistoryLoading(false);
+        }
       }
     })();
     return () => {
@@ -542,11 +551,9 @@ export function Chat({ rpc, rest, onOpenVoice }: ChatProps) {
   const profileLabel = activeProfile?.displayName ?? activeName ?? 'default';
   const modelLabel = activeProfile?.model ?? 'GPT-5.5';
   const headerTitle = currentSession?.title ?? 'Chat';
-  const headerSub = [
-    modelLabel,
-    profileLabel,
-    currentSession?.source ? sessionSourceLabel(currentSession.source) : undefined,
-  ]
+  const folderLabel = currentSession?.cwd?.split(/[/\\]/u).filter(Boolean).at(-1);
+  const headerSessionId = storedSessionId ?? sessionId;
+  const headerSub = [folderLabel, headerSessionId?.slice(0, 8)]
     .filter((value): value is string => Boolean(value))
     .join(' · ');
   const busySubmitLabel =
@@ -710,7 +717,7 @@ export function Chat({ rpc, rest, onOpenVoice }: ChatProps) {
         role="log"
         aria-live="polite"
         aria-relevant="additions text"
-        aria-busy={streaming}
+        aria-busy={streaming || historyLoading}
         aria-label="Conversation"
       >
         {autoRestarted && messages.length === 0 && (
@@ -719,25 +726,24 @@ export function Chat({ rpc, rest, onOpenVoice }: ChatProps) {
           </p>
         )}
 
-        {messages.length === 0 ? (
-          <div className="hm-empty-state hm-empty-state--chat">
-            <div className="hm-mark">H</div>
-            <h2>Start a conversation with Hermes</h2>
-            <p className="hm-muted">Open the session drawer to resume history, or send a message to begin a fresh mobile chat.</p>
+        {historyLoading && messages.length === 0 && (
+          <div className="hm-chat__history-loading" role="status" aria-label="Loading conversation">
+            <span className="hm-chat__history-skeleton" aria-hidden="true" />
+            <span className="hm-chat__history-skeleton" aria-hidden="true" />
+            <span className="hm-chat__history-skeleton" aria-hidden="true" />
           </div>
-        ) : (
-          messages.map((m, index) => (
-            <MessageBubble
-              key={m.id}
-              message={m}
-              rpc={rpc}
-              isLast={index === messages.length - 1}
-              streaming={streaming}
-              liveStatus={index === messages.length - 1 && streaming ? liveStatus.text : ''}
-              liveFace={undefined}
-            />
-          ))
         )}
+        {messages.map((m, index) => (
+          <MessageBubble
+            key={m.id}
+            message={m}
+            rpc={rpc}
+            isLast={index === messages.length - 1}
+            streaming={streaming}
+            liveStatus={index === messages.length - 1 && streaming ? liveStatus.text : ''}
+            liveFace={undefined}
+          />
+        ))}
 
         {approvalRecords.map((record) => (
           <div className="hm-chat__record" key={record.id}>
@@ -771,7 +777,8 @@ export function Chat({ rpc, rest, onOpenVoice }: ChatProps) {
         onStop={() => void interrupt(rpc)}
         busy={streaming}
         busySubmitLabel={busySubmitLabel}
-        placeholder={streaming ? busyPlaceholder : 'Reply or steer the agent…'}
+        modelLabel={modelLabel}
+        placeholder={streaming ? busyPlaceholder : 'Ask the repo agent, or run a command…\nUse / for commands, + to attach'}
         messages={messages}
         onOpenVoice={onOpenVoice}
         onUploadFile={handleUploadFile}

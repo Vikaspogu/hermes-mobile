@@ -1,0 +1,68 @@
+.hm-chat .hm-message--user {
+  padding: 0;
+  max-width: 85%;
+  background: transparent;
+}
+
+.hm-message__bubble {
+  padding: var(--hm-space-3) var(--hm-space-4);
+  border-radius: 20px;
+  background: var(--hm-color-accent-weak);
+  color: var(--hm-color-text);
+  white-space: pre-wrap;
+}
+
+.hm-message__bubble p { margin: 0; }
+.hm-chat .hm-message { min-height: 0; }
+
+.hm-chat .hm-message--assistant {
+  width: 100%;
+  max-width: 100%;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+
+.hm-message__meta {
+  display: flex;
+  align-items: center;
+  gap: var(--hm-space-1);
+  color: var(--hm-color-text-muted);
+  font-size: var(--hm-fs-label);
+}
+
+.hm-message--user .hm-message__meta { justify-content: flex-end; }
+.hm-message--assistant .hm-message__meta time { order: 1; }
+
+.hm-message__copy {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--hm-tap-min);
+  height: var(--hm-tap-min);
+  padding: 0;
+  border: 0;
+  border-radius: var(--hm-radius-sm);
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+
+.hm-message__copy:focus-visible {
+  outline: 2px solid var(--hm-color-primary);
+  outline-offset: 2px;
+}
+
+.hm-message__copy:hover { background: var(--hm-color-surface-2); }
+.hm-message__copy:active { opacity: 0.65; }
+
+.hm-message--user {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 80px;
+}
+
+.hm-message--assistant:not(.hm-message--tail):not(:has(.hm-approval-inline)) {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 160px;
+}

@@ -1,0 +1,12 @@
+.hm-inbox__loading {
+  display: flex;
+  flex-direction: column;
+  gap: var(--hm-space-4);
+}
+
+.hm-inbox__skeleton {
+  display: block;
+  height: 96px;
+  border-radius: var(--hm-radius-card);
+  background: var(--hm-color-surface-2);
+}
