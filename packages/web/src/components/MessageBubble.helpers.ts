@@ -1,4 +1,4 @@
-import { createElement, type AnchorHTMLAttributes } from 'react';
+import { createElement, type AnchorHTMLAttributes, type InputHTMLAttributes } from 'react';
 import type { Approval, Message, RpcClient } from '@hermes-pwa/core';
 
 export interface MessageBubbleProps {
@@ -37,4 +37,5 @@ export const MARKDOWN_COMPONENTS = {
       },
       children,
     ),
+  input: ({ checked }: InputHTMLAttributes<HTMLInputElement>) => (checked ? '[x]' : '[ ]'),
 };

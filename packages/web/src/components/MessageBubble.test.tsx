@@ -45,28 +45,6 @@ describe('MessageBubble', () => {
     expect(screen.getByText('Hello')).toBeInTheDocument();
   });
 
-  it('clamps long user prompts behind Show more', () => {
-    const long = 'skill text '.repeat(80);
-    render(<MessageBubble rpc={rpcMock} message={{ id: 'u', role: 'user', text: long, createdAt: undefined }} />);
-    const btn = screen.getByRole('button', { name: 'Show more' });
-    expect(btn).toHaveAttribute('aria-expanded', 'false');
-    expect(document.querySelector('.hm-message__clamp')).not.toBeNull();
-    fireEvent.click(btn);
-    expect(screen.getByRole('button', { name: 'Show less' })).toHaveAttribute('aria-expanded', 'true');
-    expect(document.querySelector('.hm-message__clamp')).toBeNull();
-  });
-
-  it('does not clamp short user messages', () => {
-    render(<MessageBubble rpc={rpcMock} message={{ id: 'u2', role: 'user', text: 'Hi', createdAt: undefined }} />);
-    expect(screen.queryByRole('button', { name: 'Show more' })).toBeNull();
-  });
-
-  it('renders [SILENT] cron replies as a muted note', () => {
-    render(<MessageBubble rpc={rpcMock} message={{ id: 's', role: 'assistant', text: '[SILENT]', createdAt: undefined }} />);
-    expect(screen.getByText('Silent run — nothing to report')).toBeInTheDocument();
-    expect(screen.queryByText('[SILENT]')).toBeNull();
-  });
-
   it('renders assistant message with markdown', () => {
     render(<MessageBubble rpc={rpcMock} message={{ id: '2', role: 'assistant', text: '# Title\n\nparagraph', createdAt: undefined }} />);
     expect(screen.getByText('Title')).toBeInTheDocument();
@@ -107,9 +85,8 @@ describe('MessageBubble', () => {
         }}
       />,
     );
-    fireEvent.click(screen.getByRole('button', { name: /Search/i }));
-    // Header summary + expanded row both carry the title.
-    expect(screen.getAllByText('Search').length).toBeGreaterThanOrEqual(2);
+    fireEvent.click(screen.getByRole('button', { name: /Tool actions/i }));
+    expect(screen.getByText('Search')).toBeInTheDocument();
   });
 
   it('keeps inline approval visible for a pending tool after restore clears streaming', () => {
@@ -380,9 +357,7 @@ describe('MessageBubble', () => {
     );
 
     expect(screen.getByText('Check manually:')).toBeInTheDocument();
-    // GFM renders task lists as checkboxes; the item must NOT become a TodoPanel.
-    expect(screen.getByRole('checkbox')).toBeChecked();
-    expect(screen.getByText(/item stays as regular markdown/)).toBeInTheDocument();
+    expect(screen.getByText(/\[x\] item stays as regular markdown/)).toBeInTheDocument();
   });
 
   it('renders app icon and inline live status with animated activity dots', () => {

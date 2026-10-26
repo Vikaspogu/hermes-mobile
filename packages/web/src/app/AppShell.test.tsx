@@ -523,10 +523,9 @@ describe('AppShell', () => {
 
     await waitFor(() => expect(screen.getByText(/systemctl --user restart hermes-dashboard/)).toBeInTheDocument());
 
-    // M2/M3: the thread's approval renders in the sticky dock (canonical
-    // surface); the inline tool-row card is suppressed to avoid a duplicate.
-    // High-impact approvals approve via the slide control (keyboard End).
-    fireEvent.keyDown(screen.getByRole('slider', { name: 'Slide to approve' }), { key: 'End' });
+    // Redesign: the pending tool row claims the approval inline; the sticky
+    // dock stays hidden to avoid a duplicate surface.
+    fireEvent.click(screen.getByRole('button', { name: 'Run' }));
     await waitFor(() =>
       expect(rpcMock.request).toHaveBeenCalledWith('approval.respond', {
         choice: 'once',

@@ -27,7 +27,7 @@ import {
 } from '../components/attachmentLimits';
 import { Icon } from '../components/Icon';
 import { parseMaybeObject } from '../lib/toolView';
-import { selectDockApproval, selectPendingApprovals } from '../lib/pendingApprovals';
+import { approvalClaimedByToolRow, selectDockApproval, selectPendingApprovals } from '../lib/pendingApprovals';
 import { ApprovalDock } from '../components/ApprovalDock';
 
 interface ChatProps {
@@ -139,8 +139,11 @@ export function Chat({ rpc, rest, onOpenVoice }: ChatProps) {
     [sessionId, storedSessionId],
   );
   const dockApproval = useMemo(
-    () => selectDockApproval(pendingApprovals, activeSessionIds),
-    [pendingApprovals, activeSessionIds],
+    () => {
+      const candidate = selectDockApproval(pendingApprovals, activeSessionIds);
+      return candidate && approvalClaimedByToolRow(candidate, messages, activeSessionIds) ? undefined : candidate;
+    },
+    [pendingApprovals, activeSessionIds, messages],
   );
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [approvalRecords, setApprovalRecords] = useState<ApprovalRecord[]>([]);
