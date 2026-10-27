@@ -8,6 +8,8 @@ const serviceWorkerSource = readFileSync(
   'utf8',
 );
 
+const swCacheVersion = serviceWorkerSource.match(/CACHE_VERSION = '([^']+)'/)?.[1] ?? '';
+
 class FakeCache {
   private entries = new Map<string, Response>();
 
@@ -148,7 +150,7 @@ describe('service worker runtime cache behavior', () => {
       }
     }
 
-    const shellCache = harness.cacheStores.get('hermes-mobile-v62:shell');
+    const shellCache = harness.cacheStores.get(`${swCacheVersion}:shell`);
     const runtimeCache = harness.cacheStores.get('hermes-mobile-runtime-assets');
     if (!shellCache || !runtimeCache) throw new Error('missing expected caches');
 

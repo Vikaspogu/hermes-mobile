@@ -73,7 +73,7 @@ export async function registerServiceWorker(): Promise<ServiceWorkerState> {
   }
 
   try {
-    const registration = await navigator.serviceWorker.register('./service-worker.js', { scope: './' });
+    const registration = await navigator.serviceWorker.register('./service-worker.js', { scope: './', updateViaCache: 'none' });
     installControllerChangeReloadPrompt();
     installSilentUpdateChecks(registration);
     await checkForServiceWorkerUpdate(registration);
