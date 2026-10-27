@@ -430,7 +430,7 @@ export function Composer({
             <span key={a.id} className={`hm-composer__chip ${a.error ? 'hm-composer__chip--error' : ''}`}>
               <span className="hm-composer__chip-name">{a.name}</span>
               {a.uploading && <span className="hm-composer__chip-spin" />}
-              {a.error && <span className="hm-composer__chip-error" aria-label={a.error} />}
+              {a.error && <span className="hm-composer__chip-error" aria-label={a.error}>{a.error}</span>}
               {!a.uploading && (
                 <button
                   type="button"
@@ -513,14 +513,6 @@ export function Composer({
 
         <div className="hm-composer__toolbar">
 
-          {onUploadFile && (
-            <button type="button" className="hm-composer__action" aria-label="Attach file" onClick={() => {
-              haptic('tap');
-              setAttachMenuOpen((v) => !v);
-            }}>
-              <Icon name="file" size={19} />
-            </button>
-          )}
 
           {onOpenVoice && (
             <button

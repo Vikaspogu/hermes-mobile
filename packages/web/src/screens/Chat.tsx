@@ -559,11 +559,25 @@ export function Chat({ rpc, rest, onOpenVoice }: ChatProps) {
         if (useChatStore.getState().messages !== messagesAtProbeStart) return;
         setAutoRestarted(true);
         useChatStore.getState().startNewSession(activeName ?? undefined);
+        ownRestartRef.current = true;
       });
     return () => {
       cancelled = true;
     };
   }, [storedSessionEnded, autoRestarted, storedSessionId, rest, activeName]);
+
+  // Clear the stale "previous chat ended" note when the user starts a new
+  // thread or switches profiles — but keep it for the auto-restart above,
+  // which is what it was created to explain.
+  const ownRestartRef = useRef(false);
+  useEffect(() => {
+    if (ownRestartRef.current) {
+      ownRestartRef.current = false;
+      return;
+    }
+    if (!sessionId) setAutoRestarted(false);
+  }, [sessionId, activeName]);
+
   const profileLabel = activeProfile?.displayName ?? activeName ?? 'default';
   const modelLabel = activeProfile?.model ?? 'GPT-5.5';
   const headerTitle = currentSession?.title ?? 'Chat';

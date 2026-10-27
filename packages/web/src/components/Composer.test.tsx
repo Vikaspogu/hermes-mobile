@@ -160,13 +160,6 @@ describe('Composer', () => {
     expect(input).not.toHaveAttribute('capture');
   });
 
-  it('opens the same attachment menu from the screenshot file control', () => {
-    render(<Composer onSend={vi.fn()} onStop={vi.fn()} busy={false} onUploadFile={vi.fn()} />);
-    fireEvent.click(screen.getByRole('button', { name: 'Attach file' }));
-    expect(screen.getByRole('menuitem', { name: 'File' })).toBeInTheDocument();
-    fireEvent.click(screen.getByRole('button', { name: 'Close attachment menu' }));
-    expect(screen.queryByRole('menuitem', { name: 'File' })).not.toBeInTheDocument();
-  });
 
   it('uploads a selected file and submits the returned file reference', async () => {
     const onSend = vi.fn();
