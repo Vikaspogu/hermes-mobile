@@ -13,7 +13,7 @@ describe('ToolGroup', () => {
         tools={[{ id: 't1', name: 'terminal', input: { command: 'pytest -k reconnect' }, output: '2 passed' }]}
       />,
     );
-    fireEvent.click(screen.getByRole('button', { name: /Tool actions/i }));
+    fireEvent.click(screen.getByRole('button', { name: /1 step · done/i }));
     expect(screen.getByText('Ran · pytest -k reconnect')).toBeInTheDocument();
     expect(screen.getByText('2 passed')).toBeInTheDocument();
   });
@@ -25,17 +25,39 @@ describe('ToolGroup', () => {
 
   it('expands a tool row to show output', () => {
     render(<ToolGroup rpc={rpcMock} tools={[{ id: 't1', name: 'terminal', input: { command: 'ls' }, output: 'file.txt' }]} />);
-    fireEvent.click(screen.getByRole('button', { name: /Tool actions/i }));
+    fireEvent.click(screen.getByRole('button', { name: /1 step · done/i }));
     fireEvent.click(screen.getByRole('button', { name: /Ran/i }));
     expect(screen.getAllByText('file.txt').length).toBeGreaterThanOrEqual(1);
   });
 
   it('collapses finished tool groups by default', () => {
     render(<ToolGroup rpc={rpcMock} tools={[{ id: 't1', name: 'terminal', input: { command: 'ls' }, output: 'x' }]} />);
-    const header = screen.getByRole('button', { name: /Tool actions/i });
+    const header = screen.getByRole('button', { name: /1 step · done/i });
     expect(header).toHaveAttribute('aria-expanded', 'false');
     expect(screen.queryByText('Ran · ls')).not.toBeInTheDocument();
     fireEvent.click(header);
     expect(screen.getByText('Ran · ls')).toBeInTheDocument();
+  });
+
+  it('shows "Worked for Xm" when durationMs is set', () => {
+    render(
+      <ToolGroup
+        rpc={rpcMock}
+        tools={[{ id: 't1', name: 'terminal', input: { command: 'ls' }, output: 'x' }]}
+        durationMs={120000}
+      />,
+    );
+    expect(screen.getByRole('button', { name: /Worked for 2m/i })).toBeInTheDocument();
+  });
+
+  it('formats sub-minute durations as seconds', () => {
+    render(
+      <ToolGroup
+        rpc={rpcMock}
+        tools={[{ id: 't1', name: 'terminal', input: { command: 'ls' }, output: 'x' }]}
+        durationMs={9000}
+      />,
+    );
+    expect(screen.getByRole('button', { name: /Worked for 9s/i })).toBeInTheDocument();
   });
 });

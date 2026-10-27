@@ -8,8 +8,14 @@ export interface MessageBubbleProps {
   streaming?: boolean;
   liveStatus?: string;
   liveFace?: string | undefined;
+  turnDurationMs?: number | undefined;
   pendingApprovals?: Approval[] | undefined;
   activeSessionIds?: string[] | undefined;
+}
+
+// Wire timestamps arrive as epoch seconds or millis depending on source; normalize to ms.
+export function toEpochMs(v: number | undefined): number | undefined {
+  return v === undefined ? undefined : (v < 1e12 ? v * 1000 : v);
 }
 
 export function areMessageBubblePropsEqual(prev: MessageBubbleProps, next: MessageBubbleProps): boolean {
@@ -20,6 +26,7 @@ export function areMessageBubblePropsEqual(prev: MessageBubbleProps, next: Messa
     prev.streaming === next.streaming &&
     prev.liveStatus === next.liveStatus &&
     prev.liveFace === next.liveFace &&
+    prev.turnDurationMs === next.turnDurationMs &&
     prev.pendingApprovals === next.pendingApprovals &&
     prev.activeSessionIds === next.activeSessionIds
   );

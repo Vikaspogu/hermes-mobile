@@ -8,6 +8,7 @@ interface ToolGroupProps {
   tools: ToolCall[];
   rpc: RpcClient;
   streaming?: boolean | undefined;
+  durationMs?: number | undefined;
 }
 
 interface ToolRowProps {
@@ -55,7 +56,15 @@ function ToolRow({ tool, rpc, streaming }: ToolRowProps) {
   );
 }
 
-export function ToolGroup({ tools, rpc, streaming }: ToolGroupProps) {
+function formatWorkDuration(ms: number): string {
+  const totalSec = Math.max(0, Math.round(ms / 1000));
+  const min = Math.floor(totalSec / 60);
+  const sec = totalSec % 60;
+  if (min === 0) return `${sec}s`;
+  return sec === 0 ? `${min}m` : `${min}m ${sec}s`;
+}
+
+export function ToolGroup({ tools, rpc, streaming, durationMs }: ToolGroupProps) {
   const runningCount = tools.filter((t) => t.output === undefined).length;
   const stateLabel = runningCount > 0 ? 'running' : 'done';
   const [open, setOpen] = useState(false);
@@ -63,21 +72,19 @@ export function ToolGroup({ tools, rpc, streaming }: ToolGroupProps) {
   const showRows = open || runningCount > 0;
 
   return (
-    <div className="hm-tool-group">
+    <div className={`hm-tool-group${showRows ? ' hm-tool-group--open' : ''}`}>
       <button
         type="button"
         className="hm-tool-group__header"
         onClick={() => setOpen((v) => !v)}
         aria-expanded={showRows}
       >
-        <span className="hm-tool-group__header-icon">
-          <Icon name="settings" size={12} />
-        </span>
         <span className="hm-tool-group__header-text">
-          <span className="hm-tool-group__header-meta">
-            {tools.length} {tools.length === 1 ? 'step' : 'steps'} · {stateLabel}
-          </span>
-          <span className="hm-tool-group__header-title">Tool actions</span>
+          {runningCount > 0
+            ? `${tools.length} ${tools.length === 1 ? 'step' : 'steps'} · ${stateLabel}`
+            : durationMs !== undefined && durationMs >= 1000
+              ? `Worked for ${formatWorkDuration(durationMs)}`
+              : `${tools.length} ${tools.length === 1 ? 'step' : 'steps'} · ${stateLabel}`}
         </span>
         {runningCount > 0 && <span className="hm-tool-group__header-running" aria-label="running" />}
         <span className="hm-tool-group__chevron" aria-hidden="true">›</span>

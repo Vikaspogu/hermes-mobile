@@ -1126,32 +1126,14 @@ a {
   color: var(--hm-color-text-muted);
 }
 
-.hm-tool-group__header-icon {
-  display: grid;
-  place-items: center;
-  width: 18px;
-  height: 18px;
-  border-radius: 5px;
-  background: var(--hm-color-surface);
-  color: var(--hm-color-text-2);
-}
-
-.hm-tool-group__header-title {
-  font-weight: var(--hm-fw-semibold);
-  color: var(--hm-color-text);
-}
-
 .hm-tool-group__header-text {
   display: flex;
-  flex: 1;
-  flex-direction: column;
-  gap: var(--hm-space-1);
+  align-items: center;
+  gap: 6px;
+  font-weight: var(--hm-fw-semibold);
 }
 
-.hm-tool-group__header-meta {
-  font-size: 11px;
-  text-transform: lowercase;
-}
+/* ToolGroup header rows (running dots, hairline) */
 
 .hm-tool-group__chevron {
   font-size: 16px;

@@ -146,6 +146,7 @@ function MessageBubbleView({
   streaming,
   liveStatus,
   liveFace,
+  turnDurationMs,
   pendingApprovals,
   activeSessionIds,
 }: MessageBubbleProps) {
@@ -233,7 +234,7 @@ function MessageBubbleView({
             </div>
           )}
 
-          {otherTools.length > 0 && <ToolGroup tools={otherTools} rpc={rpc} streaming={active} />}
+          {otherTools.length > 0 && <ToolGroup tools={otherTools} rpc={rpc} streaming={active} durationMs={turnDurationMs} />}
         </div>
       )}
 

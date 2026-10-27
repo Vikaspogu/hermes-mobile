@@ -14,6 +14,7 @@ import {
   type RestClient,
 } from '@hermes-pwa/core';
 import { MessageBubble } from '../components/MessageBubble';
+import { toEpochMs } from '../components/MessageBubble.helpers';
 import { Composer } from '../components/Composer';
 import '../styles/empty-chat.css';
 import '../styles/screens/thread.css'; // ponytail: prototype.css's trailing @import of screens/*.css is dropped by Vite
@@ -146,6 +147,21 @@ export function Chat({ rpc, rest, onOpenVoice }: ChatProps) {
     },
     [pendingApprovals, activeSessionIds, messages],
   );
+
+  // Turn duration per assistant message (T3 "Worked for Xm" chip): assistant
+  // createdAt minus the most recent user message's createdAt.
+  const turnDurationById = useMemo(() => {
+    const map = new Map<string, number>();
+    let lastUserMs: number | undefined;
+    for (const m of messages) {
+      const ms = toEpochMs(m.createdAt);
+      if (m.role === 'user') lastUserMs = ms;
+      else if (m.role === 'assistant' && lastUserMs !== undefined && ms !== undefined) {
+        map.set(m.id, Math.max(0, ms - lastUserMs));
+      }
+    }
+    return map;
+  }, [messages]);
   const [historyLoading, setHistoryLoading] = useState(connection.state === 'connected');
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [approvalRecords, setApprovalRecords] = useState<ApprovalRecord[]>([]);
@@ -742,6 +758,7 @@ export function Chat({ rpc, rest, onOpenVoice }: ChatProps) {
             streaming={streaming}
             liveStatus={index === messages.length - 1 && streaming ? liveStatus.text : ''}
             liveFace={undefined}
+            turnDurationMs={turnDurationById.get(m.id)}
           />
         ))}
 

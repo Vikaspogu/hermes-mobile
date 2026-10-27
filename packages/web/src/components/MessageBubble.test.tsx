@@ -126,7 +126,7 @@ describe('MessageBubble', () => {
         }}
       />,
     );
-    fireEvent.click(screen.getByRole('button', { name: /Tool actions/i }));
+    fireEvent.click(screen.getByRole('button', { name: /1 step · done/i }));
     expect(screen.getByText('Search')).toBeInTheDocument();
   });
 

@@ -125,13 +125,9 @@
 }
 
 /* Collapsed tool steps → mockup .steps card */
-.hm-chat .hm-tool-group__header {
-  background: var(--hm-color-surface);
-  border: 1px solid var(--hm-color-border);
-  border-radius: 12px;
-  padding: 10px 12px;
-  font-size: 13px;
-  color: var(--hm-color-text-muted);
+.hm-chat .hm-tool-group--open .hm-tool-group__header {
+  border-bottom: 1px solid var(--hm-color-border);
+  padding-bottom: 8px;
 }
 
 /* Live status → mockup .working line (pulse dot + primary text, no avatar) */
