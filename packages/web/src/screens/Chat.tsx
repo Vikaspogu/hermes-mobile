@@ -281,12 +281,14 @@ export function Chat({ rpc, rest, onOpenVoice }: ChatProps) {
     };
 
     const eventBelongsToActiveChat = (e: import('@hermes-pwa/core').RpcEvent) => {
-      const { sessionId, storedSessionId, streaming, cacheProfile } = useChatStore.getState();
-      if (!e.sessionId) {
-        const profileMatches = !activeName || !cacheProfile || cacheProfile === activeName;
-        return streaming && profileMatches && Boolean(sessionId || storedSessionId);
+      const { sessionId, storedSessionId, lastSubmittedSessionId, streaming, cacheProfile } = useChatStore.getState();
+      if (e.sessionId) {
+        return (
+          e.sessionId === sessionId || e.sessionId === storedSessionId || e.sessionId === lastSubmittedSessionId
+        );
       }
-      return e.sessionId === sessionId || e.sessionId === storedSessionId;
+      const profileMatches = !activeName || !cacheProfile || cacheProfile === activeName;
+      return streaming && profileMatches && Boolean(sessionId || storedSessionId);
     };
     const beginAssistant = () => {
       useChatStore.getState().beginAssistant();

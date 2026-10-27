@@ -51,6 +51,7 @@ describe('useChatStore', () => {
     expect(useChatStore.getState().messages[0]?.text).toBe('hello');
     expect(useChatStore.getState().messages[1]?.role).toBe('assistant');
     expect(useChatStore.getState().streaming).toBe(true);
+    expect(useChatStore.getState().lastSubmittedSessionId).toBe('s-1');
   });
 
   it('submit passes profile to session.create', async () => {
@@ -538,10 +539,11 @@ describe('useChatStore', () => {
     expect(window.localStorage.getItem('hermes-pwa.activeSession.v4:default')).toContain('saved on pagehide');
   });
 
-  it('finishAssistant sets streaming false', () => {
-    useChatStore.setState({ streaming: true });
+  it('finishAssistant sets streaming false and clears lastSubmittedSessionId at turn end', () => {
+    useChatStore.setState({ streaming: true, sessionId: 's-live', lastSubmittedSessionId: 's-live' });
     useChatStore.getState().finishAssistant();
     expect(useChatStore.getState().streaming).toBe(false);
+    expect(useChatStore.getState().lastSubmittedSessionId).toBeUndefined();
   });
 
   it('finishAssistant clears thinking when it duplicates the final answer', () => {

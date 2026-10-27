@@ -100,13 +100,14 @@ export interface ChatStore {
   sessionId: string | undefined;
   /** Durable stored session id used for session.resume and drawer selection. */
   storedSessionId: string | undefined;
+  /** Session id the in-flight prompt was submitted on; WS events for it belong to this chat even if a mid-turn refresh swaps sessionId. Cleared on session switch and turn end. */
+  lastSubmittedSessionId: string | undefined;
   messages: Message[];
   streaming: boolean;
   error: string | undefined;
 
   /** Internal cache scope; not shown in UI. */
   cacheProfile: string | undefined;
-
   setSessionId(id: string | undefined, storedSessionId?: string | undefined): void;
   loadHistory(rest: RestClient, sessionId: string): Promise<void>;
   refreshHistory(rest: RestClient, profile?: string): Promise<void>;
@@ -978,16 +979,17 @@ export const useChatStore = create<ChatStore>((set, get) => ({
   streaming: initialCache.streaming,
   error: undefined,
   cacheProfile: initialCache.profile,
+  lastSubmittedSessionId: undefined, // transient, never persisted
 
   setSessionId(id, storedSessionId) {
-    const next = { sessionId: id, storedSessionId, messages: [] as Message[], error: undefined };
+    const next = { sessionId: id, storedSessionId, lastSubmittedSessionId: undefined, messages: [] as Message[], error: undefined };
     set(next);
     persistActiveSession({ ...get(), ...next });
   },
 
   async loadHistory(rest, sessionId) {
     const before = get();
-    set({ streaming: false, error: undefined });
+    set({ streaming: false, lastSubmittedSessionId: undefined, error: undefined });
     const anchor = get();
     try {
       const raw = await rest.sessionMessages(sessionId);
@@ -1000,7 +1002,9 @@ export const useChatStore = create<ChatStore>((set, get) => ({
       const keepStreaming =
         sameActiveSession && before.streaming && merged.preservedLocalTail.some((m) => m.role === 'assistant');
       const next = { messages: merged.messages, streaming: keepStreaming, sessionId };
-      set(next);
+      // ponytail: keep lastSubmittedSessionId while this same session still streams (mid-turn reload);
+      // clear it on foreign-session history loads.
+      set({ ...next, lastSubmittedSessionId: sameActiveSession ? before.lastSubmittedSessionId : undefined });
       persistActiveSession({ ...get(), ...next });
     } catch (err) {
       if (isSameChatState(get(), anchor)) {
@@ -1057,6 +1061,7 @@ export const useChatStore = create<ChatStore>((set, get) => ({
         // and a dead turn would otherwise stick the composer in interrupt mode.
         // A genuinely running turn re-marks streaming via WS events.
         streaming: false,
+        lastSubmittedSessionId: undefined,
         error: undefined,
         cacheProfile: cached.profile ?? cacheProfile,
       });
@@ -1154,13 +1159,13 @@ export const useChatStore = create<ChatStore>((set, get) => ({
   async resumeSessionIntoChat(rest, rpc, storedSessionId, profile) {
     const cacheProfile = resolveCacheProfile(profile, get().cacheProfile);
     const beforeOpen = get();
-    set({ streaming: false, error: undefined, cacheProfile });
+    set({ streaming: false, lastSubmittedSessionId: undefined, error: undefined, cacheProfile });
     const anchor = get();
     try {
       const opened = await openDurableSession(rest, rpc, storedSessionId, cacheProfile);
       if (!isSameChatState(get(), anchor)) return;
       const nextOpened = preserveLineageTail(opened, beforeOpen);
-      set(nextOpened);
+      set({ ...nextOpened, lastSubmittedSessionId: undefined });
       persistActiveSession({ ...get(), ...nextOpened });
     } catch (err) {
       if (isSameChatState(get(), anchor)) {
@@ -1168,6 +1173,7 @@ export const useChatStore = create<ChatStore>((set, get) => ({
           sessionId: undefined,
           storedSessionId,
           streaming: false,
+          lastSubmittedSessionId: undefined,
           error: userFacingChatError(err, 'Failed to open session.'),
         });
         persistActiveSession(get());
@@ -1389,6 +1395,7 @@ export const useChatStore = create<ChatStore>((set, get) => ({
         ];
 
         const optimistic = {
+          lastSubmittedSessionId: id,
           sessionId: id,
           storedSessionId: durableId,
           streaming: true,
@@ -1420,6 +1427,7 @@ export const useChatStore = create<ChatStore>((set, get) => ({
           id = replacement.sessionId;
           durableId = replacement.storedSessionId;
           const recovered = {
+            lastSubmittedSessionId: id,
             sessionId: id,
             storedSessionId: durableId,
             streaming: true,
@@ -1499,7 +1507,7 @@ export const useChatStore = create<ChatStore>((set, get) => ({
     interruptInFlightKeys.add(interruptKey);
     try {
       await rpc.request('session.interrupt', { session_id: sessionId });
-      set({ streaming: options?.keepStreaming === true, error: undefined });
+      set({ streaming: options?.keepStreaming === true, lastSubmittedSessionId: undefined, error: undefined });
       persistActiveSession(get());
     } catch (err) {
       set({ error: userFacingChatError(err, 'Interrupt failed.') });
@@ -1533,7 +1541,7 @@ export const useChatStore = create<ChatStore>((set, get) => ({
         }
         msgs[msgs.length - 1] = nextLast;
       }
-      const next = { streaming: false, messages: msgs };
+      const next = { streaming: false, lastSubmittedSessionId: undefined, messages: msgs };
       persistActiveSession({ ...state, ...next });
       return next;
     });
@@ -1547,13 +1555,16 @@ export const useChatStore = create<ChatStore>((set, get) => ({
       if (last && last.role === 'assistant' && !last.text.trim()) {
         msgs[msgs.length - 1] = { ...last, text: `Error: ${message}` };
       }
-      const next = { streaming: false, error: message, messages: msgs };
+      const next = { streaming: false, lastSubmittedSessionId: undefined, error: message, messages: msgs };
       persistActiveSession({ ...state, ...next });
       return next;
     });
   },
 
   markIdle() {
+    // ponytail: deliberately does NOT clear lastSubmittedSessionId — a spurious running=false
+    // mid-turn (the original empty-response race) must not orphan still-incoming deltas; turn end
+    // (finishAssistant/failAssistant) and session switches own the clearing.
     set((state) => {
       const next = { streaming: false };
       persistActiveSession({ ...state, ...next });
@@ -1638,6 +1649,7 @@ export const useChatStore = create<ChatStore>((set, get) => ({
       storedSessionId: undefined,
       messages: [] as Message[],
       streaming: false,
+      lastSubmittedSessionId: undefined,
       error: undefined,
       cacheProfile,
     };

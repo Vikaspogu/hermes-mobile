@@ -43,7 +43,8 @@ describe('Chat', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     window.localStorage.clear();
-    core.useChatStore.setState({ sessionId: undefined, storedSessionId: undefined, messages: [], streaming: false, error: undefined });
+    core.useChatStore.setState({ sessionId: undefined, storedSessionId: undefined, messages: [], streaming: false,
+    lastSubmittedSessionId: undefined, error: undefined });
     core.useSessionsStore.setState({ sessions: [], loading: false, error: undefined, pinnedIds: [] });
     core.useConnectionStore.setState({ state: 'connected', error: undefined });
     core.useProfilesStore.setState({ activeName: 'default', currentName: 'default', profiles: [{ name: 'default', displayName: 'default', isActive: true }], loading: false, error: undefined });
@@ -149,6 +150,7 @@ describe('Chat', () => {
       sessionId: 'profile-b-live',
       storedSessionId: 'profile-b-stored',
       streaming: false,
+    lastSubmittedSessionId: undefined,
       messages: [{ id: 'b-1', role: 'user', text: 'new profile prompt', createdAt: undefined }],
       error: undefined,
     });
@@ -327,7 +329,8 @@ describe('Chat', () => {
 
   it('does not create or update an assistant bubble for compression lifecycle status updates', async () => {
     core.useConnectionStore.setState({ state: 'reconnecting', error: undefined });
-    core.useChatStore.setState({ sessionId: 's-1', streaming: false, messages: [] });
+    core.useChatStore.setState({ sessionId: 's-1', streaming: false,
+    lastSubmittedSessionId: undefined, messages: [] });
     render(<Chat rpc={rpcMock} rest={restMock} />);
 
     rpcMock.events.dispatchEvent({
@@ -794,6 +797,7 @@ describe('Chat', () => {
     core.useChatStore.setState({
       sessionId: 's-1',
       streaming: false,
+    lastSubmittedSessionId: undefined,
       messages: [{ id: 'old', role: 'assistant', text: 'old reply', createdAt: undefined }],
     });
     vi.mocked(rpcMock.request).mockResolvedValue({ status: 'streaming' });
@@ -816,6 +820,7 @@ describe('Chat', () => {
       storedSessionId: 'stored-1',
       messages: [{ id: 'cached-1', role: 'assistant', text: 'cached reply', createdAt: 1 }],
       streaming: false,
+    lastSubmittedSessionId: undefined,
       error: undefined,
     });
     core.useSessionsStore.setState({
@@ -863,6 +868,7 @@ describe('Chat', () => {
     core.useChatStore.setState({
       sessionId: 's-1',
       streaming: false,
+    lastSubmittedSessionId: undefined,
       messages: [{ id: 'm-old', role: 'assistant', text: 'old', createdAt: undefined }],
     });
     core.useConfigStore.setState({ config: { display: { busy_input_mode: 'queue' } } });
@@ -1011,6 +1017,7 @@ describe('Chat', () => {
       sessionId: 'sess-1',
       storedSessionId: 'stored-1',
       streaming: false,
+    lastSubmittedSessionId: undefined,
       messages: [
         {
           id: 'a-1',
