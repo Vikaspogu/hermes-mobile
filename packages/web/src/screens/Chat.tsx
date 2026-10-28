@@ -114,6 +114,7 @@ export function Chat({ rpc, rest, onOpenVoice }: ChatProps) {
     error,
     sessionId,
     storedSessionId,
+    locallyCreatedStoredId,
   } = useChatStore();
   const pendingApprovals = useActivityStore(useShallow((s) => selectPendingApprovals(s.items)));
   const pendingApprovalCount = pendingApprovals.length;
@@ -544,9 +545,14 @@ export function Chat({ rpc, rest, onOpenVoice }: ChatProps) {
   // The sessions list is capped and drops silent cron runs, so absence is not
   // proof the session ended — a notification deep link opens sessions the list
   // never shows. Probe the server; only a real 404 means it is gone.
+  // Exception: a stored id this app run just minted via session.create has no
+  // server row yet (the server defers it to the first turn), so a probe would
+  // 404 and falsely restart the brand-new chat. The submit path already
+  // recovers from genuinely dead sessions (session.usage 4001 -> replaceMissingLiveSession).
   const [autoRestarted, setAutoRestarted] = useState(false);
   useEffect(() => {
     if (!storedSessionEnded || autoRestarted || !storedSessionId) return undefined;
+    if (locallyCreatedStoredId === storedSessionId) return undefined;
     const messagesAtProbeStart = useChatStore.getState().messages;
     let cancelled = false;
     rest
@@ -566,7 +572,7 @@ export function Chat({ rpc, rest, onOpenVoice }: ChatProps) {
     return () => {
       cancelled = true;
     };
-  }, [storedSessionEnded, autoRestarted, storedSessionId, rest, activeName]);
+  }, [storedSessionEnded, autoRestarted, storedSessionId, locallyCreatedStoredId, rest, activeName]);
 
   // Clear the stale "previous chat ended" note when the user starts a new
   // thread or switches profiles — but keep it for the auto-restart above,

@@ -11,7 +11,7 @@ describe('useChatStore', () => {
 
   beforeEach(() => {
     window.localStorage.clear();
-    useChatStore.setState({ sessionId: undefined, storedSessionId: undefined, messages: [], streaming: false, error: undefined });
+    useChatStore.setState({ sessionId: undefined, storedSessionId: undefined, locallyCreatedStoredId: undefined, messages: [], streaming: false, error: undefined });
     useSessionsStore.setState({ sessions: [], loading: false, error: undefined, pinnedIds: [] });
 
     rpcMock = {
@@ -1019,6 +1019,52 @@ describe('useChatStore', () => {
       'assistant:Self-check complete. All good.',
     ]);
     expect(useChatStore.getState().streaming).toBe(false);
+  });
+
+  it('refreshHistory matches a local assistant with thinking to the same REST message without thinking', async () => {
+    useSessionsStore.setState({
+      sessions: [{ id: 'stored-thinking', title: 'Thinking session', updatedAt: 2, messageCount: 2, profile: 'default' }],
+      loading: false,
+      error: undefined,
+      pinnedIds: [],
+    });
+    useChatStore.setState({
+      sessionId: 'live-thinking',
+      storedSessionId: 'stored-thinking',
+      messages: [
+        { id: 'u-local', role: 'user', text: 'hello', createdAt: 1 },
+        { id: 'a-local', role: 'assistant', text: 'Final answer.', thinking: 'some reasoning', createdAt: 2 },
+      ],
+      streaming: false,
+      error: undefined,
+    });
+    vi.mocked(restMock.sessionMessages).mockResolvedValue({
+      session_id: 'stored-thinking',
+      messages: [
+        { id: 'u-rest', role: 'user', text: 'hello', created_at: 1 },
+        { id: 'a-rest', role: 'assistant', text: 'Final answer.', created_at: 2 },
+      ],
+    });
+
+    await useChatStore.getState().refreshHistory(restMock, 'default');
+
+    const assistants = useChatStore.getState().messages.filter((m) => m.role === 'assistant');
+    expect(assistants).toHaveLength(1);
+    expect(assistants[0]?.text).toBe('Final answer.');
+    expect(assistants[0]?.thinking).toBe('some reasoning');
+  });
+
+  it('marks a locally created stored id and clears the marker once REST proves the row exists', async () => {
+    vi.mocked(rpcMock.request)
+      .mockResolvedValueOnce({ session_id: 's-1', stored_session_id: 'stored-1' })
+      .mockResolvedValueOnce({ status: 'streaming' });
+    await useChatStore.getState().submit(rpcMock, 'hello');
+    expect(useChatStore.getState().locallyCreatedStoredId).toBe('stored-1');
+
+    useChatStore.setState({ streaming: false });
+    vi.mocked(restMock.sessionMessages).mockResolvedValue({ session_id: 'stored-1', messages: [] });
+    await useChatStore.getState().refreshHistory(restMock, 'default');
+    expect(useChatStore.getState().locallyCreatedStoredId).toBeUndefined();
   });
 
   it('refreshHistory keeps the just-sent echo when the runtime id resolves to a durable alias', async () => {

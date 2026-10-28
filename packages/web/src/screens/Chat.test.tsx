@@ -44,7 +44,7 @@ describe('Chat', () => {
     vi.clearAllMocks();
     window.localStorage.clear();
     core.useChatStore.setState({ sessionId: undefined, storedSessionId: undefined, messages: [], streaming: false,
-    lastSubmittedSessionId: undefined, error: undefined });
+    lastSubmittedSessionId: undefined, locallyCreatedStoredId: undefined, error: undefined });
     core.useSessionsStore.setState({ sessions: [], loading: false, error: undefined, pinnedIds: [] });
     core.useConnectionStore.setState({ state: 'connected', error: undefined });
     core.useProfilesStore.setState({ activeName: 'default', currentName: 'default', profiles: [{ name: 'default', displayName: 'default', isActive: true }], loading: false, error: undefined });

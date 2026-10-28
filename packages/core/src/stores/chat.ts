@@ -102,6 +102,8 @@ export interface ChatStore {
   storedSessionId: string | undefined;
   /** Session id the in-flight prompt was submitted on; WS events for it belong to this chat even if a mid-turn refresh swaps sessionId. Cleared on session switch and turn end. */
   lastSubmittedSessionId: string | undefined;
+  /** Stored id minted by session.create in this app run; its server row is deferred to the first turn, so absence/404 is not proof it ended. */
+  locallyCreatedStoredId: string | undefined;
   messages: Message[];
   streaming: boolean;
   error: string | undefined;
@@ -450,8 +452,13 @@ function mergeToolCallsPreservingLocalPending(historyTools: ToolCall[] | undefin
 
 function mergeHistoryMessageWithLocal(historyMessage: Message, localMessage: Message): Message {
   const toolCalls = mergeToolCallsPreservingLocalPending(historyMessage.toolCalls, localMessage.toolCalls);
-  if (!toolCalls || toolCalls === historyMessage.toolCalls) return historyMessage;
-  return { ...historyMessage, toolCalls };
+  const keepLocalThinking = historyMessage.thinking === undefined && localMessage.thinking !== undefined;
+  if ((!toolCalls || toolCalls === historyMessage.toolCalls) && !keepLocalThinking) return historyMessage;
+  return {
+    ...historyMessage,
+    ...(toolCalls ? { toolCalls } : {}),
+    ...(keepLocalThinking ? { thinking: localMessage.thinking } : {}),
+  };
 }
 
 function isEmptyAssistantPlaceholder(message: Message): boolean {
@@ -491,7 +498,18 @@ function mergeHistoryWithLocal(history: Message[], local: Message[]): { messages
   const consumedLocal = new Set<number>();
   const mergedHistory = history.map((historyMessage) => {
     const key = messageFingerprint(historyMessage);
-    const localIndex = local.findIndex((localMessage, index) => !consumedLocal.has(index) && messageFingerprint(localMessage) === key);
+    let localIndex = local.findIndex((localMessage, index) => !consumedLocal.has(index) && messageFingerprint(localMessage) === key);
+    if (localIndex < 0) {
+      // The realtime stream can carry fields REST does not persist (thinking,
+      // trailing whitespace). Fall back to role+text so the same message is not
+      // duplicated as a preserved local tail.
+      localIndex = local.findIndex(
+        (localMessage, index) =>
+          !consumedLocal.has(index) &&
+          localMessage.role === historyMessage.role &&
+          localMessage.text.trim() === historyMessage.text.trim(),
+      );
+    }
     if (localIndex < 0) return historyMessage;
     const localMatch = local[localIndex];
     if (!localMatch) return historyMessage;
@@ -873,6 +891,15 @@ async function createLiveSession(rpc: RpcClient, profile?: string, durableFallba
   const createParams: Record<string, unknown> = {};
   if (profile) createParams.profile = profile;
   const created = await rpc.request('session.create', createParams);
+  // The server defers this session's state.db row to its first turn, so a
+  // missing list entry or 404 is not proof it ended — remember we minted it.
+  // Only an id from THIS create response counts; the durableFallback may be an
+  // old, genuinely ended session. A stale marker is harmless: consumers compare
+  // it against the chat's current storedSessionId.
+  const createdStoredId = durableSessionIdFromResult(created, undefined);
+  if (createdStoredId) {
+    useChatStore.setState({ locallyCreatedStoredId: createdStoredId });
+  }
   return {
     sessionId: liveSessionIdFromResult(created),
     storedSessionId: durableSessionIdFromResult(created, durableFallback),
@@ -957,6 +984,11 @@ async function refreshDurableHistory(rest: RestClient, durableSessionId: string,
   const openableSessionId = resolveOpenableStoredSessionId(durableSessionId);
   const raw = await rest.sessionMessages(openableSessionId, profile);
   const storedSessionId = storedSessionIdFromMessagesResult(raw, openableSessionId);
+  // A successful fetch proves the server row exists — the locally-created
+  // exemption is no longer needed for this id.
+  if (useChatStore.getState().locallyCreatedStoredId === openableSessionId) {
+    useChatStore.setState({ locallyCreatedStoredId: undefined });
+  }
   const history = messagesFromResult(raw);
   // Merge locals when the id resolves to itself, or when the caller passed a
   // runtime-only id (mergeLocalsOnAlias): the alias is then that session's own
@@ -980,6 +1012,7 @@ export const useChatStore = create<ChatStore>((set, get) => ({
   error: undefined,
   cacheProfile: initialCache.profile,
   lastSubmittedSessionId: undefined, // transient, never persisted
+  locallyCreatedStoredId: undefined, // transient, never persisted
 
   setSessionId(id, storedSessionId) {
     const next = { sessionId: id, storedSessionId, lastSubmittedSessionId: undefined, messages: [] as Message[], error: undefined };
@@ -1650,6 +1683,7 @@ export const useChatStore = create<ChatStore>((set, get) => ({
       messages: [] as Message[],
       streaming: false,
       lastSubmittedSessionId: undefined,
+      locallyCreatedStoredId: undefined,
       error: undefined,
       cacheProfile,
     };
