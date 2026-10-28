@@ -11,6 +11,9 @@ export interface MessageBubbleProps {
   turnDurationMs?: number | undefined;
   pendingApprovals?: Approval[] | undefined;
   activeSessionIds?: string[] | undefined;
+  // When true the bubble's thinking/todo/tool actions are rendered by the turn work
+  // strip instead; text messages keep their bubble, tool-only bubbles are omitted.
+  suppressActions?: boolean | undefined;
 }
 
 // Wire timestamps arrive as epoch seconds or millis depending on source; normalize to ms.
@@ -28,7 +31,8 @@ export function areMessageBubblePropsEqual(prev: MessageBubbleProps, next: Messa
     prev.liveFace === next.liveFace &&
     prev.turnDurationMs === next.turnDurationMs &&
     prev.pendingApprovals === next.pendingApprovals &&
-    prev.activeSessionIds === next.activeSessionIds
+    prev.activeSessionIds === next.activeSessionIds &&
+    prev.suppressActions === next.suppressActions
   );
 }
 

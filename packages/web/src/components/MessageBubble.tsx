@@ -149,6 +149,7 @@ function MessageBubbleView({
   turnDurationMs,
   pendingApprovals,
   activeSessionIds,
+  suppressActions,
 }: MessageBubbleProps) {
   if (message.role === 'tool') {
     return null;
@@ -171,7 +172,9 @@ function MessageBubbleView({
     ...(recoveredTool ? [recoveredTool] : []),
   ];
   const hasActions =
-    Boolean(message.thinking?.trim()) || Boolean(completedTodoTool) || otherTools.length > 0;
+    !suppressActions &&
+    (Boolean(message.thinking?.trim()) || Boolean(completedTodoTool) || otherTools.length > 0);
+
   const showHeaderStatus = active && Boolean(liveStatus?.trim());
   const statusFace = liveFace?.trim();
 

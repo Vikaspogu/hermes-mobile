@@ -66,3 +66,27 @@
   content-visibility: auto;
   contain-intrinsic-size: auto 160px;
 }
+
+/* One thin strip replacing stacked thought/tool cards for a completed turn */
+.hm-turn-strip { margin: 4px 0 8px; }
+.hm-turn-strip__row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  padding: 6px 10px;
+  border: 1px solid var(--hm-color-border, rgba(128, 128, 128, 0.25));
+  border-radius: 999px;
+  background: transparent;
+  color: var(--hm-color-text-muted);
+  font-size: 12.5px;
+  text-align: left;
+  cursor: pointer;
+}
+.hm-turn-strip__label { flex: 1; }
+.hm-turn-strip__icon { display: inline-flex; opacity: 0.8; }
+.hm-turn-strip__row:focus-visible {
+  outline: 2px solid var(--hm-color-accent, currentColor);
+  outline-offset: 2px;
+}
+.hm-turn-strip__body { padding: 6px 2px 0; }

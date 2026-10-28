@@ -14,6 +14,8 @@ import {
   type RestClient,
 } from '@hermes-pwa/core';
 import { MessageBubble } from '../components/MessageBubble';
+import { TurnWorkStrip } from '../components/TurnWorkStrip';
+import { buildFeedItems } from './chatFeed';
 import { toEpochMs } from '../components/MessageBubble.helpers';
 import { Composer } from '../components/Composer';
 import '../styles/empty-chat.css';
@@ -163,6 +165,11 @@ export function Chat({ rpc, rest, onOpenVoice }: ChatProps) {
     }
     return map;
   }, [messages]);
+
+  const feedItems = useMemo(
+    () => buildFeedItems(messages, Boolean(streaming), turnDurationById),
+    [messages, streaming, turnDurationById],
+  );
   const [historyLoading, setHistoryLoading] = useState(connection.state === 'connected');
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [approvalRecords, setApprovalRecords] = useState<ApprovalRecord[]>([]);
@@ -771,18 +778,31 @@ export function Chat({ rpc, rest, onOpenVoice }: ChatProps) {
             <span className="hm-chat__history-skeleton" aria-hidden="true" />
           </div>
         )}
-        {messages.map((m, index) => (
-          <MessageBubble
-            key={m.id}
-            message={m}
-            rpc={rpc}
-            isLast={index === messages.length - 1}
-            streaming={streaming}
-            liveStatus={index === messages.length - 1 && streaming ? liveStatus.text : ''}
-            liveFace={undefined}
-            turnDurationMs={turnDurationById.get(m.id)}
-          />
-        ))}
+        {feedItems.map((item) =>
+          item.kind === 'strip' ? (
+            <TurnWorkStrip
+              key={item.id}
+              rpc={rpc}
+              groupThought={item.groupThought}
+              groupTodos={item.groupTodos}
+              groupTools={item.groupTools}
+              durationMs={item.durationMs}
+              streaming={item.streaming}
+            />
+          ) : (
+            <MessageBubble
+              key={item.message.id}
+              message={item.message}
+              rpc={rpc}
+              isLast={item.index === messages.length - 1}
+              streaming={streaming}
+              liveStatus={item.index === messages.length - 1 && streaming ? liveStatus.text : ''}
+              liveFace={undefined}
+              turnDurationMs={turnDurationById.get(item.message.id)}
+              suppressActions={item.suppressActions}
+            />
+          ),
+        )}
 
         {approvalRecords.map((record) => (
           <div className="hm-chat__record" key={record.id}>

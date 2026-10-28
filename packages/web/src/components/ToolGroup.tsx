@@ -56,7 +56,7 @@ function ToolRow({ tool, rpc, streaming }: ToolRowProps) {
   );
 }
 
-function formatWorkDuration(ms: number): string {
+export function formatWorkDuration(ms: number): string {
   const totalSec = Math.max(0, Math.round(ms / 1000));
   const min = Math.floor(totalSec / 60);
   const sec = totalSec % 60;
