@@ -51,6 +51,11 @@ describe('service worker source', () => {
     expect(serviceWorkerSource).toContain('showNotification(payload.title, payload.options)');
   });
 
+  it('suppresses silent cron-run notifications', () => {
+    expect(serviceWorkerSource).toContain('silent run');
+    expect(serviceWorkerSource).toContain('test(payload.options.body.trim())');
+  });
+
   it('sanitizes push payloads and falls back safely for malformed data', () => {
     expect(serviceWorkerSource).toContain('event.data ? event.data.json() : {}');
     expect(serviceWorkerSource).toContain("data = { body: event.data ? event.data.text() : '' }");

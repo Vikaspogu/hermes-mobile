@@ -48,7 +48,7 @@ function makeHarness() {
     },
     skipWaiting: vi.fn(),
     clients: { claim: vi.fn() },
-    registration: { scope: 'https://example.test/api/plugins/hermes-pwa/app/' },
+    registration: { scope: 'https://example.test/api/plugins/hermes-pwa/app/', showNotification: vi.fn(async () => undefined) },
   };
   const caches = {
     async open(name: string): Promise<FakeCache> {
@@ -132,7 +132,7 @@ function makeHarness() {
     return responsePromise as Promise<Response>;
   }
 
-  return { cacheStores, dispatch, fetchThroughServiceWorker, navigateOffline };
+  return { cacheStores, dispatch, fetchThroughServiceWorker, navigateOffline, showNotification: self.registration.showNotification };
 }
 
 describe('service worker runtime cache behavior', () => {
@@ -178,5 +178,31 @@ describe('service worker runtime cache behavior', () => {
     const runtimeKeys = (await runtimeCache.keys()).map((request) => request.url);
     expect(runtimeKeys).not.toContain('https://example.test/api/plugins/hermes-pwa/app/assets/index-old.js');
     expect(runtimeKeys).toContain('https://example.test/api/plugins/hermes-pwa/app/assets/Chat-old.js');
+  });
+});
+
+describe('service worker push notifications', () => {
+  function pushEvent(data: Record<string, unknown>) {
+    return { data: { json: () => data } };
+  }
+
+  it('tags silent cron pushes so a later one replaces it instead of stacking', async () => {
+    const harness = makeHarness();
+
+    await harness.dispatch('push', pushEvent({ title: 'important-mail', body: 'Silent run — nothing to report' }));
+
+    expect(harness.showNotification).toHaveBeenCalledTimes(1);
+    const [, options] = harness.showNotification.mock.calls[0] as unknown as [string, { tag: string; renotify: boolean }];
+    expect(options.tag).toBe('hermes-mobile-cron-silent');
+    expect(options.renotify).toBe(false);
+  });
+
+  it('keeps ordinary pushes on the default tag', async () => {
+    const harness = makeHarness();
+
+    await harness.dispatch('push', pushEvent({ title: 'Hermes', body: '3 emails need your input' }));
+
+    const [, options] = harness.showNotification.mock.calls[0] as unknown as [string, { tag: string }];
+    expect(options.tag).toBe('hermes-mobile');
   });
 });

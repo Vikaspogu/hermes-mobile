@@ -45,6 +45,17 @@ describe('MessageBubble', () => {
     expect(screen.getByText('Hello')).toBeInTheDocument();
   });
 
+  it('clamps long user messages and expands via Show more', () => {
+    const text = Array.from({ length: 8 }, (_, i) => `line ${i}`).join('\n');
+    const { container } = render(<MessageBubble rpc={rpcMock} message={{ id: 'long-1', role: 'user', text, createdAt: undefined }} />);
+    const paragraph = () => container.querySelector('.hm-message__bubble p');
+    expect(paragraph()).toHaveClass('hm-message__clamp');
+    fireEvent.click(screen.getByRole('button', { name: 'Show more' }));
+    expect(paragraph()).not.toHaveClass('hm-message__clamp');
+    fireEvent.click(screen.getByRole('button', { name: 'Show less' }));
+    expect(paragraph()).toHaveClass('hm-message__clamp');
+  });
+
   it('copies the complete prompt and shows the supplied message timestamp', async () => {
     const original = Object.getOwnPropertyDescriptor(navigator, 'clipboard');
     const writeText = vi.fn().mockResolvedValue(undefined);
