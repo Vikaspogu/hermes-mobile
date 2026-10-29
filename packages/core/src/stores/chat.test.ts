@@ -794,6 +794,79 @@ describe('useChatStore', () => {
     expect(useChatStore.getState().streaming).toBe(false);
   });
 
+  it('strips server-injected @image refs from stored user prompts', async () => {
+    window.localStorage.setItem(
+      'hermes-pwa.activeSession.v4:dev',
+      JSON.stringify({ profile: 'dev', sessionId: 'dead-live', storedSessionId: 'stored-img', messages: [] }),
+    );
+    vi.mocked(restMock.sessionMessages).mockResolvedValue({
+      messages: [
+        {
+          id: 'u-1',
+          role: 'user',
+          text: 'Try this image\n\n[Image: menu.jpg]\n@image:/opt/data/images/upload_1.jpg',
+        },
+        {
+          id: 'a-1',
+          role: 'assistant',
+          text: 'Assistant lines are never stripped\n@image:/opt/data/images/upload_1.jpg',
+        },
+      ],
+    });
+    useSessionsStore.setState({
+      sessions: [{ id: 'stored-img', title: 'Images', updatedAt: 1, messageCount: 1, profile: 'dev' }],
+      loading: false,
+      error: undefined,
+      pinnedIds: [],
+    });
+    vi.mocked(rpcMock.request)
+      .mockRejectedValueOnce(new Error('4001 session not found'))
+      .mockResolvedValueOnce({ session_id: 'live-img', session_key: 'stored-img', messages: [] });
+
+    await useChatStore.getState().restore(restMock, rpcMock, 'dev');
+
+    expect(useChatStore.getState().messages.map((m) => m.text)).toEqual([
+      'Try this image\n\n[Image: menu.jpg]',
+      'Assistant lines are never stripped\n@image:/opt/data/images/upload_1.jpg',
+    ]);
+  });
+
+  it('drops injected delegation batch messages from history', async () => {
+    window.localStorage.setItem(
+      'hermes-pwa.activeSession.v4:dev',
+      JSON.stringify({ profile: 'dev', sessionId: 'dead-live', storedSessionId: 'stored-deleg', messages: [] }),
+    );
+    vi.mocked(restMock.sessionMessages).mockResolvedValue({
+      messages: [
+        { id: 'u-1', role: 'user', text: 'real question' },
+        {
+          id: 'd-1',
+          role: 'user',
+          text: '[ASYNC DELEGATION BATCH COMPLETE — deleg_18c82bc8]\nA background fan-out unit you dispatched earlier — 1 subagent(s) — has finished',
+        },
+        { id: 'a-1', role: 'assistant', text: 'answer' },
+        { id: 'a-2', role: 'assistant', text: '[ASYNC DELEGATION quoted by the assistant]' },
+      ],
+    });
+    useSessionsStore.setState({
+      sessions: [{ id: 'stored-deleg', title: 'Deleg', updatedAt: 1, messageCount: 3, profile: 'dev' }],
+      loading: false,
+      error: undefined,
+      pinnedIds: [],
+    });
+    vi.mocked(rpcMock.request)
+      .mockRejectedValueOnce(new Error('4001 session not found'))
+      .mockResolvedValueOnce({ session_id: 'live-deleg', session_key: 'stored-deleg', messages: [] });
+
+    await useChatStore.getState().restore(restMock, rpcMock, 'dev');
+
+    expect(useChatStore.getState().messages.map((m) => m.text)).toEqual([
+      'real question',
+      'answer',
+      '[ASYNC DELEGATION quoted by the assistant]',
+    ]);
+  });
+
   it('restore reuses a live cached runtime but refreshes known local durable history', async () => {
     window.localStorage.setItem(
       'hermes-pwa.activeSession.v4:dev',

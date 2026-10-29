@@ -77,7 +77,7 @@ describe('compressImageForUpload', () => {
     // the ladder must start at the 2048px cap and strictly descend
     expect(attemptedWidths[0]).toBe(2048);
     expect(attemptedWidths.length).toBeGreaterThan(1);
-    expect(attemptedWidths.every((w, i) => i === 0 || w < attemptedWidths[i - 1])).toBe(true);
+    expect(attemptedWidths.every((w, i) => i === 0 || w < (attemptedWidths[i - 1] ?? 0))).toBe(true);
   });
 
   it('refuses animated formats instead of silently flattening them', async () => {

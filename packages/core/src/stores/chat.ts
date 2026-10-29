@@ -248,14 +248,37 @@ function messageCreatedAt(raw: Record<string, unknown>): number | undefined {
   return undefined;
 }
 
+// The gateway rewrites `[Image: name]` markers in stored user prompts and
+// appends the server-side path as an `@image:/…` line. Strip those lines at
+// ingest so history matches the optimistic echo (fingerprint dedupe) and
+// bubbles never show internal paths.
+const SERVER_INJECTED_IMAGE_REF = /^@image:\S+$/u;
+
+function stripServerInjectedImageRefs(text: string): string {
+  if (!text.includes('@image:')) return text;
+  return text
+    .split('\n')
+    .filter((line) => !SERVER_INJECTED_IMAGE_REF.test(line.trim()))
+    .join('\n');
+}
+
+// Hermes injects delegation fan-out results into the session as user-role
+// messages. They are agent plumbing, not user input — never render them.
+const DELEGATION_INJECTION_PREFIX = '[ASYNC DELEGATION';
+
+function isDelegationInjection(message: InternalMessage): boolean {
+  return message.role === 'user' && message.text.trimStart().startsWith(DELEGATION_INJECTION_PREFIX);
+}
+
 function toInternalMessage(raw: Record<string, unknown>, index = 0): InternalMessage {
   const role = normalizeMessageRole(raw.role);
-  const text =
+  const rawText =
     typeof raw.text === 'string'
       ? raw.text
       : role === 'tool'
         ? toolMessageText(raw)
         : messageContentText(raw.content ?? raw.message ?? raw.rendered);
+  const text = role === 'user' ? stripServerInjectedImageRefs(rawText) : rawText;
   const msg: InternalMessage = {
     id: String(raw.id ?? `m-${index}`),
     role,
@@ -350,7 +373,8 @@ function messagesFromResult(raw: unknown): Message[] {
   }
   const internal = maybeMessages
     .filter((item): item is Record<string, unknown> => Boolean(item) && typeof item === 'object')
-    .map(toInternalMessage);
+    .map(toInternalMessage)
+    .filter((message) => !isDelegationInjection(message));
   return mergeToolMessages(internal).map(toPublicMessage);
 }
 
