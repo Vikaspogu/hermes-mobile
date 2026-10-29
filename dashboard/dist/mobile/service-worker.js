@@ -104,6 +104,14 @@ function safeNotificationPayload(event) {
 
 self.addEventListener('push', (event) => {
   const payload = safeNotificationPayload(event);
+  // Cron jobs that only ran housekeeping reply "Silent run — nothing to
+  // report"; don't wake the user for those. Chrome's userVisibleOnly contract
+  // requires showing something, so tag it as silent: a later silent push
+  // replaces the earlier one instead of stacking.
+  if (!payload.options.requireInteraction && /^silent run\b/i.test(payload.options.body.trim())) {
+    payload.options.tag = 'hermes-mobile-cron-silent';
+    payload.options.renotify = false;
+  }
   event.waitUntil(self.registration.showNotification(payload.title, payload.options));
 });
 
