@@ -846,6 +846,7 @@ describe('useChatStore', () => {
         },
         { id: 'a-1', role: 'assistant', text: 'answer' },
         { id: 'a-2', role: 'assistant', text: '[ASYNC DELEGATION quoted by the assistant]' },
+        { id: 'u-2', role: 'user', text: '[ASYNC DELEGATION is a phrase I typed by hand' },
       ],
     });
     useSessionsStore.setState({
@@ -864,6 +865,7 @@ describe('useChatStore', () => {
       'real question',
       'answer',
       '[ASYNC DELEGATION quoted by the assistant]',
+      '[ASYNC DELEGATION is a phrase I typed by hand',
     ]);
   });
 

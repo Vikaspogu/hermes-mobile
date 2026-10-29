@@ -267,7 +267,10 @@ function stripServerInjectedImageRefs(text: string): string {
 const DELEGATION_INJECTION_PREFIX = '[ASYNC DELEGATION';
 
 function isDelegationInjection(message: InternalMessage): boolean {
-  return message.role === 'user' && message.text.trimStart().startsWith(DELEGATION_INJECTION_PREFIX);
+  if (message.role !== 'user') return false;
+  // Require the deleg_<id> token so a user hand-typing the phrase is kept.
+  const firstLine = message.text.trimStart().split('\n', 1)[0] ?? '';
+  return firstLine.startsWith(DELEGATION_INJECTION_PREFIX) && firstLine.includes('deleg_');
 }
 
 function toInternalMessage(raw: Record<string, unknown>, index = 0): InternalMessage {
