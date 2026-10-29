@@ -213,7 +213,7 @@ describe('Composer', () => {
     fireEvent.change(input, { target: { files: [file] } });
 
     expect(onUploadFile).not.toHaveBeenCalled();
-    await waitFor(() => expect(screen.getByLabelText(attachmentTooLargeMessage('huge.csv'))).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByLabelText(attachmentTooLargeMessage())).toBeInTheDocument());
   });
 
   it('rejects unsupported MIME types before upload', async () => {

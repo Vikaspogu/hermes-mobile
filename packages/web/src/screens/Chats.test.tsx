@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import type { Session } from '@hermes-pwa/core';
 import { groupThreads } from './Chats';
 
@@ -7,6 +7,16 @@ function session(id: string, updatedAtSec: number): Session {
 }
 
 const DAY = 86_400;
+
+// Pin the clock: offsets like "1 hour ago" cross day boundaries when the
+// suite runs between 00:00 and 01:00 local time.
+beforeEach(() => {
+  vi.useFakeTimers();
+  vi.setSystemTime(new Date('2026-10-28T12:00:00Z'));
+});
+afterEach(() => {
+  vi.useRealTimers();
+});
 
 describe('groupThreads', () => {
   it('buckets into Today / Yesterday / Earlier and sorts newest first', () => {

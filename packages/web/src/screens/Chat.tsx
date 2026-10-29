@@ -22,6 +22,7 @@ import '../styles/empty-chat.css';
 import '../styles/screens/thread.css'; // ponytail: prototype.css's trailing @import of screens/*.css is dropped by Vite
 import {
   MAX_ATTACHMENT_BYTES,
+  compressImageForUpload,
   MAX_IMAGE_ATTACHMENT_BYTES,
   MAX_IMAGE_ATTACHMENT_MIB,
   attachmentTooLargeMessage,
@@ -654,10 +655,18 @@ export function Chat({ rpc, rest, onOpenVoice }: ChatProps) {
       const isImage = file.type.startsWith('image/');
       // Upstream image.attach_bytes caps the base64 payload at 600k chars
       // (450,000 raw bytes) and silently truncates beyond it, so images get a
-      // stricter limit than other attachments.
+      // stricter limit than other attachments. Phone photos always exceed it,
+      // so downscale/re-encode them before giving up.
+      if (isImage && file.size > MAX_IMAGE_ATTACHMENT_BYTES) {
+        try {
+          file = (await compressImageForUpload(file)) ?? file;
+        } catch {
+          // Decoding failed in the browser; keep the original and error below.
+        }
+      }
       const maxBytes = isImage ? MAX_IMAGE_ATTACHMENT_BYTES : MAX_ATTACHMENT_BYTES;
       if (file.size > maxBytes) {
-        throw new Error(attachmentTooLargeMessage(file.name, isImage ? MAX_IMAGE_ATTACHMENT_MIB : undefined));
+        throw new Error(attachmentTooLargeMessage(isImage ? MAX_IMAGE_ATTACHMENT_MIB : undefined));
       }
       if (!isAllowedAttachmentMime(file)) {
         throw new Error(unsupportedAttachmentTypeMessage(file.name, file.type));

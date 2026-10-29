@@ -786,7 +786,7 @@ describe('Chat', () => {
       expect(readSpy).not.toHaveBeenCalled();
       expect(rpcMock.request).not.toHaveBeenCalledWith('session.create', expect.anything());
       expect(rpcMock.request).not.toHaveBeenCalledWith('file.attach', expect.anything());
-      await waitFor(() => expect(screen.getByLabelText(attachmentTooLargeMessage('huge.csv'))).toBeInTheDocument());
+      await waitFor(() => expect(screen.getByLabelText(attachmentTooLargeMessage())).toBeInTheDocument());
     } finally {
       readSpy.mockRestore();
     }

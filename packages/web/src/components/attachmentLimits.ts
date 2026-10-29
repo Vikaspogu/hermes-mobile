@@ -6,6 +6,59 @@ export const MAX_IMAGE_ATTACHMENT_BYTES = 450_000;
 export const MAX_IMAGE_ATTACHMENT_MIB = Math.round((MAX_IMAGE_ATTACHMENT_BYTES / (1024 * 1024)) * 100) / 100;
 
 
+const IMAGE_COMPRESS_MAX_DIMENSION = 2048;
+const IMAGE_COMPRESS_SCALES = [1, 0.7, 0.5];
+const IMAGE_COMPRESS_QUALITIES = [0.85, 0.7, 0.5, 0.35];
+
+/**
+ * Downscales and re-encodes an image to fit the upstream attach limit.
+ * Returns a File under maxBytes, or null when the image cannot be compressed
+ * enough (caller keeps the original too-large error). JPEG/PNG only: animated
+ * GIF/WebP would silently lose their animation, and SVG would be rasterized,
+ * so those fall back to the too-large error. PNG loses alpha in the JPEG
+ * re-encode (ponytail: alpha edge accepted — vision use-cases rarely need it).
+ * Calls are serialized because each attempt holds a full-resolution
+ * ImageBitmap plus a 2048px canvas in memory — a real OOM risk on mobile
+ * when several photos upload at once.
+ */
+let compressionQueue: Promise<unknown> = Promise.resolve();
+
+export function compressImageForUpload(file: File, maxBytes: number = MAX_IMAGE_ATTACHMENT_BYTES): Promise<File | null> {
+  const job = compressionQueue.then(() => compressImageImpl(file, maxBytes));
+  compressionQueue = job.then(
+    () => undefined,
+    () => undefined,
+  );
+  return job;
+}
+
+async function compressImageImpl(file: File, maxBytes: number): Promise<File | null> {
+  if (file.type !== 'image/jpeg' && file.type !== 'image/png') return null;
+  const bitmap = await createImageBitmap(file, { imageOrientation: 'from-image' });
+  try {
+    const baseScale = Math.min(1, IMAGE_COMPRESS_MAX_DIMENSION / Math.max(bitmap.width, bitmap.height, 1));
+    for (const scaleStep of IMAGE_COMPRESS_SCALES) {
+      const scale = baseScale * scaleStep;
+      const canvas = document.createElement('canvas');
+      canvas.width = Math.max(1, Math.round(bitmap.width * scale));
+      canvas.height = Math.max(1, Math.round(bitmap.height * scale));
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return null;
+      ctx.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+      for (const quality of IMAGE_COMPRESS_QUALITIES) {
+        const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/jpeg', quality));
+        if (blob && blob.size <= maxBytes) {
+          const baseName = safeAttachmentBasename(file.name).replace(/\.[a-z0-9]+$/i, '') || SAFE_ATTACHMENT_FALLBACK;
+          return new File([blob], `${baseName}.jpg`, { type: 'image/jpeg' });
+        }
+      }
+    }
+    return null;
+  } finally {
+    bitmap.close();
+  }
+}
+
 const MAX_ATTACHMENT_MIB = Math.floor(MAX_ATTACHMENT_BYTES / (1024 * 1024));
 
 const SAFE_ATTACHMENT_FALLBACK = 'attachment';
@@ -24,8 +77,8 @@ const ALLOWED_ATTACHMENT_MIME_TYPES = new Set([
 
 const ALLOWED_ATTACHMENT_MIME_PREFIXES = ['text/'];
 
-export function attachmentTooLargeMessage(name: string, maxMiB: number = MAX_ATTACHMENT_MIB): string {
-  return `${name} is too large to upload (max ${maxMiB} MB).`;
+export function attachmentTooLargeMessage(maxMiB: number = MAX_ATTACHMENT_MIB): string {
+  return `Too large to upload (max ${maxMiB} MB).`;
 }
 
 export function tooManyAttachmentsMessage(): string {

@@ -1594,6 +1594,7 @@ a {
 .hm-composer__chip--error {
   background: var(--hm-color-danger-bg);
   color: var(--hm-color-danger);
+  border-radius: var(--hm-radius-md);
 }
 
 .hm-composer__chip-name {
@@ -1601,6 +1602,11 @@ a {
   text-overflow: ellipsis;
   white-space: nowrap;
   max-width: 160px;
+}
+
+.hm-composer__chip-error {
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .hm-composer__chip-spin {

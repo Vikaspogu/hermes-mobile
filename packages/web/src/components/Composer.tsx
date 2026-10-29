@@ -367,7 +367,7 @@ export function Composer({
         index >= MAX_ATTACHMENTS_PER_SELECTION
           ? tooManyAttachmentsMessage()
           : file.size > MAX_ATTACHMENT_BYTES
-            ? attachmentTooLargeMessage(file.name)
+            ? attachmentTooLargeMessage()
             : !isAllowedAttachmentMime(file)
               ? unsupportedAttachmentTypeMessage(file.name, file.type)
               : undefined;
