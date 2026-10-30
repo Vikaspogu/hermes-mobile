@@ -62,7 +62,7 @@ describe('AppShell', () => {
     useConnectionStore.setState({ state: 'connected', error: undefined } as ReturnType<typeof useConnectionStore.getState>);
     useProfilesStore.setState({ profiles: [], activeName: undefined, currentName: undefined, loading: false, error: undefined });
     useProjectsStore.setState({ boards: [], activeBoardSlug: undefined, tasks: [], workers: [], loading: false, error: undefined });
-    useChatStore.setState({ sessionId: undefined, storedSessionId: undefined, messages: [], streaming: false, error: undefined });
+    useChatStore.setState({ sessionId: undefined, storedSessionId: undefined, cacheProfile: undefined, messages: [], streaming: false, error: undefined });
     useSessionsStore.setState({ sessions: [], loading: false, error: undefined, pinnedIds: [] });
     useActivityStore.setState({ items: [], loading: false, error: undefined });
     vi.clearAllMocks();
@@ -879,5 +879,57 @@ describe('AppShell', () => {
       });
     });
     await waitFor(() => expect(screen.queryByText(/Merge PR #2/)).toBeNull());
+  });
+
+  it('rebinds the active live chat session when connectionState transitions from reconnecting back to connected, deferring while profiles mismatch', async () => {
+    useChatStore.setState({
+      sessionId: 'live-reconnect-1',
+      storedSessionId: 'stored-reconnect-1',
+      cacheProfile: 'dev',
+      streaming: true,
+      messages: [{ id: 'm1', role: 'user', text: 'check PRs', createdAt: 1 }],
+    });
+    useProfilesStore.setState({
+      profiles: [
+        { name: 'default', displayName: 'Default', isActive: false },
+        { name: 'dev', displayName: 'Dev', isActive: true },
+      ],
+      activeName: 'dev',
+      currentName: 'default',
+      loading: false,
+      error: undefined,
+    });
+    vi.mocked(rpcMock.request).mockImplementation((method) => {
+      if (method === 'session.activate') {
+        return Promise.resolve({
+          session_id: 'live-reconnect-1',
+          session_key: 'stored-reconnect-1',
+          running: true,
+          open_requests: [],
+        });
+      }
+      return Promise.resolve({});
+    });
+
+    const { rerender } = render(<AppShell connectionState="connected" rpc={rpcMock} rest={restMock} />);
+    vi.mocked(rpcMock.request).mockClear();
+
+    rerender(<AppShell connectionState="reconnecting" rpc={rpcMock} rest={restMock} />);
+    rerender(<AppShell connectionState="connected" rpc={rpcMock} rest={restMock} />);
+
+    // Deferred while activeName ('dev') !== currentName ('default')
+    expect(rpcMock.request).not.toHaveBeenCalledWith('session.activate', expect.anything());
+
+    // Once currentName aligns with activeName, the deferred rebind fires
+    act(() => {
+      useProfilesStore.setState({ currentName: 'dev' });
+    });
+
+    await waitFor(() =>
+      expect(rpcMock.request).toHaveBeenCalledWith('session.activate', {
+        session_id: 'live-reconnect-1',
+        omit_messages: true,
+      }),
+    );
   });
 });

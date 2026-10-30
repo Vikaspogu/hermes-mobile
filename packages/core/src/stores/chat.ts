@@ -114,6 +114,7 @@ export interface ChatStore {
   loadHistory(rest: RestClient, sessionId: string): Promise<void>;
   refreshHistory(rest: RestClient, profile?: string): Promise<void>;
   restore(rest: RestClient, rpc: RpcClient, profile?: string): Promise<void>;
+  rebindLiveSession(rpc: RpcClient, profile?: string): Promise<boolean>;
   resumeSessionIntoChat(rest: RestClient, rpc: RpcClient, storedSessionId: string, profile?: string): Promise<void>;
   startNewSession(profile?: string): void;
   ensureLiveSession(rpc: RpcClient, profile?: string): Promise<{ sessionId: string; storedSessionId?: string | undefined }>;
@@ -904,6 +905,52 @@ function persistActiveSessionThrottled(state: ActiveSessionPersistState): void {
   }
 }
 
+
+function replayOpenRequests(
+  rpc: RpcClient,
+  raw: unknown,
+  sessionId: string | undefined,
+  storedSessionId: string | undefined,
+): void {
+  if (
+    typeof rpc.onFrame !== 'function' ||
+    !raw ||
+    typeof raw !== 'object' ||
+    !Array.isArray((raw as Record<string, unknown>).open_requests)
+  ) {
+    return;
+  }
+  const seenIds = new Set<string>();
+  for (const entry of (raw as Record<string, unknown>).open_requests as unknown[]) {
+    if (entry && typeof entry === 'object') {
+      const rec = entry as Record<string, unknown>;
+      if (
+        (typeof rec.id === 'string' || typeof rec.id === 'number') &&
+        (rec.method === 'approval' ||
+          rec.method === 'approval.request' ||
+          rec.method === 'clarify' ||
+          rec.method === 'clarify.request')
+      ) {
+        const idKey = String(rec.id);
+        if (seenIds.has(idKey)) continue;
+        seenIds.add(idKey);
+        const entryParams =
+          rec.params && typeof rec.params === 'object' && !Array.isArray(rec.params)
+            ? (rec.params as Record<string, unknown>)
+            : {};
+        rpc.onFrame(
+          JSON.stringify({
+            jsonrpc: '2.0',
+            id: rec.id,
+            method: rec.method,
+            params: { ...entryParams, session_id: sessionId || storedSessionId },
+          }),
+        );
+      }
+    }
+  }
+}
+
 async function resumeDurableSession(rpc: RpcClient, durableSessionId: string, profile?: string) {
   const params: Record<string, unknown> = { session_id: durableSessionId };
   if (profile) params.profile = profile;
@@ -911,38 +958,7 @@ async function resumeDurableSession(rpc: RpcClient, durableSessionId: string, pr
   const sessionId = liveSessionIdFromResult(raw);
   const storedSessionId = durableSessionIdFromResult(raw, durableSessionId);
   const messages = messagesFromResult(raw);
-  if (
-    typeof rpc.onFrame === 'function' &&
-    raw &&
-    typeof raw === 'object' &&
-    Array.isArray((raw as Record<string, unknown>).open_requests)
-  ) {
-    for (const entry of (raw as Record<string, unknown>).open_requests as unknown[]) {
-      if (entry && typeof entry === 'object') {
-        const rec = entry as Record<string, unknown>;
-        if (
-          (typeof rec.id === 'string' || typeof rec.id === 'number') &&
-          (rec.method === 'approval' ||
-            rec.method === 'approval.request' ||
-            rec.method === 'clarify' ||
-            rec.method === 'clarify.request')
-        ) {
-          const entryParams =
-            rec.params && typeof rec.params === 'object' && !Array.isArray(rec.params)
-              ? (rec.params as Record<string, unknown>)
-              : {};
-          rpc.onFrame(
-            JSON.stringify({
-              jsonrpc: '2.0',
-              id: rec.id,
-              method: rec.method,
-              params: { ...entryParams, session_id: sessionId || storedSessionId },
-            }),
-          );
-        }
-      }
-    }
-  }
+  replayOpenRequests(rpc, raw, sessionId, storedSessionId);
   return { sessionId, storedSessionId, messages, streaming: false, error: undefined };
 }
 
@@ -1181,23 +1197,37 @@ export const useChatStore = create<ChatStore>((set, get) => ({
     ) {
       const usageAnchor = get();
       try {
-        await rpc.request('session.usage', { session_id: liveSessionId });
+        const activated = await rpc.request('session.activate', {
+          session_id: liveSessionId,
+          omit_messages: true,
+        });
         if (!isSameChatState(get(), usageAnchor)) return;
+        const activatedStoredId = durableSessionIdFromResult(activated, durableSessionId);
         let refreshed: Awaited<ReturnType<typeof refreshDurableHistory>> | undefined;
         try {
-          refreshed = await refreshDurableHistory(rest, durableSessionId, state.messages, cacheProfile);
+          refreshed = await refreshDurableHistory(rest, activatedStoredId ?? durableSessionId, state.messages, cacheProfile);
         } catch {
           // Keep the validated live runtime and cached transcript; restore should
           // not fail just because a passive REST refresh is temporarily stale.
         }
         if (!isSameChatState(get(), usageAnchor)) return;
+        const stillRunning = Boolean(
+          activated && typeof activated === 'object' && (activated as Record<string, unknown>).running === true,
+        );
         const next = {
-          streaming: false,
+          streaming: stillRunning,
           error: undefined,
+          ...(activatedStoredId ? { storedSessionId: activatedStoredId } : {}),
           ...(refreshed ? { storedSessionId: refreshed.storedSessionId, messages: refreshed.messages } : {}),
         };
         set(next);
         persistActiveSession({ ...get(), ...next });
+        replayOpenRequests(
+          rpc,
+          activated,
+          liveSessionId,
+          refreshed?.storedSessionId ?? activatedStoredId,
+        );
         return;
       } catch {
         // Cached runtime id belongs to a dead/restarted gateway. Fall through to
@@ -1271,6 +1301,64 @@ export const useChatStore = create<ChatStore>((set, get) => ({
         persistActiveSession(get());
       }
       throw err;
+    }
+  },
+
+  async rebindLiveSession(rpc, profile) {
+    const state = get();
+    const liveSessionId = state.sessionId;
+    const durableSessionId = state.storedSessionId;
+    if (!liveSessionId || (profile && state.cacheProfile && state.cacheProfile !== profile)) return true;
+    try {
+      const activated = await rpc.request('session.activate', {
+        session_id: liveSessionId,
+        omit_messages: true,
+      });
+      if (get().sessionId !== liveSessionId) return true;
+      const nextStoredId = durableSessionIdFromResult(activated, durableSessionId);
+      const nextRunning = Boolean(
+        activated && typeof activated === 'object' && (activated as Record<string, unknown>).running === true,
+      );
+      if (get().streaming !== nextRunning || (nextStoredId && get().storedSessionId !== nextStoredId)) {
+        const next = {
+          streaming: nextRunning,
+          ...(nextStoredId ? { storedSessionId: nextStoredId } : {}),
+        };
+        set(next);
+        persistActiveSession({ ...get(), ...next });
+      }
+      replayOpenRequests(rpc, activated, liveSessionId, nextStoredId);
+      return true;
+    } catch (err) {
+      if (get().sessionId !== liveSessionId) return true;
+      if (!isSessionNotFoundError(err)) return false;
+      if (durableSessionId) {
+        try {
+          const resumed = await resumeDurableSession(
+            rpc,
+            durableSessionId,
+            resolveCacheProfile(profile, state.cacheProfile),
+          );
+          if (get().sessionId !== liveSessionId) return true;
+          const next = {
+            sessionId: resumed.sessionId,
+            storedSessionId: resumed.storedSessionId ?? durableSessionId,
+            streaming: false,
+            ...(resumed.messages.length > 0 && resumed.messages.length >= get().messages.length
+              ? { messages: resumed.messages }
+              : {}),
+          };
+          set(next);
+          persistActiveSession({ ...get(), ...next });
+          return true;
+        } catch {
+          // Fall through and clear dead runtime sessionId so next action resumes cleanly.
+        }
+      }
+      const cleared = { sessionId: undefined, streaming: false };
+      set(cleared);
+      persistActiveSession({ ...get(), ...cleared });
+      return true;
     }
   },
 

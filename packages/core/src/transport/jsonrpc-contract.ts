@@ -34,6 +34,10 @@ export interface SessionIdParams {
   profile?: string;
 }
 
+export interface SessionActivateParams extends SessionIdParams {
+  omit_messages?: boolean;
+}
+
 export interface SessionListParams {
   limit?: number;
 }
@@ -113,6 +117,13 @@ export interface ImageAttachBytesParams extends SessionIdParams {
 export interface SessionCreateResult {
   session_id: string;
   stored_session_id?: string;
+  session_key?: string;
+  running?: boolean;
+  open_requests?: Array<{
+    id?: string | number;
+    method?: string;
+    params?: Record<string, unknown>;
+  }>;
   message_count?: number;
   messages?: unknown[];
   info?: Record<string, unknown>;
@@ -263,6 +274,7 @@ export interface RpcContract {
   'session.create'(params?: SessionCreateParams): Promise<SessionCreateResult>;
   'session.list'(params?: SessionListParams): Promise<SessionListResult>;
   'session.resume'(params: SessionIdParams): Promise<SessionCreateResult>;
+  'session.activate'(params: SessionActivateParams): Promise<SessionCreateResult>;
   'session.history'(params: SessionIdParams): Promise<SessionHistoryResult>;
   'session.status'(params: SessionIdParams): Promise<Record<string, unknown>>;
   'session.interrupt'(params: SessionIdParams): Promise<Record<string, unknown>>;

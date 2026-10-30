@@ -258,6 +258,8 @@ export function AppShell({ connectionState, rpc, rest, onRetry, connectionError 
   const pendingRefreshInFlightRef = useRef(false);
   const chatRecoveryInFlightRef = useRef(false);
   const pushSyncInFlightRef = useRef(false);
+  const hadConnectedOnceRef = useRef(false);
+  const needsReconnectRebindRef = useRef(false);
 
   useEffect(() => {
     persistScreen(screen);
@@ -395,12 +397,31 @@ export function AppShell({ connectionState, rpc, rest, onRetry, connectionError 
 
   useEffect(() => {
     if (connectionState !== 'connected') {
+      if (hadConnectedOnceRef.current) {
+        needsReconnectRebindRef.current = true;
+      }
       clearRpcRequests();
       return undefined;
     }
+    hadConnectedOnceRef.current = true;
     let cancelled = false;
 
+    const rebindIfNeeded = () => {
+      if (cancelled || !needsReconnectRebindRef.current) return;
+      if (activeName && currentName && activeName !== currentName) return;
+      needsReconnectRebindRef.current = false;
+      void useChatStore
+        .getState()
+        .rebindLiveSession(rpc, activeName)
+        .then((ok) => {
+          if (!ok && !cancelled) {
+            needsReconnectRebindRef.current = true;
+          }
+        });
+    };
+
     const refreshPendingActions = () => {
+      rebindIfNeeded();
       if (cancelled || pendingRefreshInFlightRef.current) return;
       pendingRefreshInFlightRef.current = true;
       const profile = activeName ?? 'default';
@@ -421,7 +442,7 @@ export function AppShell({ connectionState, rpc, rest, onRetry, connectionError 
       window.removeEventListener('focus', refreshPendingActions);
       document.removeEventListener('visibilitychange', onVisibilityChange);
     };
-  }, [connectionState, activeName, rest, loadActivity, clearRpcRequests]);
+  }, [connectionState, activeName, currentName, rpc, rest, loadActivity, clearRpcRequests]);
 
   useEffect(() => {
     if (connectionState !== 'connected') return undefined;

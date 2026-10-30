@@ -11,7 +11,7 @@ describe('useChatStore', () => {
 
   beforeEach(() => {
     window.localStorage.clear();
-    useChatStore.setState({ sessionId: undefined, storedSessionId: undefined, locallyCreatedStoredId: undefined, messages: [], streaming: false, error: undefined });
+    useChatStore.setState({ sessionId: undefined, storedSessionId: undefined, locallyCreatedStoredId: undefined, cacheProfile: undefined, messages: [], streaming: false, error: undefined });
     useSessionsStore.setState({ sessions: [], loading: false, error: undefined, pinnedIds: [] });
 
     rpcMock = {
@@ -896,7 +896,7 @@ describe('useChatStore', () => {
 
     await useChatStore.getState().restore(restMock, rpcMock, 'dev');
 
-    expect(rpcMock.request).toHaveBeenCalledWith('session.usage', { session_id: 'live-ok' });
+    expect(rpcMock.request).toHaveBeenCalledWith('session.activate', { session_id: 'live-ok', omit_messages: true });
     expect(rpcMock.request).not.toHaveBeenCalledWith('session.resume', expect.anything());
     expect(restMock.sessionMessages).toHaveBeenCalledWith('stored-ok', 'dev');
     expect(useChatStore.getState().sessionId).toBe('live-ok');
@@ -1652,5 +1652,174 @@ describe('useChatStore', () => {
     const accepted = await useChatStore.getState().steer(rpcMock, 'lost');
     expect(accepted).toBe(true);
     expect(useChatStore.getState().messages).toHaveLength(0);
+  });
+
+  it('restore rebinds cached live session via session.activate and replays open_requests', async () => {
+    window.localStorage.setItem(
+      'hermes-pwa.activeSession.v4:dev',
+      JSON.stringify({
+        profile: 'dev',
+        sessionId: 'live-open',
+        storedSessionId: 'stored-open',
+        messages: [{ id: 'cached-1', role: 'user', text: 'merge PRs', createdAt: 1 }],
+      }),
+    );
+    useSessionsStore.setState({
+      sessions: [{ id: 'stored-open', title: 'Merge PRs', updatedAt: 2, messageCount: 1, profile: 'dev' }],
+      loading: false,
+      error: undefined,
+      pinnedIds: [],
+    });
+    const onFrame = vi.fn();
+    rpcMock.onFrame = onFrame;
+    vi.mocked(rpcMock.request).mockResolvedValue({
+      session_id: 'live-open',
+      session_key: 'stored-open',
+      running: true,
+      open_requests: [
+        {
+          id: 'srq-1',
+          method: 'approval',
+          params: { request_id: '8012dc9c', command: 'gh pr list', description: 'List open PRs' },
+        },
+      ],
+    });
+    vi.mocked(restMock.sessionMessages).mockResolvedValue({
+      session_id: 'stored-open',
+      messages: [{ id: 'cached-1', role: 'user', text: 'merge PRs', created_at: 1 }],
+    });
+
+    await useChatStore.getState().restore(restMock, rpcMock, 'dev');
+
+    expect(rpcMock.request).toHaveBeenCalledWith('session.activate', {
+      session_id: 'live-open',
+      omit_messages: true,
+    });
+    expect(useChatStore.getState().streaming).toBe(true);
+    expect(onFrame).toHaveBeenCalledWith(
+      JSON.stringify({
+        jsonrpc: '2.0',
+        id: 'srq-1',
+        method: 'approval',
+        params: {
+          request_id: '8012dc9c',
+          command: 'gh pr list',
+          description: 'List open PRs',
+          session_id: 'live-open',
+        },
+      }),
+    );
+  });
+
+  it('rebindLiveSession rebinds transport and replays open_requests after WS reconnect', async () => {
+    useChatStore.setState({
+      sessionId: 'live-rebind',
+      storedSessionId: 'stored-rebind',
+      streaming: false,
+      messages: [{ id: 'm1', role: 'user', text: 'run check', createdAt: 1 }],
+    });
+    const onFrame = vi.fn();
+    rpcMock.onFrame = onFrame;
+    vi.mocked(rpcMock.request).mockResolvedValue({
+      session_id: 'live-rebind',
+      session_key: 'stored-rebind',
+      running: true,
+      open_requests: [
+        {
+          id: 'srq-7',
+          method: 'approval',
+          params: { request_id: 'deadbeef', command: 'kubectl get pods' },
+        },
+      ],
+    });
+
+    await useChatStore.getState().rebindLiveSession(rpcMock, 'default');
+
+    expect(rpcMock.request).toHaveBeenCalledWith('session.activate', {
+      session_id: 'live-rebind',
+      omit_messages: true,
+    });
+    expect(useChatStore.getState().streaming).toBe(true);
+    expect(onFrame).toHaveBeenCalledWith(
+      JSON.stringify({
+        jsonrpc: '2.0',
+        id: 'srq-7',
+        method: 'approval',
+        params: {
+          request_id: 'deadbeef',
+          command: 'kubectl get pods',
+          session_id: 'live-rebind',
+        },
+      }),
+    );
+  });
+
+  it('rebindLiveSession falls back to session.resume on 4001 and clears dead sessionId when resume fails', async () => {
+    useChatStore.setState({
+      sessionId: 'dead-live-1',
+      storedSessionId: 'stored-1',
+      streaming: false,
+      messages: [{ id: 'm1', role: 'user', text: 'hello', createdAt: 1 }],
+    });
+    vi.mocked(rpcMock.request)
+      .mockRejectedValueOnce(new JsonRpcError({ code: 4001, message: 'Session not found' }))
+      .mockResolvedValueOnce({
+        session_id: 'resumed-live-1',
+        session_key: 'stored-1',
+        messages: [],
+      });
+
+    await useChatStore.getState().rebindLiveSession(rpcMock, 'default');
+
+    expect(rpcMock.request).toHaveBeenNthCalledWith(1, 'session.activate', {
+      session_id: 'dead-live-1',
+      omit_messages: true,
+    });
+    expect(rpcMock.request).toHaveBeenNthCalledWith(
+      2,
+      'session.resume',
+      { session_id: 'stored-1', profile: 'default' },
+      expect.objectContaining({ timeoutMs: expect.any(Number) }),
+    );
+    expect(useChatStore.getState().sessionId).toBe('resumed-live-1');
+
+    // Now test when both activate and resume fail with 4001
+    useChatStore.setState({
+      sessionId: 'dead-live-2',
+      storedSessionId: 'stored-2',
+      streaming: false,
+    });
+    vi.mocked(rpcMock.request)
+      .mockRejectedValueOnce(new JsonRpcError({ code: 4001, message: 'Session not found' }))
+      .mockRejectedValueOnce(new JsonRpcError({ code: 4001, message: 'Session not found' }));
+
+    await useChatStore.getState().rebindLiveSession(rpcMock, 'default');
+
+    expect(useChatStore.getState().sessionId).toBeUndefined();
+    expect(useChatStore.getState().streaming).toBe(false);
+  });
+
+  it('rebindLiveSession skips profile-mismatched sessions, returns false on transient errors, and downgrades streaming when idle', async () => {
+    useChatStore.setState({
+      sessionId: 'live-work',
+      storedSessionId: 'stored-work',
+      cacheProfile: 'work',
+      streaming: true,
+    });
+    expect(await useChatStore.getState().rebindLiveSession(rpcMock, 'default')).toBe(true);
+    expect(rpcMock.request).not.toHaveBeenCalled();
+
+    vi.mocked(rpcMock.request).mockRejectedValueOnce(new Error('network timeout'));
+    expect(await useChatStore.getState().rebindLiveSession(rpcMock, 'work')).toBe(false);
+    expect(useChatStore.getState().sessionId).toBe('live-work');
+
+    vi.mocked(rpcMock.request).mockResolvedValueOnce({
+      session_id: 'live-work',
+      session_key: 'stored-work',
+      running: false,
+      open_requests: [],
+    });
+    expect(await useChatStore.getState().rebindLiveSession(rpcMock, 'work')).toBe(true);
+    expect(useChatStore.getState().streaming).toBe(false);
   });
 });
