@@ -1,6 +1,6 @@
 {
   "name": "hermes-pwa",
-  "version": "0.1.7",
+  "version": "0.1.8",
   "description": "Installable mobile PWA control plane for the self-hosted Hermes Agent",
   "type": "module",
   "license": "MIT",
