@@ -14,6 +14,7 @@ import {
 } from '@hermes-pwa/core';
 import { Icon } from '../components/Icon';
 import { BrandMark } from '../components/BrandMark';
+import { ConnectionBanner } from '../components/ConnectionBanner';
 import { usePullToRefresh } from '../components/usePullToRefresh';
 // ponytail: prototype.css's trailing @import of screens/*.css is dropped by Vite
 // (spec: @import must lead the file), so the screen pulls its own styles.
@@ -27,6 +28,7 @@ interface ChatsProps {
   sidebar?: boolean;
   /** Opens the voice overlay from the composer mic (main pane only). */
   onOpenVoice?: () => void;
+  onRetry?: (() => void) | undefined;
 }
 
 /** updated_at arrives as Unix seconds; accept ms too. */
@@ -93,7 +95,7 @@ export function groupThreads(sessions: Session[]): ThreadGroup[] {
   return groups.filter((g) => g.items.length > 0);
 }
 
-export function Chats({ rpc, rest, onNavigate, sidebar }: ChatsProps) {
+export function Chats({ rpc, rest, onNavigate, sidebar, onRetry }: ChatsProps) {
   const { sessions, load } = useSessionsStore();
   const activeName = useProfilesStore((s) => s.activeName);
   const { startNewSession, resumeSessionIntoChat } = useChatStore();
@@ -133,7 +135,9 @@ export function Chats({ rpc, rest, onNavigate, sidebar }: ChatsProps) {
 
 
 
-  const connected = useConnectionStore((s) => s.state === 'connected');
+  const connectionState = useConnectionStore((s) => s.state);
+  const connectionError = useConnectionStore((s) => s.error);
+  const connected = connectionState === 'connected';
   const ptr = usePullToRefresh(() => window.location.reload());
 
   return (
@@ -147,6 +151,9 @@ export function Chats({ rpc, rest, onNavigate, sidebar }: ChatsProps) {
             role="status"
           />
           <span className="hm-app-header__sub">{activeName ?? 'default'}</span>
+          {connectionState !== 'offline' && (
+            <ConnectionBanner state={connectionState} error={connectionError} onRetry={onRetry} />
+          )}
           <button
             type="button"
             className="hm-iconbtn"

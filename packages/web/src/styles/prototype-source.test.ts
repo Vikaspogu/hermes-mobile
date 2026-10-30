@@ -11,7 +11,14 @@ describe('loading hero animation', () => {
     expect(css).toContain('@keyframes hm-brand-float');
     expect(css).toContain('@keyframes hm-brand-twinkle');
     expect(css).toContain('@keyframes hm-brand-breathe');
-    for (const name of ['hm-brand-float', 'hm-brand-twinkle', 'hm-brand-breathe']) {
+    for (const name of [
+      'hm-brand-float',
+      'hm-brand-twinkle',
+      'hm-brand-breathe',
+      'hm-conn-pill-in',
+      'hm-conn-dot-pulse',
+      'hm-conn-sweep',
+    ]) {
       const block = css.match(new RegExp(`@keyframes ${name} \\{([^}]|\\}(?!\\s*\\}))*\\}\\s*\\}`))?.[0] ?? '';
       expect(block.length).toBeGreaterThan(0);
       expect(block).not.toMatch(/(width|height|top|left|right|bottom|margin|padding|background|border|color)(-\w+)?\s*:|filter\s*:|box-shadow/u);
@@ -22,6 +29,9 @@ describe('loading hero animation', () => {
 
   it('respects prefers-reduced-motion and stops on terminal states', () => {
     expect(css).toMatch(/@media \(prefers-reduced-motion: reduce\)/);
+    expect(css).toMatch(
+      /@media \(prefers-reduced-motion: reduce\)[\s\S]*?\.hm-conn-pill,\s*\.hm-conn-pill__dot,\s*\.hm-conn-shimmer::after\s*\{\s*animation:\s*none;\s*\}/,
+    );
     expect(css).toContain('.hm-brand-hero--static .hm-brand__mark');
     expect(app).toContain('hm-brand-hero--static');
   });

@@ -563,21 +563,21 @@ export function AppShell({ connectionState, rpc, rest, onRetry, connectionError 
         )}
         <h1 className="hm-header__title">{screenTitle}</h1>
         {(connectionState !== 'connected' || gatewayHealth !== 'running') && (
-          <button
-            type="button"
-            className="hm-header__status"
-            onClick={() => navigate('command')}
-            aria-label="Open system status"
-          >
-            <StatusChip state={connectionState} gatewayHealth={gatewayHealth} />
-          </button>
+          <div className="hm-header__right">
+            {screen !== 'chat' && screen !== 'home' && connectionState !== 'offline' && (
+              <ConnectionBanner state={connectionState} error={connectionError} onRetry={onRetry} />
+            )}
+            <button
+              type="button"
+              className="hm-header__status"
+              onClick={() => navigate('command')}
+              aria-label="Open system status"
+            >
+              <StatusChip state={connectionState} gatewayHealth={gatewayHealth} />
+            </button>
+          </div>
         )}
       </header>
-
-      {/* ── Connection banner ────────────────────────────────────── */}
-      {connectionState !== 'offline' && (
-        <ConnectionBanner state={connectionState} error={connectionError} onRetry={onRetry} />
-      )}
       {showUpdateNotification && updateCheck ? (
         <UpdateNotification update={updateCheck} onDismiss={dismissUpdateNotification} />
       ) : null}
@@ -615,7 +615,7 @@ export function AppShell({ connectionState, rpc, rest, onRetry, connectionError 
                 <div className="hm-desktop-split__side" aria-hidden="false">
                   <Chats key={`side-${activeName ?? 'default'}`} rpc={rpc} rest={rest} onNavigate={() => {}} sidebar />
                 </div>
-                <Chat key={activeName ?? 'default'} rpc={rpc} rest={rest} onOpenVoice={() => startTransition(() => setVoiceOpen(true))} />
+                <Chat key={activeName ?? 'default'} rpc={rpc} rest={rest} onOpenVoice={() => startTransition(() => setVoiceOpen(true))} onRetry={onRetry} />
               </div>
             )}
             {screen === 'sessions'  && <Sessions key={activeName ?? 'default'} rpc={rpc} rest={rest} onSessionOpen={() => navigate('chat')} />}
@@ -624,7 +624,7 @@ export function AppShell({ connectionState, rpc, rest, onRetry, connectionError 
             {screen === 'agents'    && <Agents key={activeName ?? 'default'} rpc={rpc} />}
             {screen === 'profiles'  && <Profiles key={activeName ?? 'default'} rest={rest} />}
             {screen === 'command'   && <CommandCenter key={activeName ?? 'default'} rest={rest} />}
-            {screen === 'home'      && <Chats key={activeName ?? 'default'} rpc={rpc} rest={rest} onNavigate={(s) => navigate(s as Screen)} onOpenVoice={() => startTransition(() => setVoiceOpen(true))} />}
+            {screen === 'home'      && <Chats key={activeName ?? 'default'} rpc={rpc} rest={rest} onNavigate={(s) => navigate(s as Screen)} onOpenVoice={() => startTransition(() => setVoiceOpen(true))} onRetry={onRetry} />}
             {screen === 'cron'      && <Cron key={activeName ?? 'default'} rest={rest} onNavigate={(s) => navigate(s as Screen)} />}
             {screen === 'artifacts' && <Artifacts key={activeName ?? 'default'} rest={rest} />}
             {screen === 'settings'  && (

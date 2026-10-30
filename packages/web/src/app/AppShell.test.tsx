@@ -690,9 +690,47 @@ describe('AppShell', () => {
     ));
   });
 
-  it('shows status chip for reconnecting state', () => {
-    render(<AppShell connectionState="reconnecting" rpc={rpcMock} rest={restMock} />);
-    const chip = screen.getByTestId('status-chip');
-    expect(within(chip).getByText(/reconnecting/i)).toBeInTheDocument();
+  it('shows status chip for reconnecting state and renders a single header retry pill after grace period', () => {
+    vi.useFakeTimers();
+    try {
+      const onRetry = vi.fn();
+      window.location.hash = '';
+      useConnectionStore.setState({ state: 'reconnecting', error: 'Live updates disconnected.' });
+      render(<AppShell connectionState="reconnecting" rpc={rpcMock} rest={restMock} onRetry={onRetry} />);
+      const chip = screen.getByTestId('status-chip');
+      expect(within(chip).getByText(/reconnecting/i)).toBeInTheDocument();
+      expect(screen.queryByTestId('connection-banner')).toBeNull();
+
+      act(() => {
+        vi.advanceTimersByTime(1500);
+      });
+      const homeBanners = screen.getAllByTestId('connection-banner');
+      expect(homeBanners).toHaveLength(1);
+      expect(homeBanners[0]?.closest('.hm-home__header')).not.toBeNull();
+      fireEvent.click(within(homeBanners[0]!).getByRole('button', { name: /Retry now/i }));
+      expect(onRetry).toHaveBeenCalledTimes(1);
+
+      fireEvent.click(screen.getByTestId('chats-new-chat'));
+      act(() => {
+        vi.advanceTimersByTime(1500);
+      });
+      const chatBanners = screen.getAllByTestId('connection-banner');
+      expect(chatBanners).toHaveLength(1);
+      expect(chatBanners[0]?.closest('.hm-chat-header')).not.toBeNull();
+      fireEvent.click(within(chatBanners[0]!).getByRole('button', { name: /Retry now/i }));
+      expect(onRetry).toHaveBeenCalledTimes(2);
+
+      fireEvent.click(screen.getByRole('button', { name: 'Inbox' }));
+      act(() => {
+        vi.advanceTimersByTime(1500);
+      });
+      const inboxBanners = screen.getAllByTestId('connection-banner');
+      expect(inboxBanners).toHaveLength(1);
+      expect(inboxBanners[0]?.closest('.hm-header__right')).not.toBeNull();
+      fireEvent.click(within(inboxBanners[0]!).getByRole('button', { name: /Retry now/i }));
+      expect(onRetry).toHaveBeenCalledTimes(3);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });

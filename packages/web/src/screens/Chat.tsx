@@ -34,11 +34,13 @@ import { Icon } from '../components/Icon';
 import { parseMaybeObject } from '../lib/toolView';
 import { approvalClaimedByToolRow, selectDockApproval, selectPendingApprovals } from '../lib/pendingApprovals';
 import { ApprovalDock } from '../components/ApprovalDock';
+import { ConnectionBanner } from '../components/ConnectionBanner';
 
 interface ChatProps {
   rpc: RpcClient;
   rest: RestClient;
   onOpenVoice?: () => void;
+  onRetry?: (() => void) | undefined;
 }
 
 type BusyInputMode = 'queue' | 'steer' | 'interrupt';
@@ -106,7 +108,7 @@ function isNonChatStatus(kind: string, payload: Record<string, unknown> | undefi
   return NON_CHAT_STATUS_TEXT.test(rawText);
 }
 
-export function Chat({ rpc, rest, onOpenVoice }: ChatProps) {
+export function Chat({ rpc, rest, onOpenVoice, onRetry }: ChatProps) {
   const {
     messages,
     streaming,
@@ -730,6 +732,7 @@ export function Chat({ rpc, rest, onOpenVoice }: ChatProps) {
           <div className="hm-app-header__title">{headerTitle}</div>
           <div className="hm-app-header__sub">{headerSub}</div>
         </div>
+        <ConnectionBanner state={connection.state} error={connection.error} onRetry={onRetry} />
         <button
           type="button"
           className="hm-iconbtn"

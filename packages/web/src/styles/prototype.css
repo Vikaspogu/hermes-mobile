@@ -2183,6 +2183,7 @@ select:focus-visible,
 /* mockup: .app-header — 56px bar (home / big-title / back variants) */
 .hm-app-header {
   height: 56px;
+  position: relative;
   flex: none;
   display: flex;
   align-items: center;
@@ -2615,10 +2616,146 @@ select:focus-visible,
   0%, 100% { opacity: 0.75; }
   50% { opacity: 1; }
 }
+/* ── Header connection status pill + border shimmer (O1) ─────────────────── */
+.hm-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.hm-conn-banner {
+  display: inline-flex;
+  align-items: center;
+  flex: none;
+}
+
+.hm-header__right {
+  display: inline-flex;
+  align-items: center;
+  margin-left: auto;
+}
+
+.hm-home__header .hm-conn-banner {
+  margin-left: auto;
+}
+
+.hm-home__header:has(.hm-conn-banner) .hm-home__header-dot,
+.hm-home__header:has(.hm-conn-banner) .hm-app-header__sub,
+.hm-header__right:has(.hm-conn-banner) .hm-header__status {
+  display: none;
+}
+
+.hm-conn-pill {
+  position: relative;
+  height: 26px;
+  padding: 0 9px;
+  border-radius: var(--hm-radius-full);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--hm-text-xs);
+  font-weight: var(--hm-weight-semibold);
+  letter-spacing: 0.01em;
+  line-height: 1;
+  animation: hm-conn-pill-in var(--hm-duration-normal) var(--hm-ease-out) both;
+}
+
+button.hm-conn-pill {
+  cursor: pointer;
+}
+
+.hm-conn-pill::before {
+  content: '';
+  position: absolute;
+  inset: -9px -4px;
+}
+
+.hm-conn-banner--warn .hm-conn-pill {
+  background: var(--hm-color-warning-bg);
+  color: var(--hm-color-warning-strong);
+  border: 1px solid var(--hm-color-warning);
+  border-color: color-mix(in srgb, var(--hm-color-warning) 38%, transparent);
+}
+
+.hm-conn-banner--error .hm-conn-pill {
+  background: var(--hm-color-danger-bg);
+  color: var(--hm-color-danger-strong);
+  border: 1px solid var(--hm-color-danger);
+  border-color: color-mix(in srgb, var(--hm-color-danger) 42%, transparent);
+}
+
+.hm-conn-pill__dot {
+  width: 6px;
+  height: 6px;
+  border-radius: var(--hm-radius-full);
+  background: var(--hm-color-warning);
+  flex: none;
+  animation: hm-conn-dot-pulse 1.4s ease-in-out infinite;
+}
+
+.hm-conn-banner--error .hm-conn-pill__dot {
+  background: var(--hm-color-danger);
+  animation: none;
+}
+
+.hm-conn-shimmer {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -1px;
+  height: 2px;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.hm-conn-shimmer::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    var(--hm-color-warning) 45%,
+    var(--hm-color-primary) 55%,
+    transparent 100%
+  );
+  animation: hm-conn-sweep 1.6s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+.hm-conn-banner--error .hm-conn-shimmer::after {
+  background: var(--hm-color-danger);
+  opacity: 0.7;
+  animation: none;
+}
+
+@keyframes hm-conn-pill-in {
+  from { opacity: 0; transform: translateY(-2px) scale(0.96); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes hm-conn-dot-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.55; transform: scale(1.35); }
+}
+
+@keyframes hm-conn-sweep {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(100%); }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .hm-brand-hero .hm-brand__mark,
   .hm-brand-hero .hm-brand__mark circle,
-  .hm-brand-status { animation: none; }
+  .hm-brand-status,
+  .hm-conn-pill,
+  .hm-conn-pill__dot,
+  .hm-conn-shimmer::after { animation: none; }
 }
 
 /* Terminal states (unsupported / incompatible transport) don't animate. */
