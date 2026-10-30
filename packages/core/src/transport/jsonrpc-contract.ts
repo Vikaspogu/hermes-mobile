@@ -10,6 +10,10 @@ import type { RpcClient } from './jsonrpc';
 // Requests
 // ---------------------------------------------------------------------------
 
+export interface ClientCapabilities {
+  server_requests?: boolean;
+}
+
 export interface SessionCreateParams {
   cols?: number;
   title?: string;
@@ -17,10 +21,12 @@ export interface SessionCreateParams {
   profile?: string;
   messages?: unknown[];
   close_on_disconnect?: boolean;
+  client_capabilities?: ClientCapabilities;
 }
 
 export interface SessionIdParams {
   session_id: string;
+  client_capabilities?: ClientCapabilities;
 }
 
 export interface SessionListParams {
@@ -41,6 +47,31 @@ export interface ApprovalRespondParams {
   choice: 'once' | 'session' | 'always' | 'deny';
   session_id?: string;
 }
+
+export interface ServerApprovalRequestParams {
+  session_id?: string;
+  approval_id?: string;
+  command?: string;
+  description?: string;
+  pattern_key?: string;
+  tool_name?: string;
+  tool_call_id?: string;
+}
+
+export interface ServerClarifyRequestParams {
+  session_id?: string;
+  question?: string;
+  choices?: string[];
+  tool_call_id?: string;
+}
+
+export interface ServerRequestCancelParams {
+  request_id?: string | number;
+  reason?: string;
+  session_id?: string;
+}
+
+export type ServerRequestMethod = 'approval.request' | 'clarify.request';
 
 export interface ClarifyRespondParams {
   id: string;
@@ -196,6 +227,8 @@ export type JsonRpcEventType =
   | 'reasoning.delta'
   | 'reasoning.available'
   | 'approval.request'
+  | 'approval.cancelled'
+  | 'request.cancel'
   | 'clarify.request'
   | 'status.update'
   | 'notice'

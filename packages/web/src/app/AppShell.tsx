@@ -65,19 +65,28 @@ function approvalFromEvent(event: RpcEvent): Approval {
   const command = typeof d.command === 'string' ? d.command : '';
   const description = typeof d.description === 'string' ? d.description : '';
   const patternKey = typeof d.pattern_key === 'string' ? d.pattern_key : '';
+  const sessionId =
+    event.sessionId ?? (typeof d.session_id === 'string' && d.session_id ? d.session_id : undefined);
+  const approvalId =
+    typeof d.approval_id === 'string' && d.approval_id
+      ? d.approval_id
+      : typeof d.id === 'string' && d.id
+        ? d.id
+        : event.rpcRequestId !== undefined
+          ? `approval-req-${String(event.rpcRequestId)}`
+          : `approval-${sessionId ?? 'global'}-${patternKey || Date.now()}`;
   const item: Approval = {
-    id: typeof d.id === 'string'
-      ? d.id
-      : `approval-${event.sessionId ?? 'global'}-${patternKey || Date.now()}`,
+    id: approvalId,
     kind: 'approval',
     status: 'needs_you',
     title: typeof d.title === 'string' ? d.title : 'Approval required',
     highImpact: Boolean(d.high_impact ?? d.highImpact ?? true),
     createdAt: Date.now(),
   };
-  if (event.sessionId) item.sessionId = event.sessionId;
+  if (event.rpcRequestId !== undefined) item.rpcRequestId = event.rpcRequestId;
+  if (sessionId) item.sessionId = sessionId;
   if (typeof d.session === 'string') item.session = d.session;
-  else if (event.sessionId) item.session = `Session ${event.sessionId.slice(0, 8)}`;
+  else if (sessionId) item.session = `Session ${sessionId.slice(0, 8)}`;
   const summary = [command, description].filter(Boolean).join('\n');
   if (summary) item.summary = summary;
   if (typeof d.visibility === 'string' && (d.visibility === 'private' || d.visibility === 'public')) {
@@ -90,15 +99,24 @@ function approvalFromEvent(event: RpcEvent): Approval {
 
 function clarifyFromEvent(event: RpcEvent): Clarify {
   const d = eventPayload(event);
+  const sessionId =
+    event.sessionId ?? (typeof d.session_id === 'string' && d.session_id ? d.session_id : undefined);
+  const clarifyId =
+    typeof d.id === 'string' && d.id
+      ? d.id
+      : event.rpcRequestId !== undefined
+        ? `clarify-req-${String(event.rpcRequestId)}`
+        : `clarify-${sessionId ?? 'global'}-${Date.now()}`;
   const item: Clarify = {
-    id: typeof d.id === 'string' ? d.id : `clarify-${event.sessionId ?? 'global'}-${Date.now()}`,
+    id: clarifyId,
     kind: 'clarify',
     status: 'needs_you',
     title: typeof d.title === 'string' ? d.title : 'Clarification needed',
     question: typeof d.question === 'string' ? d.question : '',
     createdAt: Date.now(),
   };
-  if (event.sessionId) item.sessionId = event.sessionId;
+  if (event.rpcRequestId !== undefined) item.rpcRequestId = event.rpcRequestId;
+  if (sessionId) item.sessionId = sessionId;
   return item;
 }
 
@@ -189,6 +207,8 @@ export function AppShell({ connectionState, rpc, rest, onRetry, connectionError 
   const { sessions, load } = useSessionsStore();
   const { sessionId, storedSessionId } = useChatStore();
   const addActivityItem = useActivityStore((s) => s.addItem);
+  const cancelRpcRequest = useActivityStore((s) => s.cancelRpcRequest);
+  const clearRpcRequests = useActivityStore((s) => s.clearRpcRequests);
   const loadActivity = useActivityStore((s) => s.load);
   const pendingApprovals = useActivityStore(
     (s) => s.items.filter((item) => item.kind === 'approval' && item.status === 'needs_you').length,
@@ -341,7 +361,10 @@ export function AppShell({ connectionState, rpc, rest, onRetry, connectionError 
   }, [activeName, rest, load, loadBoards]);
 
   useEffect(() => {
-    if (connectionState !== 'connected') return undefined;
+    if (connectionState !== 'connected') {
+      clearRpcRequests();
+      return undefined;
+    }
     let cancelled = false;
 
     const refreshPendingActions = () => {
@@ -365,7 +388,7 @@ export function AppShell({ connectionState, rpc, rest, onRetry, connectionError 
       window.removeEventListener('focus', refreshPendingActions);
       document.removeEventListener('visibilitychange', onVisibilityChange);
     };
-  }, [connectionState, activeName, rest, loadActivity]);
+  }, [connectionState, activeName, rest, loadActivity, clearRpcRequests]);
 
   useEffect(() => {
     if (connectionState !== 'connected') return undefined;
@@ -473,6 +496,23 @@ export function AppShell({ connectionState, rpc, rest, onRetry, connectionError 
   useEffect(() => {
     const onApprovalRequired = (event: RpcEvent) => addActivityItem(approvalFromEvent(event));
     const onClarifyRequired = (event: RpcEvent) => addActivityItem(clarifyFromEvent(event));
+    const onRequestCancel = (event: RpcEvent) => {
+      const d = eventPayload(event);
+      const requestId =
+        (typeof d.request_id === 'string' && d.request_id.length > 0) || typeof d.request_id === 'number'
+          ? d.request_id
+          : undefined;
+      if (requestId !== undefined) {
+        cancelRpcRequest(requestId);
+      }
+    };
+    const onApprovalCancelled = (event: RpcEvent) => {
+      const d = eventPayload(event);
+      const approvalId = typeof d.approval_id === 'string' && d.approval_id ? d.approval_id : undefined;
+      if (approvalId) {
+        cancelRpcRequest(undefined, approvalId);
+      }
+    };
     const onStatusUpdate = (event: RpcEvent) => {
       const d = eventPayload(event);
       const kind = typeof d.kind === 'string' ? d.kind : undefined;
@@ -490,13 +530,17 @@ export function AppShell({ connectionState, rpc, rest, onRetry, connectionError 
 
     rpc.events.addEventListener('approval.request', onApprovalRequired);
     rpc.events.addEventListener('clarify.request', onClarifyRequired);
+    rpc.events.addEventListener('request.cancel', onRequestCancel);
+    rpc.events.addEventListener('approval.cancelled', onApprovalCancelled);
     rpc.events.addEventListener('status.update', onStatusUpdate);
     return () => {
       rpc.events.removeEventListener('approval.request', onApprovalRequired);
       rpc.events.removeEventListener('clarify.request', onClarifyRequired);
+      rpc.events.removeEventListener('request.cancel', onRequestCancel);
+      rpc.events.removeEventListener('approval.cancelled', onApprovalCancelled);
       rpc.events.removeEventListener('status.update', onStatusUpdate);
     };
-  }, [rpc, addActivityItem]);
+  }, [rpc, addActivityItem, cancelRpcRequest]);
 
 
 

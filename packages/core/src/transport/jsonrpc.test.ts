@@ -26,7 +26,10 @@ describe('makeRpcClient', () => {
     const sent = JSON.parse(send.mock.calls[0][0].trim());
     expect(sent.jsonrpc).toBe('2.0');
     expect(sent.method).toBe('session.create');
-    expect(sent.params).toEqual({ profile: 'default' });
+    expect(sent.params).toEqual({
+      profile: 'default',
+      client_capabilities: { server_requests: true },
+    });
     expect(sent.id).toBe('1');
   });
 
@@ -235,5 +238,147 @@ describe('makeRpcClient', () => {
 
     expect(warn).toHaveBeenCalledWith('[Hermes PWA] Unknown gateway event type: future.event');
     expect(handler).toHaveBeenCalledWith({ type: 'future.event', payload: { ok: true } });
+  });
+
+  it('dispatches server-initiated approval.request with rpcRequestId and responds by id', () => {
+    const send = vi.fn();
+    const rpc = makeRpcClient(send);
+    const handler = vi.fn();
+    rpc.events.addEventListener('approval.request', handler);
+
+    rpc.onFrame(
+      JSON.stringify({
+        jsonrpc: '2.0',
+        id: 'srv-42',
+        method: 'approval.request',
+        params: {
+          session_id: 'live-1',
+          approval_id: 'ap-42',
+          command: 'gh pr list',
+          description: 'Inspect open PRs',
+        },
+      }),
+    );
+
+    expect(handler).toHaveBeenCalledTimes(1);
+    const event = handler.mock.calls[0]?.[0] as import('./jsonrpc').RpcEvent;
+    expect(event).toEqual({
+      type: 'approval.request',
+      sessionId: 'live-1',
+      rpcRequestId: 'srv-42',
+      payload: {
+        session_id: 'live-1',
+        approval_id: 'ap-42',
+        command: 'gh pr list',
+        description: 'Inspect open PRs',
+      },
+    });
+
+    rpc.respond?.('srv-42', { choice: 'once' });
+    expect(send).toHaveBeenCalledTimes(1);
+    expect(JSON.parse(send.mock.calls[0][0].trim())).toEqual({
+      jsonrpc: '2.0',
+      id: 'srv-42',
+      result: { choice: 'once' },
+    });
+  });
+
+  it('returns -32601 error for unsupported server-initiated requests', () => {
+    const send = vi.fn();
+    const rpc = makeRpcClient(send);
+
+    rpc.onFrame(
+      JSON.stringify({
+        jsonrpc: '2.0',
+        id: 'srv-99',
+        method: 'secret.request',
+        params: {},
+      }),
+    );
+
+    expect(send).toHaveBeenCalledTimes(1);
+    expect(JSON.parse(send.mock.calls[0][0].trim())).toEqual({
+      jsonrpc: '2.0',
+      id: 'srv-99',
+      error: { code: -32601, message: 'Unsupported server request: secret.request' },
+    });
+  });
+
+  it('dispatches request.cancel in both event-envelope and notification forms', () => {
+    const send = vi.fn();
+    const rpc = makeRpcClient(send);
+    const handler = vi.fn();
+    rpc.events.addEventListener('request.cancel', handler);
+
+    rpc.onFrame(
+      JSON.stringify({
+        jsonrpc: '2.0',
+        method: 'event',
+        params: {
+          type: 'request.cancel',
+          session_id: 'live-1',
+          payload: { request_id: 'srv-1', reason: 'timeout' },
+        },
+      }),
+    );
+    rpc.onFrame(
+      JSON.stringify({
+        jsonrpc: '2.0',
+        method: 'request.cancel',
+        params: {
+          session_id: 'live-1',
+          request_id: 'srv-2',
+          reason: 'cancelled',
+        },
+      }),
+    );
+
+    expect(handler).toHaveBeenCalledTimes(2);
+    expect(handler.mock.calls[0]?.[0]).toEqual({
+      type: 'request.cancel',
+      sessionId: 'live-1',
+      payload: { request_id: 'srv-1', reason: 'timeout' },
+    });
+    expect(handler.mock.calls[1]?.[0]).toEqual({
+      type: 'request.cancel',
+      sessionId: 'live-1',
+      payload: { session_id: 'live-1', request_id: 'srv-2', reason: 'cancelled' },
+    });
+  });
+
+  it('injects server_requests capability on session.resume and session.activate and does not settle client pending requests on colliding server request id', async () => {
+    const send = vi.fn();
+    const rpc = makeRpcClient(send);
+    const approvalHandler = vi.fn();
+    rpc.events.addEventListener('approval.request', approvalHandler);
+
+    const resumePromise = rpc.request('session.resume', { session_id: 's-1' });
+    void rpc.request('session.activate', { session_id: 's-1', client_capabilities: { server_requests: false } });
+
+    expect(JSON.parse(send.mock.calls[0][0].trim())).toMatchObject({
+      id: '1',
+      method: 'session.resume',
+      params: { session_id: 's-1', client_capabilities: { server_requests: true } },
+    });
+    expect(JSON.parse(send.mock.calls[1][0].trim())).toMatchObject({
+      id: '2',
+      method: 'session.activate',
+      params: { session_id: 's-1', client_capabilities: { server_requests: false } },
+    });
+
+    // Server sends a request whose id collides with client request id '1'
+    rpc.onFrame(
+      JSON.stringify({
+        jsonrpc: '2.0',
+        id: '1',
+        method: 'approval.request',
+        params: { session_id: 's-1', approval_id: 'ap-collide', command: 'ls' },
+      }),
+    );
+    expect(approvalHandler).toHaveBeenCalledTimes(1);
+
+    // Client request '1' must still resolve from the actual response frame
+    rpc.onFrame(JSON.stringify({ jsonrpc: '2.0', id: '1', result: { session_id: 's-1' } }));
+    await expect(resumePromise).resolves.toEqual({ session_id: 's-1' });
   });
 });

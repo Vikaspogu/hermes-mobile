@@ -14,6 +14,7 @@ export interface ActionItem {
   summary?: string;
   sessionId?: string;
   sourceSessionId?: string;
+  rpcRequestId?: string | number;
   createdAt: number;
 }
 

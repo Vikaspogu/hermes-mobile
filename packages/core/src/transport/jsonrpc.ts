@@ -56,6 +56,7 @@ export interface RpcEvent {
   type: string;
   sessionId?: string;
   payload?: unknown;
+  rpcRequestId?: string | number;
 }
 
 export type RpcEventHandler = (event: RpcEvent) => void;
@@ -74,6 +75,8 @@ const KNOWN_GATEWAY_EVENT_TYPES = new Set([
   'reasoning.delta',
   'reasoning.available',
   'approval.request',
+  'approval.cancelled',
+  'request.cancel',
   'clarify.request',
   'status.update',
   'notice',
@@ -99,10 +102,17 @@ export interface RpcRequestOptions {
 
 export interface RpcClient {
   request<T>(method: string, params?: unknown, options?: RpcRequestOptions): Promise<T>;
+  respond?(id: string | number, result: unknown): void;
   onFrame(line: string): void;
   events: RpcEvents;
   disconnect(): void;
 }
+
+const SESSION_CAPABILITY_METHODS = new Set(['session.create', 'session.resume', 'session.activate']);
+const SUPPORTED_SERVER_REQUEST_METHODS: ReadonlySet<string> = new Set<import('./jsonrpc-contract').ServerRequestMethod>([
+  'approval.request',
+  'clarify.request',
+]);
 
 export function makeRpcEvents(): RpcEvents {
   const listeners = new Map<string, Set<RpcEventHandler>>();
@@ -158,13 +168,36 @@ export function makeRpcClient(send: RpcSend, options: RpcClientOptions = {}): Rp
         pendingEntry.timeoutId = timeoutId;
       }
       pending.set(id, pendingEntry);
-      const req: JsonRpcRequest = { jsonrpc: '2.0', id, method, params };
+      const paramRecord =
+        params && typeof params === 'object' && !Array.isArray(params)
+          ? (params as Record<string, unknown>)
+          : undefined;
+      const existingCaps =
+        paramRecord?.client_capabilities &&
+        typeof paramRecord.client_capabilities === 'object' &&
+        !Array.isArray(paramRecord.client_capabilities)
+          ? (paramRecord.client_capabilities as Record<string, unknown>)
+          : undefined;
+      const wireParams = SESSION_CAPABILITY_METHODS.has(method)
+        ? {
+            ...(paramRecord ?? {}),
+            client_capabilities: {
+              server_requests: true,
+              ...(existingCaps ?? {}),
+            },
+          }
+        : params;
+      const req: JsonRpcRequest = { jsonrpc: '2.0', id, method, params: wireParams };
       try {
         send(JSON.stringify(req) + '\n');
       } catch (error) {
         settle(id, ({ reject: rejectPending }) => rejectPending(error instanceof Error ? error : new Error(String(error))));
       }
     });
+  }
+
+  function respond(id: string | number, result: unknown): void {
+    send(JSON.stringify({ jsonrpc: '2.0', id, result }) + '\n');
   }
 
   function onFrame(line: string): void {
@@ -176,7 +209,7 @@ export function makeRpcClient(send: RpcSend, options: RpcClientOptions = {}): Rp
       return;
     }
 
-    if ('id' in frame && frame.id !== undefined && pending.has(frame.id)) {
+    if (!('method' in frame) && 'id' in frame && frame.id !== undefined && pending.has(frame.id)) {
       settle(frame.id, ({ resolve, reject }) => {
         if ('error' in frame && frame.error !== undefined) {
           reject(new JsonRpcError(frame.error));
@@ -198,6 +231,58 @@ export function makeRpcClient(send: RpcSend, options: RpcClientOptions = {}): Rp
         event.sessionId = params.session_id;
       }
       events.dispatchEvent(event);
+      return;
+    }
+
+    const rawFrame = frame as unknown as Record<string, unknown>;
+    if (typeof rawFrame.method === 'string') {
+      const rawParams =
+        rawFrame.params && typeof rawFrame.params === 'object' && !Array.isArray(rawFrame.params)
+          ? (rawFrame.params as Record<string, unknown>)
+          : {};
+      const hasRequestId =
+        (typeof rawFrame.id === 'string' && rawFrame.id.length > 0) || typeof rawFrame.id === 'number';
+      if (hasRequestId) {
+        const requestId = rawFrame.id as string | number;
+        if (!SUPPORTED_SERVER_REQUEST_METHODS.has(rawFrame.method)) {
+          try {
+            send(
+              JSON.stringify({
+                jsonrpc: '2.0',
+                id: requestId,
+                error: { code: -32601, message: `Unsupported server request: ${rawFrame.method}` },
+              }) + '\n',
+            );
+          } catch {
+            // Ignore send failures when socket is already closing
+          }
+          return;
+        }
+        const event: RpcEvent = {
+          type: rawFrame.method,
+          payload: rawParams,
+          rpcRequestId: requestId,
+        };
+        if (typeof rawParams.session_id === 'string') {
+          event.sessionId = rawParams.session_id;
+        }
+        events.dispatchEvent(event);
+        return;
+      }
+      if (rawFrame.id === undefined && isKnownGatewayEventType(rawFrame.method)) {
+        const payload =
+          rawParams.payload && typeof rawParams.payload === 'object' && !Array.isArray(rawParams.payload)
+            ? (rawParams.payload as Record<string, unknown>)
+            : rawParams;
+        const event: RpcEvent = {
+          type: rawFrame.method,
+          payload,
+        };
+        if (typeof rawParams.session_id === 'string') {
+          event.sessionId = rawParams.session_id;
+        }
+        events.dispatchEvent(event);
+      }
     }
   }
 
@@ -207,5 +292,5 @@ export function makeRpcClient(send: RpcSend, options: RpcClientOptions = {}): Rp
     }
   }
 
-  return { request, onFrame, events, disconnect };
+  return { request, respond, onFrame, events, disconnect };
 }

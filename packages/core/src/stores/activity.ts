@@ -20,6 +20,8 @@ export interface ActivityStore {
   dismiss(id: string): void;
   addItem(item: ActionItem): void;
   updateItem(id: string, patch: Partial<ActionItem>): void;
+  cancelRpcRequest(requestId?: string | number, approvalId?: string): void;
+  clearRpcRequests(): void;
   clear(): void;
 }
 
@@ -45,6 +47,7 @@ function approvalIds(item: ActionItem): string[] {
 
 function sameApproval(a: ActionItem, b: ActionItem): boolean {
   if (a.kind !== 'approval' || b.kind !== 'approval') return false;
+  if (a.rpcRequestId !== undefined && b.rpcRequestId !== undefined && a.rpcRequestId !== b.rpcRequestId) return false;
   if (!a.summary || !b.summary || a.summary !== b.summary) return false;
 
   // The same backend approval can reach the UI twice:
@@ -64,29 +67,71 @@ function sameApproval(a: ActionItem, b: ActionItem): boolean {
 
 const REALTIME_APPROVAL_REFRESH_GRACE_MS = 5_000;
 const approvalResponsesInFlight = new Set<string>();
+const clarifyResponsesInFlight = new Set<string>();
 
 function mergeIncomingItems(existing: ActionItem[], incoming: ActionItem[]): ActionItem[] {
   const now = Date.now();
+  const matchedExistingIds = new Set<string>();
+  const mergedIncoming = incoming.map((item) => {
+    const match = existing.find(
+      (current) => !matchedExistingIds.has(current.id) && (current.id === item.id || sameApproval(item, current)),
+    );
+    if (match) matchedExistingIds.add(match.id);
+    const rpcRequestId = item.rpcRequestId ?? match?.rpcRequestId;
+    if (match && rpcRequestId !== undefined) {
+      const sourceSessionId = item.sessionId ?? match.sourceSessionId;
+      return {
+        ...item,
+        id: item.rpcRequestId !== undefined ? item.id : match.id,
+        rpcRequestId,
+        ...(match.sessionId ? { sessionId: match.sessionId } : {}),
+        ...(sourceSessionId ? { sourceSessionId } : {}),
+      };
+    }
+    return item;
+  });
   const rest = existing.filter((current) => {
-    const replacedByIncoming = incoming.some((item) => item.id === current.id || sameApproval(item, current));
-    if (replacedByIncoming) return false;
+    if (matchedExistingIds.has(current.id)) return false;
 
     // /actions/pending is the backend source of truth for approval cards, but
     // a websocket approval.request can arrive a moment before the REST recovery
     // file is visible to the next refresh. Keep very fresh realtime approvals
     // briefly; after that, if REST doesn't list it, the gateway queue has
-    // resolved/timed out and the local card is stale.
-    if (current.kind === 'approval') {
+    // resolved/timed out and the local card is stale. Server-initiated JSON-RPC
+    // requests (rpcRequestId !== undefined) stay open until answered, cancelled
+    // via request.cancel/approval.cancelled, or the WebSocket disconnects.
+    if (current.kind === 'approval' && current.rpcRequestId === undefined) {
       return now - current.createdAt < REALTIME_APPROVAL_REFRESH_GRACE_MS;
     }
 
     return true;
   });
-  return [...incoming, ...rest];
+  return [...mergedIncoming, ...rest];
 }
 
 function upsertActivityItem(existing: ActionItem[], item: ActionItem): ActionItem[] {
-  return [item, ...existing.filter((current) => current.id !== item.id && !sameApproval(item, current))];
+  const match = existing.find((current) => current.id === item.id || sameApproval(item, current));
+  const merged: ActionItem =
+    match && item.rpcRequestId !== undefined
+      ? {
+          ...item,
+          ...(item.sessionId ?? match.sessionId ? { sessionId: item.sessionId ?? match.sessionId } : {}),
+          ...(item.sourceSessionId ?? match.sourceSessionId ?? match.sessionId
+            ? { sourceSessionId: item.sourceSessionId ?? match.sourceSessionId ?? match.sessionId }
+            : {}),
+        }
+      : match && match.rpcRequestId !== undefined && item.rpcRequestId === undefined
+        ? {
+            ...item,
+            id: match.id,
+            rpcRequestId: match.rpcRequestId,
+            ...(match.sessionId ? { sessionId: match.sessionId } : {}),
+            ...(item.sessionId ?? match.sourceSessionId
+              ? { sourceSessionId: item.sessionId ?? match.sourceSessionId }
+              : {}),
+          }
+        : item;
+  return [merged, ...existing.filter((current) => current.id !== item.id && !sameApproval(item, current))];
 }
 
 function isStaleApprovalError(err: unknown): boolean {
@@ -117,15 +162,19 @@ export const useActivityStore = create<ActivityStore>((set, get) => ({
     approvalResponsesInFlight.add(id);
     try {
       const item = get().items.find((i) => i.id === id);
-      const resolvedSessionId = sessionId ?? item?.sessionId;
-      if (!resolvedSessionId) {
-        throw new Error('Approval response requires session_id.');
-      }
       const choice = choiceOverride ?? (decision === 'approve' ? 'once' : 'deny');
-      await rpc.request('approval.respond', {
-        choice,
-        session_id: resolvedSessionId,
-      });
+      if (item?.kind === 'approval' && item.rpcRequestId !== undefined && typeof rpc.respond === 'function') {
+        rpc.respond(item.rpcRequestId, { choice });
+      } else {
+        const resolvedSessionId = sessionId ?? item?.sessionId;
+        if (!resolvedSessionId) {
+          throw new Error('Approval response requires session_id.');
+        }
+        await rpc.request('approval.respond', {
+          choice,
+          session_id: resolvedSessionId,
+        });
+      }
       set((s) => ({ items: removeById(s.items, id) }));
     } catch (err) {
       if (isStaleApprovalError(err)) {
@@ -142,13 +191,22 @@ export const useActivityStore = create<ActivityStore>((set, get) => ({
   },
 
   async respondClarify(rpc, id, answer) {
+    if (clarifyResponsesInFlight.has(id)) return;
+    clarifyResponsesInFlight.add(id);
     try {
-      await rpc.request('clarify.respond', { id, answer });
+      const item = get().items.find((i) => i.id === id);
+      if (item?.kind === 'clarify' && item.rpcRequestId !== undefined && typeof rpc.respond === 'function') {
+        rpc.respond(item.rpcRequestId, { answer });
+      } else {
+        await rpc.request('clarify.respond', { id, answer });
+      }
       set((s) => ({ items: removeById(s.items, id) }));
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Failed to respond.';
       set({ error: msg });
       throw err;
+    } finally {
+      clarifyResponsesInFlight.delete(id);
     }
   },
 
@@ -166,7 +224,29 @@ export const useActivityStore = create<ActivityStore>((set, get) => ({
     set((s) => ({ items: updateInPlace(s.items, id, patch) }));
   },
 
+  cancelRpcRequest(requestId, approvalId) {
+    set((s) => ({
+      items: s.items.filter((item) => {
+        if (requestId !== undefined && item.rpcRequestId === requestId) {
+          return false;
+        }
+        if (approvalId && item.kind === 'approval' && item.id === approvalId) {
+          return false;
+        }
+        return true;
+      }),
+    }));
+  },
+
+  clearRpcRequests() {
+    set((s) => ({
+      items: s.items.filter((item) => item.rpcRequestId === undefined),
+    }));
+  },
+
   clear() {
+    approvalResponsesInFlight.clear();
+    clarifyResponsesInFlight.clear();
     set({ items: [], loading: false, error: undefined });
   },
 }));

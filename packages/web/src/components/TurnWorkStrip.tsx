@@ -27,7 +27,7 @@ function TurnWorkStripView({
   // row: the approval dock hides approvals claimed by those rows, so the strip
   // must expose them without a click.
   const [open, setOpen] = useState(
-    Boolean(streaming) || (groupTools ?? []).some((tool) => tool.output === undefined),
+    () => Boolean(streaming) || (groupTools ?? []).some((tool) => tool.output === undefined),
   );
   const workedLabel = durationMs !== undefined && durationMs >= 1000 ? `Worked for ${formatWorkDuration(durationMs)}` : 'Worked';
   return (

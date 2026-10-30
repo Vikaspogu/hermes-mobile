@@ -244,4 +244,134 @@ describe('useActivityStore', () => {
     expect(useActivityStore.getState().items).toEqual([]);
     expect(useActivityStore.getState().error).toBeUndefined();
   });
+
+  it('respondApproval replies via rpc.respond when rpcRequestId is present', async () => {
+    const respond = vi.fn();
+    const rpcWithRespond = { ...rpcMock, respond } as unknown as RpcClient;
+    useActivityStore.setState({
+      items: [
+        {
+          id: 'ap-42',
+          kind: 'approval',
+          status: 'needs_you',
+          title: 'Approval required',
+          sessionId: 'live-1',
+          rpcRequestId: 'srv-42',
+          createdAt: 1,
+        },
+      ],
+    });
+
+    await useActivityStore.getState().respondApproval(rpcWithRespond, 'ap-42', 'approve', undefined, 'session');
+
+    expect(respond).toHaveBeenCalledWith('srv-42', { choice: 'session' });
+    expect(rpcMock.request).not.toHaveBeenCalled();
+    expect(useActivityStore.getState().items).toHaveLength(0);
+  });
+
+  it('cancelRpcRequest and clearRpcRequests remove server-initiated requests', () => {
+    useActivityStore.setState({
+      items: [
+        {
+          id: 'ap-42',
+          kind: 'approval',
+          status: 'needs_you',
+          title: 'Approval required',
+          sessionId: 'live-1',
+          rpcRequestId: 'srv-42',
+          createdAt: 1,
+        },
+        {
+          id: 'ap-rest',
+          kind: 'approval',
+          status: 'needs_you',
+          title: 'Approval required',
+          sessionId: 'live-1',
+          createdAt: 1,
+        },
+      ],
+    });
+
+    useActivityStore.getState().cancelRpcRequest('srv-42');
+    expect(useActivityStore.getState().items.map((i) => i.id)).toEqual(['ap-rest']);
+
+    useActivityStore.getState().addItem({
+      id: 'ap-43',
+      kind: 'approval',
+      status: 'needs_you',
+      title: 'Approval required',
+      sessionId: 'live-1',
+      rpcRequestId: 'srv-43',
+      createdAt: 2,
+    });
+    useActivityStore.getState().clearRpcRequests();
+    expect(useActivityStore.getState().items.map((i) => i.id)).toEqual(['ap-rest']);
+  });
+
+  it('respondClarify replies via rpc.respond when rpcRequestId is present', async () => {
+    const respond = vi.fn();
+    const rpcWithRespond = { ...rpcMock, respond } as unknown as RpcClient;
+    useActivityStore.setState({
+      items: [
+        {
+          id: 'c-42',
+          kind: 'clarify',
+          status: 'needs_you',
+          title: 'Clarification needed',
+          summary: 'Proceed?',
+          sessionId: 'live-1',
+          rpcRequestId: 'srv-c-42',
+          createdAt: 1,
+        },
+      ],
+    });
+
+    await useActivityStore.getState().respondClarify(rpcWithRespond, 'c-42', 'yes');
+
+    expect(respond).toHaveBeenCalledWith('srv-c-42', { answer: 'yes' });
+    expect(rpcMock.request).not.toHaveBeenCalled();
+    expect(useActivityStore.getState().items).toHaveLength(0);
+  });
+
+  it('preserves rpcRequestId and sessionId when REST load merges with a live server-request approval', async () => {
+    useActivityStore.setState({
+      items: [
+        {
+          id: 'ap-live',
+          kind: 'approval',
+          status: 'needs_you',
+          title: 'Approval required',
+          summary: 'gh pr list\nInspect open PRs',
+          sessionId: 'live-sess-1',
+          rpcRequestId: 'srv-99',
+          createdAt: 1,
+        },
+      ],
+    });
+
+    const rest = {
+      pendingActions: vi.fn().mockResolvedValue([
+        {
+          id: 'ap-rest-row',
+          kind: 'approval',
+          status: 'needs_you',
+          title: 'Approval required',
+          summary: 'gh pr list\nInspect open PRs',
+          sessionId: 'stored-sess-1',
+          createdAt: 2,
+          highImpact: true,
+        },
+      ]),
+    } as unknown as import('../transport/rest').RestClient;
+
+    await useActivityStore.getState().load(rest, 'default');
+    const items = useActivityStore.getState().items;
+    expect(items).toHaveLength(1);
+    expect(items[0]).toMatchObject({
+      id: 'ap-live',
+      rpcRequestId: 'srv-99',
+      sessionId: 'live-sess-1',
+      sourceSessionId: 'stored-sess-1',
+    });
+  });
 });

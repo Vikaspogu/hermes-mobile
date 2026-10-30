@@ -5,6 +5,7 @@ import { useActivityStore, useConnectionStore, useProfilesStore, useProjectsStor
 
 const rpcMock = {
   request: vi.fn(),
+  respond: vi.fn(),
   onFrame: vi.fn(),
   events: makeRpcEvents(),
 } as unknown as import('@hermes-pwa/core').RpcClient;
@@ -732,5 +733,113 @@ describe('AppShell', () => {
     } finally {
       vi.useRealTimers();
     }
+  });
+
+  it('responds to v8 server-initiated approval.request inline and clears on request.cancel', async () => {
+    localStorage.setItem('hermes-mobile-screen', 'chat');
+    localStorage.setItem(
+      'hermes-pwa.activeSession.v4:default',
+      JSON.stringify({
+        profile: 'default',
+        sessionId: 'sess-v8',
+        storedSessionId: 'stored-v8',
+        messages: [{ id: 'a-1', role: 'assistant', text: '', toolCalls: [{ id: 'tc-1', name: 'terminal' }] }],
+      }),
+    );
+    useChatStore.setState({
+      sessionId: 'sess-v8',
+      storedSessionId: 'stored-v8',
+      streaming: true,
+      messages: [
+        {
+          id: 'a-1',
+          role: 'assistant',
+          text: '',
+          createdAt: undefined,
+          toolCalls: [{ id: 'tc-1', name: 'terminal' }],
+        },
+      ],
+      error: undefined,
+    });
+    vi.mocked(restMock.sessionMessages).mockResolvedValue({
+      messages: [
+        {
+          id: 'a-1',
+          role: 'assistant',
+          text: '',
+          tool_calls: [{ id: 'tc-1', name: 'terminal' }],
+        },
+      ],
+    });
+    useConnectionStore.setState({ state: 'reconnecting', error: undefined } as ReturnType<typeof useConnectionStore.getState>);
+
+    render(<AppShell connectionState="reconnecting" rpc={rpcMock} rest={restMock} />);
+    await waitFor(() => expect(screen.getAllByText(/Running command|Ran command/).length).toBeGreaterThanOrEqual(1), { timeout: 3000 });
+
+    act(() => {
+      rpcMock.events.dispatchEvent({
+        type: 'approval.request',
+        sessionId: 'sess-v8',
+        rpcRequestId: 'srv-v8-1',
+        payload: {
+          approval_id: 'ap-v8-1',
+          command: 'gh pr list',
+          description: 'Inspect open PRs',
+        },
+      });
+    });
+
+    await waitFor(() => expect(screen.getByText(/Inspect open PRs/)).toBeInTheDocument());
+    fireEvent.click(screen.getByRole('button', { name: 'Run' }));
+    await waitFor(() =>
+      expect(rpcMock.respond).toHaveBeenCalledWith('srv-v8-1', { choice: 'once' }),
+    );
+    expect(rpcMock.request).not.toHaveBeenCalledWith('approval.respond', expect.anything());
+
+    act(() => {
+      rpcMock.events.dispatchEvent({
+        type: 'approval.request',
+        sessionId: 'sess-v8',
+        rpcRequestId: 'srv-v8-2',
+        payload: {
+          approval_id: 'ap-v8-2',
+          command: 'gh pr list',
+          description: 'Merge PR #1',
+        },
+      });
+    });
+    await waitFor(() => expect(screen.getByText(/Merge PR #1/)).toBeInTheDocument());
+
+    act(() => {
+      rpcMock.events.dispatchEvent({
+        type: 'request.cancel',
+        sessionId: 'sess-v8',
+        payload: { request_id: 'srv-v8-2', reason: 'timeout' },
+      });
+    });
+    await waitFor(() => expect(screen.queryByText(/Merge PR #1/)).toBeNull());
+
+    act(() => {
+      rpcMock.events.dispatchEvent({
+        type: 'approval.request',
+        sessionId: 'sess-v8',
+        rpcRequestId: 'srv-v8-3',
+        payload: {
+          approval_id: 'ap-v8-3',
+          command: 'gh pr list',
+          description: 'Merge PR #2',
+        },
+      });
+    });
+    await waitFor(() => expect(screen.getByText(/Merge PR #2/)).toBeInTheDocument());
+
+    act(() => {
+      rpcMock.events.dispatchEvent({
+        type: 'approval.cancelled',
+        sessionId: 'sess-v8',
+        payload: { approval_id: 'ap-v8-3', reason: 'cancelled' },
+      });
+    });
+    await waitFor(() => expect(screen.queryByText(/Merge PR #2/)).toBeNull());
   });
 });
