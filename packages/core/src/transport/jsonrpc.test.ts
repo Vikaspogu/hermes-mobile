@@ -26,10 +26,7 @@ describe('makeRpcClient', () => {
     const sent = JSON.parse(send.mock.calls[0][0].trim());
     expect(sent.jsonrpc).toBe('2.0');
     expect(sent.method).toBe('session.create');
-    expect(sent.params).toEqual({
-      profile: 'default',
-      client_capabilities: { server_requests: true },
-    });
+    expect(sent.params).toEqual({ profile: 'default' });
     expect(sent.id).toBe('1');
   });
 
@@ -346,37 +343,78 @@ describe('makeRpcClient', () => {
     });
   });
 
-  it('injects server_requests capability on session.resume and session.activate and does not settle client pending requests on colliding server request id', async () => {
+  it('does not inject extra fields into strict session methods, maps v8 approval/clarify server requests, and does not settle client pending requests on colliding server request id', async () => {
     const send = vi.fn();
     const rpc = makeRpcClient(send);
     const approvalHandler = vi.fn();
+    const clarifyHandler = vi.fn();
     rpc.events.addEventListener('approval.request', approvalHandler);
+    rpc.events.addEventListener('clarify.request', clarifyHandler);
 
     const resumePromise = rpc.request('session.resume', { session_id: 's-1' });
-    void rpc.request('session.activate', { session_id: 's-1', client_capabilities: { server_requests: false } });
+    void rpc.request('session.activate', { session_id: 's-1' });
+    void rpc.request('session.create', { profile: 'default' });
 
-    expect(JSON.parse(send.mock.calls[0][0].trim())).toMatchObject({
+    expect(JSON.parse(send.mock.calls[0][0].trim())).toEqual({
+      jsonrpc: '2.0',
       id: '1',
       method: 'session.resume',
-      params: { session_id: 's-1', client_capabilities: { server_requests: true } },
+      params: { session_id: 's-1' },
     });
-    expect(JSON.parse(send.mock.calls[1][0].trim())).toMatchObject({
+    expect(JSON.parse(send.mock.calls[1][0].trim())).toEqual({
+      jsonrpc: '2.0',
       id: '2',
       method: 'session.activate',
-      params: { session_id: 's-1', client_capabilities: { server_requests: false } },
+      params: { session_id: 's-1' },
+    });
+    expect(JSON.parse(send.mock.calls[2][0].trim())).toEqual({
+      jsonrpc: '2.0',
+      id: '3',
+      method: 'session.create',
+      params: { profile: 'default' },
     });
 
-    // Server sends a request whose id collides with client request id '1'
+    // Server sends v8 "approval" request whose id collides with client request id '1'
     rpc.onFrame(
       JSON.stringify({
         jsonrpc: '2.0',
         id: '1',
-        method: 'approval.request',
-        params: { session_id: 's-1', approval_id: 'ap-collide', command: 'ls' },
+        method: 'approval',
+        params: { session_id: 's-1', request_id: 'ap-collide', command: 'ls' },
       }),
     );
     expect(approvalHandler).toHaveBeenCalledTimes(1);
+    expect(approvalHandler.mock.calls[0]?.[0]).toMatchObject({
+      type: 'approval.request',
+      sessionId: 's-1',
+      rpcRequestId: '1',
+    });
 
+    // Server sends legacy "approval.request" and v8 "clarify" requests
+    rpc.onFrame(
+      JSON.stringify({
+        jsonrpc: '2.0',
+        id: 'srq-legacy',
+        method: 'approval.request',
+        params: { session_id: 's-1', approval_id: 'ap-leg', command: 'pwd' },
+      }),
+    );
+    expect(approvalHandler).toHaveBeenCalledTimes(2);
+
+    rpc.onFrame(
+      JSON.stringify({
+        jsonrpc: '2.0',
+        id: 'srq-2',
+        method: 'clarify',
+        params: { session_id: 's-1', questions: [{ qid: 'q1', question: 'Which branch?' }] },
+      }),
+    );
+    expect(clarifyHandler).toHaveBeenCalledTimes(1);
+    expect(clarifyHandler.mock.calls[0]?.[0]).toMatchObject({
+      type: 'clarify.request',
+      sessionId: 's-1',
+      rpcRequestId: 'srq-2',
+    });
     // Client request '1' must still resolve from the actual response frame
     rpc.onFrame(JSON.stringify({ jsonrpc: '2.0', id: '1', result: { session_id: 's-1' } }));
     await expect(resumePromise).resolves.toEqual({ session_id: 's-1' });

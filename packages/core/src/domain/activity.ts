@@ -15,6 +15,7 @@ export interface ActionItem {
   sessionId?: string;
   sourceSessionId?: string;
   rpcRequestId?: string | number;
+  qid?: string;
   createdAt: number;
 }
 

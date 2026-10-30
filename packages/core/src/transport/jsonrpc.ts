@@ -108,12 +108,12 @@ export interface RpcClient {
   disconnect(): void;
 }
 
-const SESSION_CAPABILITY_METHODS = new Set(['session.create', 'session.resume', 'session.activate']);
-const SUPPORTED_SERVER_REQUEST_METHODS: ReadonlySet<string> = new Set<import('./jsonrpc-contract').ServerRequestMethod>([
-  'approval.request',
-  'clarify.request',
-]);
-
+const SERVER_REQUEST_EVENT_MAP: Readonly<Record<string, string>> = {
+  approval: 'approval.request',
+  'approval.request': 'approval.request',
+  clarify: 'clarify.request',
+  'clarify.request': 'clarify.request',
+};
 export function makeRpcEvents(): RpcEvents {
   const listeners = new Map<string, Set<RpcEventHandler>>();
 
@@ -168,26 +168,7 @@ export function makeRpcClient(send: RpcSend, options: RpcClientOptions = {}): Rp
         pendingEntry.timeoutId = timeoutId;
       }
       pending.set(id, pendingEntry);
-      const paramRecord =
-        params && typeof params === 'object' && !Array.isArray(params)
-          ? (params as Record<string, unknown>)
-          : undefined;
-      const existingCaps =
-        paramRecord?.client_capabilities &&
-        typeof paramRecord.client_capabilities === 'object' &&
-        !Array.isArray(paramRecord.client_capabilities)
-          ? (paramRecord.client_capabilities as Record<string, unknown>)
-          : undefined;
-      const wireParams = SESSION_CAPABILITY_METHODS.has(method)
-        ? {
-            ...(paramRecord ?? {}),
-            client_capabilities: {
-              server_requests: true,
-              ...(existingCaps ?? {}),
-            },
-          }
-        : params;
-      const req: JsonRpcRequest = { jsonrpc: '2.0', id, method, params: wireParams };
+      const req: JsonRpcRequest = { jsonrpc: '2.0', id, method, params };
       try {
         send(JSON.stringify(req) + '\n');
       } catch (error) {
@@ -244,7 +225,8 @@ export function makeRpcClient(send: RpcSend, options: RpcClientOptions = {}): Rp
         (typeof rawFrame.id === 'string' && rawFrame.id.length > 0) || typeof rawFrame.id === 'number';
       if (hasRequestId) {
         const requestId = rawFrame.id as string | number;
-        if (!SUPPORTED_SERVER_REQUEST_METHODS.has(rawFrame.method)) {
+        const mappedEventType = SERVER_REQUEST_EVENT_MAP[rawFrame.method];
+        if (!mappedEventType) {
           try {
             send(
               JSON.stringify({
@@ -259,7 +241,7 @@ export function makeRpcClient(send: RpcSend, options: RpcClientOptions = {}): Rp
           return;
         }
         const event: RpcEvent = {
-          type: rawFrame.method,
+          type: mappedEventType,
           payload: rawParams,
           rpcRequestId: requestId,
         };

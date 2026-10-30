@@ -70,11 +70,13 @@ function approvalFromEvent(event: RpcEvent): Approval {
   const approvalId =
     typeof d.approval_id === 'string' && d.approval_id
       ? d.approval_id
-      : typeof d.id === 'string' && d.id
-        ? d.id
-        : event.rpcRequestId !== undefined
-          ? `approval-req-${String(event.rpcRequestId)}`
-          : `approval-${sessionId ?? 'global'}-${patternKey || Date.now()}`;
+      : typeof d.request_id === 'string' && d.request_id
+        ? d.request_id
+        : typeof d.id === 'string' && d.id
+          ? d.id
+          : event.rpcRequestId !== undefined
+            ? `approval-req-${String(event.rpcRequestId)}`
+            : `approval-${sessionId ?? 'global'}-${patternKey || Date.now()}`;
   const item: Approval = {
     id: approvalId,
     kind: 'approval',
@@ -97,27 +99,58 @@ function approvalFromEvent(event: RpcEvent): Approval {
   return item;
 }
 
-function clarifyFromEvent(event: RpcEvent): Clarify {
+function clarifyItemsFromEvent(event: RpcEvent): Clarify[] {
   const d = eventPayload(event);
   const sessionId =
     event.sessionId ?? (typeof d.session_id === 'string' && d.session_id ? d.session_id : undefined);
+  const lockedAnswers =
+    d.answers && typeof d.answers === 'object' && !Array.isArray(d.answers)
+      ? (d.answers as Record<string, unknown>)
+      : {};
+  const questions = Array.isArray(d.questions)
+    ? d.questions.filter((q): q is Record<string, unknown> => {
+        if (!q || typeof q !== 'object') return false;
+        const qid = (q as Record<string, unknown>).qid;
+        return typeof qid === 'string' && qid.length > 0 && !(qid in lockedAnswers);
+      })
+    : [];
   const clarifyId =
     typeof d.id === 'string' && d.id
       ? d.id
       : event.rpcRequestId !== undefined
         ? `clarify-req-${String(event.rpcRequestId)}`
         : `clarify-${sessionId ?? 'global'}-${Date.now()}`;
+  const title = typeof d.title === 'string' ? d.title : 'Clarification needed';
+
+  if (Array.isArray(d.questions)) {
+    return questions.map((q) => {
+      const qid = q.qid as string;
+      const item: Clarify = {
+        id: `${clarifyId}:${qid}`,
+        kind: 'clarify',
+        status: 'needs_you',
+        title,
+        question: typeof q.question === 'string' ? q.question : '',
+        qid,
+        createdAt: Date.now(),
+      };
+      if (event.rpcRequestId !== undefined) item.rpcRequestId = event.rpcRequestId;
+      if (sessionId) item.sessionId = sessionId;
+      return item;
+    });
+  }
+
   const item: Clarify = {
     id: clarifyId,
     kind: 'clarify',
     status: 'needs_you',
-    title: typeof d.title === 'string' ? d.title : 'Clarification needed',
+    title,
     question: typeof d.question === 'string' ? d.question : '',
     createdAt: Date.now(),
   };
   if (event.rpcRequestId !== undefined) item.rpcRequestId = event.rpcRequestId;
   if (sessionId) item.sessionId = sessionId;
-  return item;
+  return [item];
 }
 
 const HIDDEN_ADMIN_SCREENS = new Set<Screen>([
@@ -495,15 +528,27 @@ export function AppShell({ connectionState, rpc, rest, onRetry, connectionError 
 
   useEffect(() => {
     const onApprovalRequired = (event: RpcEvent) => addActivityItem(approvalFromEvent(event));
-    const onClarifyRequired = (event: RpcEvent) => addActivityItem(clarifyFromEvent(event));
+    const onClarifyRequired = (event: RpcEvent) => {
+      for (const item of clarifyItemsFromEvent(event).reverse()) {
+        addActivityItem(item);
+      }
+    };
     const onRequestCancel = (event: RpcEvent) => {
       const d = eventPayload(event);
-      const requestId =
-        (typeof d.request_id === 'string' && d.request_id.length > 0) || typeof d.request_id === 'number'
-          ? d.request_id
-          : undefined;
-      if (requestId !== undefined) {
-        cancelRpcRequest(requestId);
+      const rawId =
+        (typeof d.id === 'string' && d.id.length > 0) || typeof d.id === 'number'
+          ? d.id
+          : (typeof d.request_id === 'string' && d.request_id.length > 0) || typeof d.request_id === 'number'
+            ? d.request_id
+            : undefined;
+      const domainId =
+        typeof d.approval_id === 'string' && d.approval_id
+          ? d.approval_id
+          : typeof d.clarify_id === 'string' && d.clarify_id
+            ? d.clarify_id
+            : undefined;
+      if (rawId !== undefined || domainId) {
+        cancelRpcRequest(rawId, domainId);
       }
     };
     const onApprovalCancelled = (event: RpcEvent) => {

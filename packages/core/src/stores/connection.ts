@@ -274,8 +274,15 @@ export const useConnectionStore = create<ConnectionStore>((set, get) => {
       readyHandler = () => {
         clearReadyWatchdog();
         wsAttempt = 0;
-        set({ state: 'connected', error: undefined });
         removeReadyListener();
+        try {
+          void Promise.resolve(rpc.request('client.capabilities', { server_requests: true })).catch(() => {
+            // Older gateways without client.capabilities ignore or reject with -32601
+          });
+        } catch {
+          // Ignore synchronous errors from mock or closed transports
+        }
+        set({ state: 'connected', error: undefined });
       };
       rpc.events.addEventListener('gateway.ready', readyHandler);
     } catch (err) {

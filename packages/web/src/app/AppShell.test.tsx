@@ -802,7 +802,7 @@ describe('AppShell', () => {
         sessionId: 'sess-v8',
         rpcRequestId: 'srv-v8-2',
         payload: {
-          approval_id: 'ap-v8-2',
+          request_id: 'ap-v8-2',
           command: 'gh pr list',
           description: 'Merge PR #1',
         },
@@ -814,11 +814,49 @@ describe('AppShell', () => {
       rpcMock.events.dispatchEvent({
         type: 'request.cancel',
         sessionId: 'sess-v8',
-        payload: { request_id: 'srv-v8-2', reason: 'timeout' },
+        payload: { id: 'srv-v8-2', method: 'approval', reason: 'timeout' },
       });
     });
     await waitFor(() => expect(screen.queryByText(/Merge PR #1/)).toBeNull());
 
+    act(() => {
+      rpcMock.events.dispatchEvent({
+        type: 'clarify.request',
+        sessionId: 'sess-v8',
+        rpcRequestId: 'srv-clarify-empty',
+        payload: {
+          questions: [{ qid: 'q1', question: 'Already locked?' }],
+          answers: { q1: 'yes' },
+        },
+      });
+    });
+    expect(useActivityStore.getState().items.filter((i) => i.kind === 'clarify')).toHaveLength(0);
+
+    act(() => {
+      rpcMock.events.dispatchEvent({
+        type: 'clarify.request',
+        sessionId: 'sess-v8',
+        rpcRequestId: 'srv-clarify-batch',
+        payload: {
+          questions: [
+            { qid: 'q1', question: 'Locked question' },
+            { qid: 'q2', question: 'Target branch?' },
+            { qid: 'q3', question: 'Squash commits?' },
+          ],
+          answers: { q1: 'main' },
+        },
+      });
+    });
+    const clarifyItems = useActivityStore.getState().items.filter((i) => i.kind === 'clarify');
+    expect(clarifyItems.map((i) => ({ id: i.id, qid: i.qid, rpcRequestId: i.rpcRequestId }))).toEqual([
+      { id: 'clarify-req-srv-clarify-batch:q2', qid: 'q2', rpcRequestId: 'srv-clarify-batch' },
+      { id: 'clarify-req-srv-clarify-batch:q3', qid: 'q3', rpcRequestId: 'srv-clarify-batch' },
+    ]);
+    await useActivityStore.getState().respondClarify(rpcMock, 'clarify-req-srv-clarify-batch:q2', 'develop');
+    await useActivityStore.getState().respondClarify(rpcMock, 'clarify-req-srv-clarify-batch:q3', 'yes');
+    expect(rpcMock.respond).toHaveBeenCalledWith('srv-clarify-batch', {
+      answers: { q2: 'develop', q3: 'yes' },
+    });
     act(() => {
       rpcMock.events.dispatchEvent({
         type: 'approval.request',

@@ -14,6 +14,12 @@ export interface ClientCapabilities {
   server_requests?: boolean;
 }
 
+export type ClientCapabilitiesParams = ClientCapabilities;
+
+export interface ClientCapabilitiesResult {
+  server_requests: ServerRequestMethod[];
+}
+
 export interface SessionCreateParams {
   cols?: number;
   title?: string;
@@ -21,12 +27,11 @@ export interface SessionCreateParams {
   profile?: string;
   messages?: unknown[];
   close_on_disconnect?: boolean;
-  client_capabilities?: ClientCapabilities;
 }
 
 export interface SessionIdParams {
   session_id: string;
-  client_capabilities?: ClientCapabilities;
+  profile?: string;
 }
 
 export interface SessionListParams {
@@ -51,9 +56,11 @@ export interface ApprovalRespondParams {
 export interface ServerApprovalRequestParams {
   session_id?: string;
   approval_id?: string;
+  request_id?: string;
   command?: string;
   description?: string;
   pattern_key?: string;
+  high_impact?: boolean;
   tool_name?: string;
   tool_call_id?: string;
 }
@@ -62,16 +69,25 @@ export interface ServerClarifyRequestParams {
   session_id?: string;
   question?: string;
   choices?: string[];
+  questions?: Array<{
+    qid: string;
+    question: string;
+    choices?: string[];
+    multi_select?: boolean;
+  }>;
+  answers?: Record<string, string | null>;
   tool_call_id?: string;
 }
 
 export interface ServerRequestCancelParams {
+  id?: string | number;
   request_id?: string | number;
+  method?: string;
   reason?: string;
   session_id?: string;
 }
 
-export type ServerRequestMethod = 'approval.request' | 'clarify.request';
+export type ServerRequestMethod = 'approval' | 'approval.request' | 'clarify' | 'clarify.request';
 
 export interface ClarifyRespondParams {
   id: string;
@@ -243,6 +259,7 @@ export type JsonRpcEventType =
 export interface RpcContract {
   request<T>(method: string, params?: unknown): Promise<T>;
 
+  'client.capabilities'(params: ClientCapabilitiesParams): Promise<ClientCapabilitiesResult>;
   'session.create'(params?: SessionCreateParams): Promise<SessionCreateResult>;
   'session.list'(params?: SessionListParams): Promise<SessionListResult>;
   'session.resume'(params: SessionIdParams): Promise<SessionCreateResult>;

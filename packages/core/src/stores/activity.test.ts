@@ -308,7 +308,7 @@ describe('useActivityStore', () => {
     expect(useActivityStore.getState().items.map((i) => i.id)).toEqual(['ap-rest']);
   });
 
-  it('respondClarify replies via rpc.respond when rpcRequestId is present', async () => {
+  it('respondClarify replies via rpc.respond with v8 answers map (including multi-question batches) and legacy answer otherwise', async () => {
     const respond = vi.fn();
     const rpcWithRespond = { ...rpcMock, respond } as unknown as RpcClient;
     useActivityStore.setState({
@@ -323,12 +323,39 @@ describe('useActivityStore', () => {
           rpcRequestId: 'srv-c-42',
           createdAt: 1,
         },
+        {
+          id: 'c-v8:q1',
+          kind: 'clarify',
+          status: 'needs_you',
+          title: 'Clarification needed',
+          summary: 'Which branch?',
+          sessionId: 'live-1',
+          rpcRequestId: 'srq-v8',
+          qid: 'q1',
+          createdAt: 2,
+        },
+        {
+          id: 'c-v8:q2',
+          kind: 'clarify',
+          status: 'needs_you',
+          title: 'Clarification needed',
+          summary: 'Merge strategy?',
+          sessionId: 'live-1',
+          rpcRequestId: 'srq-v8',
+          qid: 'q2',
+          createdAt: 3,
+        },
       ],
     });
 
     await useActivityStore.getState().respondClarify(rpcWithRespond, 'c-42', 'yes');
-
     expect(respond).toHaveBeenCalledWith('srv-c-42', { answer: 'yes' });
+
+    await useActivityStore.getState().respondClarify(rpcWithRespond, 'c-v8:q2', 'squash');
+    expect(respond).toHaveBeenCalledTimes(1);
+
+    await useActivityStore.getState().respondClarify(rpcWithRespond, 'c-v8:q1', 'main');
+    expect(respond).toHaveBeenCalledWith('srq-v8', { answers: { q2: 'squash', q1: 'main' } });
     expect(rpcMock.request).not.toHaveBeenCalled();
     expect(useActivityStore.getState().items).toHaveLength(0);
   });

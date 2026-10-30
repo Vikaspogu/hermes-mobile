@@ -20,7 +20,7 @@ export interface ActivityStore {
   dismiss(id: string): void;
   addItem(item: ActionItem): void;
   updateItem(id: string, patch: Partial<ActionItem>): void;
-  cancelRpcRequest(requestId?: string | number, approvalId?: string): void;
+  cancelRpcRequest(requestId?: string | number, itemId?: string): void;
   clearRpcRequests(): void;
   clear(): void;
 }
@@ -68,6 +68,7 @@ function sameApproval(a: ActionItem, b: ActionItem): boolean {
 const REALTIME_APPROVAL_REFRESH_GRACE_MS = 5_000;
 const approvalResponsesInFlight = new Set<string>();
 const clarifyResponsesInFlight = new Set<string>();
+const pendingClarifyAnswers = new Map<string, Record<string, string>>();
 
 function mergeIncomingItems(existing: ActionItem[], incoming: ActionItem[]): ActionItem[] {
   const now = Date.now();
@@ -196,7 +197,26 @@ export const useActivityStore = create<ActivityStore>((set, get) => ({
     try {
       const item = get().items.find((i) => i.id === id);
       if (item?.kind === 'clarify' && item.rpcRequestId !== undefined && typeof rpc.respond === 'function') {
-        rpc.respond(item.rpcRequestId, { answer });
+        const rpcKey = String(item.rpcRequestId);
+        const remainingSiblings = get().items.filter(
+          (i) =>
+            i.kind === 'clarify' &&
+            i.id !== id &&
+            i.rpcRequestId !== undefined &&
+            String(i.rpcRequestId) === rpcKey,
+        );
+        if (item.qid) {
+          const collected = { ...(pendingClarifyAnswers.get(rpcKey) ?? {}), [item.qid]: answer };
+          if (remainingSiblings.length > 0) {
+            pendingClarifyAnswers.set(rpcKey, collected);
+          } else {
+            pendingClarifyAnswers.delete(rpcKey);
+            rpc.respond(item.rpcRequestId, { answers: collected });
+          }
+        } else {
+          pendingClarifyAnswers.delete(rpcKey);
+          rpc.respond(item.rpcRequestId, { answer });
+        }
       } else {
         await rpc.request('clarify.respond', { id, answer });
       }
@@ -224,13 +244,24 @@ export const useActivityStore = create<ActivityStore>((set, get) => ({
     set((s) => ({ items: updateInPlace(s.items, id, patch) }));
   },
 
-  cancelRpcRequest(requestId, approvalId) {
+  cancelRpcRequest(requestId, itemId) {
+    if (requestId !== undefined) {
+      pendingClarifyAnswers.delete(String(requestId));
+    }
     set((s) => ({
       items: s.items.filter((item) => {
-        if (requestId !== undefined && item.rpcRequestId === requestId) {
+        if (
+          requestId !== undefined &&
+          item.rpcRequestId !== undefined &&
+          String(item.rpcRequestId) === String(requestId)
+        ) {
           return false;
         }
-        if (approvalId && item.kind === 'approval' && item.id === approvalId) {
+        if (
+          itemId &&
+          (item.kind === 'approval' || item.kind === 'clarify') &&
+          (item.id === itemId || item.id.startsWith(`${itemId}:`))
+        ) {
           return false;
         }
         return true;
@@ -239,6 +270,7 @@ export const useActivityStore = create<ActivityStore>((set, get) => ({
   },
 
   clearRpcRequests() {
+    pendingClarifyAnswers.clear();
     set((s) => ({
       items: s.items.filter((item) => item.rpcRequestId === undefined),
     }));
@@ -247,6 +279,7 @@ export const useActivityStore = create<ActivityStore>((set, get) => ({
   clear() {
     approvalResponsesInFlight.clear();
     clarifyResponsesInFlight.clear();
+    pendingClarifyAnswers.clear();
     set({ items: [], loading: false, error: undefined });
   },
 }));

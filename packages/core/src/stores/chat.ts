@@ -911,6 +911,38 @@ async function resumeDurableSession(rpc: RpcClient, durableSessionId: string, pr
   const sessionId = liveSessionIdFromResult(raw);
   const storedSessionId = durableSessionIdFromResult(raw, durableSessionId);
   const messages = messagesFromResult(raw);
+  if (
+    typeof rpc.onFrame === 'function' &&
+    raw &&
+    typeof raw === 'object' &&
+    Array.isArray((raw as Record<string, unknown>).open_requests)
+  ) {
+    for (const entry of (raw as Record<string, unknown>).open_requests as unknown[]) {
+      if (entry && typeof entry === 'object') {
+        const rec = entry as Record<string, unknown>;
+        if (
+          (typeof rec.id === 'string' || typeof rec.id === 'number') &&
+          (rec.method === 'approval' ||
+            rec.method === 'approval.request' ||
+            rec.method === 'clarify' ||
+            rec.method === 'clarify.request')
+        ) {
+          const entryParams =
+            rec.params && typeof rec.params === 'object' && !Array.isArray(rec.params)
+              ? (rec.params as Record<string, unknown>)
+              : {};
+          rpc.onFrame(
+            JSON.stringify({
+              jsonrpc: '2.0',
+              id: rec.id,
+              method: rec.method,
+              params: { ...entryParams, session_id: sessionId || storedSessionId },
+            }),
+          );
+        }
+      }
+    }
+  }
   return { sessionId, storedSessionId, messages, streaming: false, error: undefined };
 }
 

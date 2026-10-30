@@ -185,8 +185,26 @@ describe('useConnectionStore', () => {
     rpcMock.events.dispatchEvent({ type: 'gateway.ready' });
     await vi.advanceTimersByTimeAsync(12_000);
 
+    expect(rpcMock.request).toHaveBeenCalledWith('client.capabilities', { server_requests: true });
     expect(useConnectionStore.getState().state).toBe('connected');
     expect(restMock.wsTicket).toHaveBeenCalledTimes(1);
+  });
+
+  it('still enters connected when client.capabilities rejects on older gateways', async () => {
+    vi.mocked(restMock.status).mockResolvedValue({ authRequired: false, authProviders: [] });
+    vi.mocked(restMock.wsTicket).mockResolvedValue({ ticket: 't-1', ttlSeconds: 30 });
+    vi.mocked(rpcMock.request).mockRejectedValueOnce(new Error('Method not found (-32601)'));
+
+    const store = useConnectionStore.getState();
+    store.bindTransport(restMock, wsMock, rpcMock);
+    await store.init();
+    const onOpen = vi.mocked(wsMock.connect).mock.calls[0]?.[1];
+
+    onOpen?.();
+    rpcMock.events.dispatchEvent({ type: 'gateway.ready' });
+    await Promise.resolve();
+
+    expect(useConnectionStore.getState().state).toBe('connected');
   });
 
   it('reports unsupported websocket ticket transport without reconnect backoff', async () => {

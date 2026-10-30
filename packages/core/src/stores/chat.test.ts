@@ -1282,6 +1282,58 @@ describe('useChatStore', () => {
     expect(useChatStore.getState().streaming).toBe(false);
   });
 
+  it('resumeSessionIntoChat re-delivers open_requests through rpc.onFrame with the resumed live session_id', async () => {
+    const onFrame = vi.fn();
+    const rpcWithFrame = { ...rpcMock, onFrame } as unknown as RpcClient;
+    useSessionsStore.setState({
+      sessions: [{ id: 'stored-open', title: 'Pending approval chat', updatedAt: 1, messageCount: 1, profile: 'dev' }],
+      loading: false,
+      error: undefined,
+      pinnedIds: [],
+    });
+    vi.mocked(restMock.sessionMessages).mockResolvedValue({ messages: [] });
+    vi.mocked(rpcMock.request).mockResolvedValue({
+      session_id: 'live-open',
+      session_key: 'stored-open',
+      messages: [],
+      open_requests: [
+        {
+          id: 'srq-99',
+          method: 'approval',
+          params: { session_id: 'stale-sid', request_id: 'ap-99', command: 'gh pr merge' },
+        },
+        {
+          id: 'srq-100',
+          method: 'clarify',
+          params: { questions: [{ qid: 'q1', question: 'Which branch?' }] },
+        },
+      ],
+    });
+
+    await useChatStore.getState().resumeSessionIntoChat(restMock, rpcWithFrame, 'stored-open', 'dev');
+
+    expect(onFrame).toHaveBeenCalledTimes(2);
+    expect(JSON.parse(onFrame.mock.calls[0]?.[0] as string)).toEqual({
+      jsonrpc: '2.0',
+      id: 'srq-99',
+      method: 'approval',
+      params: {
+        session_id: 'live-open',
+        request_id: 'ap-99',
+        command: 'gh pr merge',
+      },
+    });
+    expect(JSON.parse(onFrame.mock.calls[1]?.[0] as string)).toEqual({
+      jsonrpc: '2.0',
+      id: 'srq-100',
+      method: 'clarify',
+      params: {
+        session_id: 'live-open',
+        questions: [{ qid: 'q1', question: 'Which branch?' }],
+      },
+    });
+  });
+
   it('resumeSessionIntoChat canonicalizes a cached/root alias to the current openable local head id', async () => {
     useSessionsStore.setState({
       sessions: [
