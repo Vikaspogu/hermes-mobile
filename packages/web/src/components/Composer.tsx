@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { Message, RpcClient } from '@hermes-pwa/core';
 import { Icon } from './Icon';
-import { AttachMenu } from './AttachMenu';
 import { registerBackLayer } from '../lib/backLayers';
 import { haptic } from '../pwa/haptics';
 import {
@@ -166,7 +165,7 @@ export function Composer({
 }: ComposerProps) {
   const [text, setText] = useState('');
   const [attachments, setAttachments] = useState<AttachmentDraft[]>([]);
-  const [attachMenuOpen, setAttachMenuOpen] = useState(false);
+  const filesInputRef = useRef<HTMLInputElement>(null);
   const [slashLoading, setSlashLoading] = useState(false);
   const [slashItems, setSlashItems] = useState<SlashCommandItem[]>([]);
   const [slashError, setSlashError] = useState<string | undefined>();
@@ -284,10 +283,6 @@ export function Composer({
 
   // Back layers (Android/browser Back): sheets and the slash palette close
   // before navigation; a focused composer dismisses the keyboard first.
-  useEffect(() => {
-    if (!attachMenuOpen) return undefined;
-    return registerBackLayer({ priority: 20, dismiss: () => setAttachMenuOpen(false) });
-  }, [attachMenuOpen]);
 
   useEffect(() => {
     if (!slashPaletteOpen) return undefined;
@@ -485,14 +480,23 @@ export function Composer({
             className="hm-composer__action"
             onClick={() => {
               haptic('tap');
-              setAttachMenuOpen((v) => !v);
+              filesInputRef.current?.click();
             }}
             disabled={!onUploadFile}
             aria-label="Add attachment"
           >
             <Icon name="plus" size={19} />
           </button>
-          <AttachMenu open={attachMenuOpen} onClose={() => setAttachMenuOpen(false)} onFiles={handleFilesSelected} />
+          <input
+            ref={filesInputRef}
+            type="file"
+            multiple
+            className="hm-composer__file-input"
+            onChange={(e) => {
+              void handleFilesSelected(e.target.files);
+              e.target.value = '';
+            }}
+          />
         <textarea
           ref={textareaRef}
           value={text}

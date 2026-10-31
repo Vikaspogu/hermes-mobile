@@ -18,6 +18,11 @@ const PAPERLESS_STATUS: Record<string, string> = {
   needs_review: 'Needs manual review',
 };
 
+function hasActionablePaperless(
+  pending: ReturnType<typeof usePaperlessStore.getState>['pending'],
+): pending is NonNullable<typeof pending> {
+  return Boolean(pending && pending.candidates.length > 0);
+}
 /** Paperless PDF triage approval posted by the email-pdf-triage cron. */
 function PaperlessCard({ rest }: { rest: RestClient }) {
   const { pending, busy, error, result, load, decide } = usePaperlessStore();
@@ -28,7 +33,7 @@ function PaperlessCard({ rest }: { rest: RestClient }) {
   }, [rest, load]);
 
   // an empty candidate list is not actionable — hide the card entirely
-  if (!pending || pending.candidates.length === 0) return result ? <p className="hm-muted">{result}</p> : null;
+  if (!hasActionablePaperless(pending)) return result ? <p className="hm-muted">{result}</p> : null;
   const toggle = (n: number) => setPicked((p) => (p.includes(n) ? p.filter((x) => x !== n) : [...p, n]));
 
   return (
@@ -133,12 +138,14 @@ export function ApprovalsScreen({ rpc, rest }: ApprovalsScreenProps) {
 
   const needsYou = items.filter((i) => (isApproval(i) || isClarify(i)) && i.status === 'needs_you');
   const notices = items.filter((i) => !isApproval(i) && !isClarify(i));
+  const hasPaperless = Boolean(rest && hasActionablePaperless(paperlessPending));
+  const isEmpty = needsYou.length === 0 && notices.length === 0 && !hasPaperless;
 
   return (
     <div className="hm-inbox hm-scroll">
       {error && <div className="hm-warning-banner hm-warning-banner--error">{error}</div>}
 
-      {loading && items.length === 0 && (
+      {loading && isEmpty && (
         <div className="hm-inbox__loading" role="status" aria-label="Loading approvals">
           <span className="hm-inbox__skeleton" aria-hidden="true" />
           <span className="hm-inbox__skeleton" aria-hidden="true" />
@@ -176,12 +183,12 @@ export function ApprovalsScreen({ rpc, rest }: ApprovalsScreenProps) {
         </>
       )}
 
-      {items.length === 0 && !loading && !paperlessPending && (
+      {!loading && isEmpty && (
         <div className="hm-empty-state">
           <div className="hm-empty-state__icon">
             <span>✓</span>
           </div>
-          <p>All clear</p>
+          <p>There&apos;s nothing in the inbox</p>
           <p className="hm-muted">No actions waiting on you.</p>
         </div>
       )}

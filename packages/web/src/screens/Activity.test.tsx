@@ -20,7 +20,7 @@ describe('Activity', () => {
 
   it('renders empty state when no items', async () => {
     render(<Activity rpc={rpcMock} />);
-    await waitFor(() => expect(screen.getByText(/All clear/i)).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText("There's nothing in the inbox")).toBeInTheDocument());
   });
 
   it('shows skeleton feedback while initially loading approvals, then the empty state', () => {
@@ -28,11 +28,11 @@ describe('Activity', () => {
     render(<Activity rpc={rpcMock} />);
 
     expect(screen.getByRole('status', { name: 'Loading approvals' })).toBeInTheDocument();
-    expect(screen.queryByText(/All clear/i)).not.toBeInTheDocument();
+    expect(screen.queryByText("There's nothing in the inbox")).not.toBeInTheDocument();
 
     act(() => useActivityStore.setState({ loading: false }));
     expect(screen.queryByRole('status', { name: 'Loading approvals' })).not.toBeInTheDocument();
-    expect(screen.getByText(/All clear/i)).toBeInTheDocument();
+    expect(screen.getByText("There's nothing in the inbox")).toBeInTheDocument();
   });
 
   it('keeps cached approvals and errors visible during a refresh', () => {
@@ -99,14 +99,14 @@ describe('Activity', () => {
   it('does not subscribe to ws events directly; AppShell owns the global activity feed', async () => {
     render(<Activity rpc={rpcMock} />);
     rpcMock.events.dispatchEvent({ type: 'approval.request', payload: { id: 'a-1', title: 'New approval' } });
-    await waitFor(() => expect(screen.getByText(/All clear/i)).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText("There's nothing in the inbox")).toBeInTheDocument());
   });
 
   it('ignores status.update without process text', async () => {
     useActivityStore.setState({ items: [] });
     render(<Activity rpc={rpcMock} />);
     rpcMock.events.dispatchEvent({ type: 'status.update', payload: {} });
-    await waitFor(() => expect(screen.getByText(/All clear/i)).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText("There's nothing in the inbox")).toBeInTheDocument());
   });
 
   it('lists a pending Paperless approval and imports only ready PDFs', async () => {
@@ -123,7 +123,7 @@ describe('Activity', () => {
     } as unknown as RestClient;
     render(<Activity rpc={rpcMock} rest={rest} />);
     await waitFor(() => expect(screen.getByTestId('paperless-card')).toBeInTheDocument());
-    expect(screen.queryByText(/All clear/i)).not.toBeInTheDocument();
+    expect(screen.queryByText("There's nothing in the inbox")).not.toBeInTheDocument();
     const [ready, retry] = screen.getAllByRole('checkbox');
     expect(retry).toBeDisabled();
     const importBtn = screen.getByRole('button', { name: 'Import selected' });
@@ -132,12 +132,27 @@ describe('Activity', () => {
     fireEvent.click(importBtn);
     await waitFor(() => expect(screen.getByText('Import queued: Invoice')).toBeInTheDocument());
     expect(rest.paperlessDecide).toHaveBeenCalledWith('approve', 'run-1', [1]);
+    expect(screen.getByText("There's nothing in the inbox")).toBeInTheDocument();
   });
 
   it('hides the Paperless card when the plugin route is missing', async () => {
     const rest = { paperlessPending: vi.fn().mockRejectedValue(new Error('404')) } as unknown as RestClient;
     render(<Activity rpc={rpcMock} rest={rest} />);
-    await waitFor(() => expect(screen.getByText(/All clear/i)).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText("There's nothing in the inbox")).toBeInTheDocument());
     expect(screen.queryByTestId('paperless-card')).not.toBeInTheDocument();
+  });
+
+  it('renders the empty state instead of a blank screen when Paperless has zero candidates', async () => {
+    const rest = {
+      paperlessPending: vi.fn().mockResolvedValue({
+        runId: 'run-empty',
+        expiresAt: '2026-10-18T00:00:00Z',
+        candidates: [],
+      }),
+    } as unknown as RestClient;
+    render(<Activity rpc={rpcMock} rest={rest} />);
+    await waitFor(() => expect(usePaperlessStore.getState().pending?.candidates).toEqual([]));
+    expect(screen.queryByTestId('paperless-card')).not.toBeInTheDocument();
+    expect(screen.getByText("There's nothing in the inbox")).toBeInTheDocument();
   });
 });

@@ -699,8 +699,7 @@ describe('Chat', () => {
     const { container } = render(<Chat rpc={rpcMock} rest={restMock} />);
 
     fireEvent.click(screen.getByRole('button', { name: /Add attachment/i }));
-    expect(screen.getByRole('menuitem', { name: /File/i })).toBeInTheDocument();
-    expect(screen.queryByText(/Photo or video/i)).not.toBeInTheDocument();
+    expect(screen.queryByRole('menu')).not.toBeInTheDocument();
 
     const input = container.querySelector('input[type="file"]')!;
     const file = new File(['hello'], 'note.txt', { type: 'text/plain' });

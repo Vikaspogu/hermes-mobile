@@ -140,24 +140,28 @@ describe('Composer', () => {
   });
 
 
-  it('shows only the native file picker action in the attachment menu', () => {
-    const { container } = render(
+  it('opens the native file picker directly when tapping Add attachment', () => {
+    const { container, unmount } = render(
       <Composer onSend={vi.fn()} onStop={vi.fn()} busy={false} onUploadFile={vi.fn()} />,
     );
 
-    fireEvent.click(screen.getByRole('button', { name: /Add attachment/i }));
-
-    expect(haptic).toHaveBeenCalledTimes(1);
-    expect(haptic).toHaveBeenCalledWith('tap');
-    expect(screen.getByRole('menuitem', { name: /File/i })).toBeInTheDocument();
-    expect(screen.queryByText(/Take photo/i)).not.toBeInTheDocument();
-    expect(screen.queryByText(/Photo or video/i)).not.toBeInTheDocument();
-
-    const input = container.querySelector('input[type="file"]');
+    const input = container.querySelector('input[type="file"]') as HTMLInputElement;
     expect(input).toBeInTheDocument();
     expect(input).toHaveAttribute('multiple');
     expect(input).not.toHaveAttribute('accept');
     expect(input).not.toHaveAttribute('capture');
+
+    const clickSpy = vi.spyOn(input, 'click');
+    fireEvent.click(screen.getByRole('button', { name: /Add attachment/i }));
+
+    expect(haptic).toHaveBeenCalledTimes(1);
+    expect(haptic).toHaveBeenCalledWith('tap');
+    expect(clickSpy).toHaveBeenCalledTimes(1);
+    expect(screen.queryByRole('menu')).not.toBeInTheDocument();
+
+    unmount();
+    render(<Composer onSend={vi.fn()} onStop={vi.fn()} busy={false} />);
+    expect(screen.getByRole('button', { name: /Add attachment/i })).toBeDisabled();
   });
 
 
@@ -172,6 +176,7 @@ describe('Composer', () => {
     const input = container.querySelector('input[type="file"]')!;
     const file = new File(['hello'], 'note.txt', { type: 'text/plain' });
     fireEvent.change(input, { target: { files: [file] } });
+    expect((input as HTMLInputElement).value).toBe('');
 
     await waitFor(() => expect(onUploadFile).toHaveBeenCalledWith(file));
     await waitFor(() => expect(screen.getByText('note.txt')).toBeInTheDocument());
