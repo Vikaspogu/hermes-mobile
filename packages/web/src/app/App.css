@@ -3844,9 +3844,10 @@ a {
   display: flex;
   align-items: center;
   padding: var(--hm-space-3) var(--hm-space-4);
-  background: var(--hm-color-surface);
+  background: var(--hm-card-bg);
   border: 1px solid var(--hm-color-border);
   border-radius: var(--hm-radius-sm);
+  box-shadow: var(--hm-card-highlight);
   gap: var(--hm-space-3);
   width: 100%;
   text-align: left;

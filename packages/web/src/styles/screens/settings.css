@@ -19,9 +19,10 @@
   align-items: center;
   gap: 12px;
   padding: 13px 14px;
-  background: var(--hm-color-surface);
+  background: var(--hm-card-bg);
   border: 1px solid var(--hm-color-border);
   border-radius: 14px;
+  box-shadow: var(--hm-card-highlight);
   width: 100%;
   text-align: left;
   font: inherit;
