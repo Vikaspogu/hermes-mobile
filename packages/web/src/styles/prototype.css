@@ -180,9 +180,15 @@ textarea {
   display: grid;
   grid-auto-flow: column;
   grid-auto-columns: 1fr;
-  background: var(--hm-color-surface);
-  border-top: 1px solid var(--hm-color-border);
-  padding-bottom: env(safe-area-inset-bottom, 0px);
+  gap: 4px;
+  margin: 0 14px calc(10px + env(safe-area-inset-bottom, 0px));
+  padding: 8px;
+  background: var(--hm-glass-bg);
+  -webkit-backdrop-filter: blur(20px);
+  backdrop-filter: blur(20px);
+  border: 1px solid var(--hm-glass-border);
+  border-radius: 22px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45);
 }
 
 .hm-tab {
@@ -193,12 +199,15 @@ textarea {
   flex-direction: column;
   align-items: center;
   gap: 3px;
-  padding: 9px 4px 7px;
+  padding: 10px 4px 8px;
+  border-radius: 16px;
   color: var(--hm-color-text-faint);
   cursor: pointer;
+  transition: background var(--hm-duration-fast), color var(--hm-duration-fast);
 }
 
 .hm-tab--active {
+  background: var(--hm-tint-sky);
   color: var(--hm-color-primary);
 }
 
@@ -256,8 +265,11 @@ textarea {
   left: 0;
   right: 0;
   bottom: 0;
-  background: var(--hm-color-surface);
-  border-radius: 16px 16px 0 0;
+  background: var(--hm-glass-bg);
+  /* no backdrop-filter here: the panel sits over the already-dimmed overlay,
+     stacking two 20px blurs is a measurable cost on low-end phones */
+  border-top: 1px solid var(--hm-glass-border);
+  border-radius: 22px 22px 0 0;
   padding: 8px 14px calc(14px + env(safe-area-inset-bottom, 0px));
   box-shadow: var(--hm-elev-sheet);
   animation: hm-sheet-in 0.26s cubic-bezier(0.2, 0.8, 0.2, 1);
@@ -384,8 +396,8 @@ textarea {
   display: flex;
   flex-direction: column;
   gap: 12px;
-  /* bottom padding clears the 54px FAB (bottom:96px) so rows scroll past it */
-  padding: 14px 16px calc(84px + env(safe-area-inset-bottom, 0px));
+  /* bottom padding clears the 54px FAB (bottom:~100px) and the glass dock */
+  padding: 14px 16px calc(110px + env(safe-area-inset-bottom, 0px));
 }
 
 .hm-chats__composer {
@@ -2012,8 +2024,11 @@ select:focus-visible,
     grid-auto-rows: min-content;
     gap: 4px;
     padding: 12px 0;
-    border-top: 0;
+    margin: 0;
+    border: 0;
     border-right: 1px solid var(--hm-color-border);
+    border-radius: 0;
+    box-shadow: none;
     z-index: 50;
   }
 
@@ -2311,7 +2326,7 @@ select:focus-visible,
      indicator) and scrolls away with the content */
   position: fixed;
   right: 18px;
-  bottom: calc(64px + env(safe-area-inset-bottom, 0px) + 16px);
+  bottom: calc(84px + env(safe-area-inset-bottom, 0px) + 16px);
   z-index: 30;
   width: 54px;
   height: 54px;

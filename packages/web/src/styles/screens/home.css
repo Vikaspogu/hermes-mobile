@@ -68,7 +68,7 @@
 .hm-fab {
   position: fixed;
   right: 20px;
-  bottom: calc(64px + env(safe-area-inset-bottom, 0px) + 16px);
+  bottom: calc(84px + env(safe-area-inset-bottom, 0px) + 16px);
   z-index: 30;
   width: 56px;
   height: 56px;
@@ -80,7 +80,7 @@
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  box-shadow: 0 6px 20px rgba(37, 62, 245, 0.35);
+  box-shadow: 0 6px 20px color-mix(in srgb, var(--hm-color-primary) 30%, transparent);
 }
 .hm-fab:active { transform: scale(0.95); }
 
