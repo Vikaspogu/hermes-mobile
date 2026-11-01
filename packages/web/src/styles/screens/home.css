@@ -1,11 +1,5 @@
-/* home.css — M1 Chats (home) screen styles, mockup-parity v2.
-   Values from .pi/artifacts/hermes-mobile-redesign-mockups.html frame M1.
-   Shared atoms (hm-banner, hm-group-label, …) live in ../prototype.css. */
+/* home.css — Quiet Precision / Dark Obsidian Chats (home) screen styles */
 
-/* mockup .scroll: uniform 10px rhythm between banner/composer/search/list */
-/* M1 wordmark header: the screen renders its own .hm-app-header (mockup .app-header);
-   the shell's generic title header is hidden only while this header is present. */
-/* .hm-screen prefix beats the legacy .hm-home* rules in prototype.css (loaded later). */
 .hm-screen .hm-home {
   display: flex;
   flex-direction: column;
@@ -23,7 +17,8 @@
 }
 
 .hm-screen .hm-chats {
-  gap: 10px;
+  gap: 12px;
+  padding-bottom: 110px;
 }
 
 .hm-screen .hm-chats__list {
@@ -32,8 +27,7 @@
   gap: 10px;
 }
 
-/* mockup .banner — approval waiting (box from shared .hm-banner atom) */
-/* mockup .banner — approval waiting (box from shared .hm-banner atom) */
+/* Coral Rose approval alert card */
 .hm-screen .hm-home__approval-banner {
   flex: none;
   width: 100%;
@@ -41,16 +35,24 @@
   font: inherit;
   text-align: left;
   cursor: pointer;
+  background: var(--hm-tint-rose-surface);
+  border: 1px solid var(--hm-tint-rose-border);
+  border-radius: 18px;
+  padding: 12px 14px;
+  box-shadow: var(--hm-card-highlight);
 }
-/* mockup: bare 16px ⚠ — reset the legacy 34px icon chip from prototype.css */
+
 .hm-screen .hm-home__approval-icon {
-  width: auto;
-  height: auto;
-  border-radius: 0;
-  background: none;
+  width: 38px;
+  height: 38px;
+  border-radius: 12px;
+  background: var(--hm-tint-rose-badge);
+  border: 1px solid var(--hm-tint-rose-border);
   flex: none;
-  display: flex;
-  color: var(--hm-color-warning-strong);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--hm-tint-rose-accent);
 }
 .hm-screen .hm-home__approval-body {
   display: flex;
@@ -60,40 +62,41 @@
 .hm-screen .hm-home__approval-chevron {
   margin-left: auto;
   flex: none;
-  color: var(--hm-color-warning-strong);
+  color: var(--hm-tint-rose-accent);
   font-size: 16px;
 }
 
-/* Floating new-chat button (replaces the M1 inline composer) */
+/* Floating new-chat button */
 .hm-fab {
   position: fixed;
   right: 20px;
   bottom: calc(84px + env(safe-area-inset-bottom, 0px) + 16px);
   z-index: 30;
-  width: 56px;
-  height: 56px;
-  border: 0;
-  border-radius: 50%;
+  width: 52px;
+  height: 52px;
+  border: 1px solid rgba(56, 189, 248, 0.36);
+  border-radius: 16px;
   background: var(--hm-color-primary);
   color: var(--hm-color-on-accent);
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  box-shadow: 0 6px 20px color-mix(in srgb, var(--hm-color-primary) 30%, transparent);
+  box-shadow: 0 8px 24px color-mix(in srgb, var(--hm-color-primary) 32%, transparent);
 }
 .hm-fab:active { transform: scale(0.95); }
 
-/* mockup .search */
+/* Search bar */
 .hm-home-search {
   flex: none;
   display: flex;
   align-items: center;
   gap: 8px;
-  background: var(--hm-color-surface);
+  background: var(--hm-card-bg);
   border: 1px solid var(--hm-color-border);
-  border-radius: 12px;
-  padding: 10px 12px;
+  box-shadow: var(--hm-card-highlight);
+  border-radius: 16px;
+  padding: 10px 14px;
   color: var(--hm-color-text-faint);
   font-size: 14px;
 }
@@ -110,21 +113,22 @@
   color: var(--hm-color-text-faint);
 }
 
-/* filter chips row (Threads / Cron / All) — chips reuse .hm-pill */
+/* Filter chips row (Threads / Cron / All) */
 .hm-chats__filters {
   flex: none;
   display: flex;
   gap: 8px;
-  margin: 10px 0 2px;
+  margin: 4px 0 2px;
 }
-/* cron row: clock icon tile replaces the status dot */
+
+/* Cron row icon squircle */
 .hm-screen .hm-thread-row__cronicon {
-  width: 30px;
-  height: 30px;
-  border-radius: 9px;
-  background: var(--hm-color-surface-2);
-  border: 1px solid var(--hm-color-border);
-  color: var(--hm-color-text-muted);
+  width: 38px;
+  height: 38px;
+  border-radius: 12px;
+  background: var(--hm-tint-sky-badge);
+  border: 1px solid var(--hm-tint-sky-border);
+  color: var(--hm-tint-sky-accent);
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -133,55 +137,92 @@
 .hm-screen .hm-thread-row__crontag {
   display: inline-flex;
   margin-top: 5px;
+  font-family: var(--hm-font-mono);
+  font-size: 10.5px;
+  font-variant-numeric: tabular-nums;
   text-transform: uppercase;
-  letter-spacing: 0.3px;
+  letter-spacing: 0.06em;
 }
 
-/* mockup .thread — Obsidian card composite + right meta (overrides prototype.css base) */
+/* Thread row — Dark Obsidian card with active amber tint when streaming */
 .hm-screen .hm-thread-row {
-  align-items: flex-start;
-  gap: 11px;
-  padding: 11px 12px;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
   margin-bottom: 0;
   font: inherit;
   background: var(--hm-card-bg);
   border: 1px solid var(--hm-color-border);
+  border-radius: 18px;
   box-shadow: var(--hm-card-highlight);
+  transition: transform var(--hm-duration-fast), border-color var(--hm-duration-fast);
+}
+.hm-screen .hm-thread-row:active {
+  transform: scale(0.99);
+}
+.hm-screen .hm-thread-row--live {
+  background: var(--hm-tint-amber-surface);
+  border-color: var(--hm-tint-amber-border);
+}
+.hm-screen .hm-thread-row--cron {
+  background: var(--hm-tint-sky-surface);
+  border-color: var(--hm-tint-sky-border);
 }
 .hm-screen .hm-thread-row__dot {
   width: 8px;
   height: 8px;
   border-radius: 50%;
   flex: none;
-  margin-top: 7px;
 }
 .hm-screen .hm-thread-row__dot--live {
-  background: var(--hm-color-primary);
-  box-shadow: 0 0 0 3px var(--hm-color-primary-tint);
+  background: var(--hm-tint-amber-accent);
+  box-shadow: 0 0 8px var(--hm-tint-amber-accent);
 }
 .hm-screen .hm-thread-row__dot--idle {
-  background: #d3d9e6;
+  background: #475569;
 }
 .hm-screen .hm-thread-row__body {
   display: block;
+  min-width: 0;
+  flex: 1;
 }
 .hm-screen .hm-thread-row__title {
   display: block;
-  font-size: 14.5px;
-  font-weight: 600;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: -0.015em;
+  color: var(--hm-color-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .hm-screen .hm-thread-row__preview {
   display: block;
-  font-size: 12.5px;
+  font-size: 12px;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  color: var(--hm-color-text-muted);
   margin-top: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.hm-screen .hm-thread-row--live .hm-thread-row__preview {
+  color: var(--hm-tint-amber-accent);
 }
 .hm-screen .hm-thread-row__meta {
+  font-family: var(--hm-font-mono);
+  font-size: 11px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--hm-color-text-faint);
   line-height: 1.5;
   text-align: right;
+  flex-shrink: 0;
 }
 .hm-screen .hm-thread-row__live {
   display: block;
-  color: var(--hm-color-primary);
+  color: var(--hm-tint-amber-accent);
   font-weight: 700;
 }
 
@@ -189,12 +230,13 @@
   padding: 24px 4px;
 }
 
-/* dark theme: keep the idle dot a faint neutral (light value is unreadable on dark) */
-:root[data-theme='dark'] .hm-screen .hm-thread-row__dot--idle {
-  background: #3a4354;
-}
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme]) .hm-screen .hm-thread-row__dot--idle {
-    background: #3a4354;
+@media (min-width: 1024px) {
+  .hm-screen .hm-home:not(.hm-home--sidebar) .hm-chats__list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+    gap: 12px;
+  }
+  .hm-screen .hm-home:not(.hm-home--sidebar) .hm-chats__list > .hm-group-label {
+    grid-column: 1 / -1;
   }
 }

@@ -78,7 +78,7 @@ export function More({ rest, onNavigate }: MoreProps) {
   return (
     <div className="hm-more-screen">
       {stats && (
-        <section className="hm-more-health" data-testid="more-health">
+        <section className="hm-qp-hero hm-more-health" data-testid="more-health">
           <div className="hm-more-health__head">
             <span className="hm-dot" aria-hidden="true" />
             <strong>Gateway running</strong>
@@ -115,15 +115,24 @@ export function More({ rest, onNavigate }: MoreProps) {
         </section>
       )}
 
-      <div className="hm-more-list">
+      <div className="hm-qp-section__head">
+        <span className="hm-qp-kicker">CONTROL MODULES</span>
+        <span className="hm-qp-meta-badge">{rows.length} SURFACES</span>
+      </div>
+      <div className="hm-more-list hm-qp-grid-2">
         {rows.map((row) => (
-          <button key={row.key} type="button" className="hm-more-row" onClick={row.onClick ?? (() => onNavigate(row.key))}>
-            <span className="hm-more-row__icon" aria-hidden="true">
+          <button
+            key={row.key}
+            type="button"
+            className="hm-qp-tile hm-more-row"
+            onClick={row.onClick ?? (() => onNavigate(row.key))}
+          >
+            <span className="hm-qp-tile__icon hm-more-row__icon" aria-hidden="true">
               {row.icon}
             </span>
             <span className="hm-more-row__text">
-              <span className="hm-more-row__label">{row.label}</span>
-              {row.sub && <span className="hm-more-row__sub">{row.sub}</span>}
+              <span className="hm-qp-tile__name hm-more-row__label">{row.label}</span>
+              {row.sub && <span className="hm-qp-tile__state hm-more-row__sub">{row.sub}</span>}
             </span>
             <span className="hm-more-row__chev" aria-hidden="true">
               ›

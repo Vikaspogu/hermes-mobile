@@ -145,6 +145,41 @@ export function ApprovalsScreen({ rpc, rest }: ApprovalsScreenProps) {
     <div className="hm-inbox hm-scroll">
       {error && <div className="hm-warning-banner hm-warning-banner--error">{error}</div>}
 
+      {!isEmpty && (
+        <section className="hm-qp-hero" aria-label="Inbox summary">
+          <div className="hm-qp-hero__top">
+            <div>
+              <div className="hm-qp-hero__title">Inbox</div>
+              <div className="hm-qp-hero__telemetry">
+                {needsYou.length} PENDING · {notices.length} NOTICES
+              </div>
+            </div>
+            <span className="hm-qp-presence">
+              {needsYou.length > 0 ? 'ACTION REQUIRED' : 'CLEAR'}
+            </span>
+          </div>
+          <div className="hm-qp-pills">
+            {needsYou.length > 0 ? (
+              <span className="hm-qp-pill hm-qp-pill--rose">
+                <span className="hm-qp-pill__dot" aria-hidden="true" />
+                {needsYou.length} NEEDS YOU
+              </span>
+            ) : (
+              <span className="hm-qp-pill hm-qp-pill--emerald">
+                <span className="hm-qp-pill__dot" aria-hidden="true" />
+                QUEUE CLEAR
+              </span>
+            )}
+            {notices.length > 0 && (
+              <span className="hm-qp-pill hm-qp-pill--sky">
+                <span className="hm-qp-pill__dot" aria-hidden="true" />
+                {notices.length} TELEMETRY
+              </span>
+            )}
+          </div>
+        </section>
+      )}
+
       {loading && isEmpty && (
         <div className="hm-inbox__loading" role="status" aria-label="Loading approvals">
           <span className="hm-inbox__skeleton" aria-hidden="true" />
@@ -157,7 +192,10 @@ export function ApprovalsScreen({ rpc, rest }: ApprovalsScreenProps) {
 
       {needsYou.length > 0 && (
         <>
-          <div className="hm-group-label">Needs you · {needsYou.length}</div>
+          <div className="hm-group-label hm-qp-sec__head">
+            <span className="hm-qp-sec__kicker">Needs you · {needsYou.length}</span>
+            <span className="hm-qp-sec__meta">QUEUE</span>
+          </div>
           {needsYou.map((item) =>
             isClarify(item) ? (
               <ClarifyCard key={item.id} item={item} onRespond={(id, answer) => void respondClarify(rpc, id, answer)} />
@@ -176,7 +214,10 @@ export function ApprovalsScreen({ rpc, rest }: ApprovalsScreenProps) {
 
       {notices.length > 0 && (
         <>
-          <div className="hm-group-label">Notices</div>
+          <div className="hm-group-label hm-qp-sec__head">
+            <span className="hm-qp-sec__kicker">Notices</span>
+            <span className="hm-qp-sec__meta">{notices.length}</span>
+          </div>
           {notices.map((item) => (
             <NoticeRow key={item.id} item={item} />
           ))}

@@ -10,7 +10,7 @@ export function ClarifyCard({ item, onRespond }: ClarifyCardProps) {
   const [answer, setAnswer] = useState('');
 
   return (
-    <div className="hm-card" data-testid="clarify-card">
+    <div className="hm-card hm-inbox-card hm-inbox-card--clarify" data-testid="clarify-card">
       <div className="hm-card__header">
         <span className="hm-badge hm-badge--info">Clarification</span>
       </div>

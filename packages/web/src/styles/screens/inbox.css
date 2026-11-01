@@ -7,22 +7,36 @@
   flex: 1;
   min-height: 0;
   overflow-y: auto;
-  padding: 14px 16px;
+  padding: 14px 16px 110px;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 12px;
 }
 .hm-inbox > .hm-group-label:first-child {
   padding-top: 0;
 }
 
-/* ── Approval card (mockup .card + .dock-*) ────────────────────── */
+/* ── Approval card — semantic active tinting ────────────────────── */
+.hm-inbox-card {
+  background: var(--hm-tint-amber-surface);
+  border: 1px solid var(--hm-tint-amber-border);
+  border-radius: 18px;
+  box-shadow: var(--hm-card-highlight);
+}
 .hm-inbox-card--high {
-  border-left: 3px solid var(--hm-color-danger);
+  background: var(--hm-tint-rose-surface);
+  border: 1px solid var(--hm-tint-rose-border);
+  border-left: 3px solid var(--hm-tint-rose-accent);
+}
+.hm-inbox-card--clarify {
+  background: var(--hm-tint-sky-surface);
+  border: 1px solid var(--hm-tint-sky-border);
 }
 .hm-inbox-card__title {
-  font-size: 13.5px;
+  font-size: 14px;
   font-weight: 700;
+  letter-spacing: -0.015em;
+  color: var(--hm-color-text);
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -35,16 +49,20 @@
   min-width: 0;
 }
 .hm-inbox-card__meta {
-  font-size: 12px;
+  font-family: var(--hm-font-mono);
+  font-size: 11.5px;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
   color: var(--hm-color-text-muted);
   margin-top: 2px;
 }
 .hm-inbox-card__cmd {
   font-family: var(--hm-font-mono);
   font-size: 12px;
-  background: var(--hm-color-surface-2);
+  font-variant-numeric: tabular-nums;
+  background: rgba(11, 14, 20, 0.65);
   border: 1px solid var(--hm-color-border);
-  border-radius: 9px;
+  border-radius: 12px;
   padding: 8px 10px;
   margin: 8px 0;
   color: var(--hm-color-text-2);
@@ -60,77 +78,88 @@
   gap: 10px;
   align-items: center;
 }
-/* row buttons inherit the shared 44px .hm-btn height (44px touch target) */
 .hm-inbox-card__review {
   display: inline-block;
   font-size: 12.5px;
-  color: var(--hm-color-primary);
-  font-weight: 600;
+  color: var(--hm-tint-rose-accent);
+  font-weight: 700;
   margin-top: 4px;
   text-decoration: none;
   min-height: 24px;
 }
 
-/* ── Notice rows (mockup .listrow) ─────────────────────────────── */
+/* ── Notice rows (Quiet Precision control tiles) ─────────────────── */
 .hm-notice {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 13px 14px;
+  padding: 12px 14px;
   background: var(--hm-card-bg);
   box-shadow: var(--hm-card-highlight);
   border: 1px solid var(--hm-color-border);
-  border-radius: 14px;
+  border-radius: 18px;
 }
 .hm-notice__icon {
   width: 38px;
   height: 38px;
-  border-radius: 11px;
-  background: var(--hm-color-surface-2);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.04);
   border: 1px solid var(--hm-color-border);
   display: flex;
   align-items: center;
   justify-content: center;
   flex: none;
-  font-size: 16px;
+  font-size: 15px;
   color: var(--hm-color-text-2);
 }
 .hm-notice__icon--danger {
-  background: var(--hm-tint-coral-badge);
-  border-color: var(--hm-tint-coral-border);
-  color: var(--hm-color-danger);
+  background: var(--hm-tint-rose-badge);
+  border-color: var(--hm-tint-rose-border);
+  color: var(--hm-tint-rose-accent);
 }
 .hm-notice__icon--success {
   background: var(--hm-tint-emerald-badge);
   border-color: var(--hm-tint-emerald-border);
-  color: var(--hm-color-success);
+  color: var(--hm-tint-emerald-accent);
 }
 .hm-notice__body {
   flex: 1;
   min-width: 0;
 }
 .hm-notice__title {
-  font-size: 14.5px;
-  font-weight: 600;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: -0.015em;
+  color: var(--hm-color-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .hm-notice__sub {
   font-size: 12px;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
   color: var(--hm-color-text-muted);
-  margin-top: 1px;
+  margin-top: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .hm-notice__time {
   margin-left: auto;
+  font-family: var(--hm-font-mono);
+  font-size: 11px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
   color: var(--hm-color-text-faint);
-  font-size: 12.5px;
   flex: none;
 }
 
-/* ── Desktop: cap reading width like the old activity list ─────── */
+/* ── Desktop: cap reading width ─────── */
 @media (min-width: 1200px) and (pointer: fine) {
-  /* specificity must beat App.css's `html.hm-native-viewport-lock .hm-scroll` */
   html.hm-native-viewport-lock .hm-scroll.hm-inbox,
   .hm-inbox {
-    max-width: 840px;
+    max-width: 960px;
     margin: 0 auto;
     width: 100%;
   }

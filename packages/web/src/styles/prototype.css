@@ -298,31 +298,91 @@ textarea {
 }
 
 .hm-more-sheet__list {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
 }
 
 .hm-more-row {
   appearance: none;
-  background: none;
-  border: 0;
+  box-sizing: border-box;
   width: 100%;
-  display: flex;
+  height: 66px;
+  border-radius: 18px;
+  padding: 12px 14px;
+  background: var(--hm-card-bg);
+  border: 1px solid var(--hm-color-border);
+  box-shadow: var(--hm-card-highlight);
+  display: grid;
+  grid-template-columns: 38px minmax(0, 1fr);
   align-items: center;
-  gap: 12px;
-  padding: 13px 6px;
+  gap: 10px;
   cursor: pointer;
-  color: var(--hm-color-text-faint);
-  border-bottom: 1px solid var(--hm-color-border);
+  color: var(--hm-color-text);
+  text-align: left;
+  transition: transform var(--hm-duration-fast), border-color var(--hm-duration-fast);
 }
 
-.hm-more-row:last-child {
-  border-bottom: 0;
+.hm-more-row:active {
+  transform: scale(0.985);
 }
 
 .hm-more-row__icon {
+  width: 38px;
+  height: 38px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.06);
   color: var(--hm-color-text-muted);
   display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.hm-more-row--emerald {
+  background: var(--hm-tint-emerald-surface);
+  border-color: var(--hm-tint-emerald-border);
+}
+
+.hm-more-row--emerald .hm-more-row__icon {
+  background: var(--hm-tint-emerald-badge);
+  border-color: var(--hm-tint-emerald-border);
+  color: var(--hm-tint-emerald-accent);
+}
+
+.hm-more-row--emerald .hm-more-row__sub {
+  color: var(--hm-tint-emerald-accent);
+}
+
+.hm-more-row--amber {
+  background: var(--hm-tint-amber-surface);
+  border-color: var(--hm-tint-amber-border);
+}
+
+.hm-more-row--amber .hm-more-row__icon {
+  background: var(--hm-tint-amber-badge);
+  border-color: var(--hm-tint-amber-border);
+  color: var(--hm-tint-amber-accent);
+}
+
+.hm-more-row--amber .hm-more-row__sub {
+  color: var(--hm-tint-amber-accent);
+}
+
+.hm-more-row--sky {
+  background: var(--hm-tint-sky-surface);
+  border-color: var(--hm-tint-sky-border);
+}
+
+.hm-more-row--sky .hm-more-row__icon {
+  background: var(--hm-tint-sky-badge);
+  border-color: var(--hm-tint-sky-border);
+  color: var(--hm-tint-sky-accent);
+}
+
+.hm-more-row--sky .hm-more-row__sub {
+  color: var(--hm-tint-sky-accent);
 }
 
 .hm-more-row__text {
@@ -331,18 +391,26 @@ textarea {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: 1px;
+  gap: 2px;
   text-align: left;
 }
 
 .hm-more-row__label {
-  font-size: 15px;
-  font-weight: var(--hm-fw-medium);
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: -0.015em;
   color: var(--hm-color-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
 }
 
 .hm-more-row__sub {
-  font-size: 12px;
+  font-family: var(--hm-font-mono);
+  font-size: 11.5px;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
   color: var(--hm-color-text-muted);
   overflow: hidden;
   text-overflow: ellipsis;
@@ -351,10 +419,12 @@ textarea {
 }
 
 .hm-more-sheet__version {
+  font-family: var(--hm-font-mono);
   text-align: center;
   font-size: 11px;
+  font-variant-numeric: tabular-nums;
   color: var(--hm-color-text-faint);
-  padding-top: 10px;
+  padding-top: 12px;
 }
 
 .hm-more-health {
@@ -1867,7 +1937,14 @@ select:focus-visible,
 }
 
 .hm-profile-row--active {
-  border-color: var(--hm-color-primary);
+  background: var(--hm-tint-emerald-surface);
+  border-color: var(--hm-tint-emerald-border);
+}
+
+.hm-profile-row--active .hm-row__icon {
+  background: var(--hm-tint-emerald-badge);
+  border-color: var(--hm-tint-emerald-border);
+  color: var(--hm-tint-emerald-accent);
 }
 
 .hm-profile-row__body {
@@ -2321,7 +2398,7 @@ select:focus-visible,
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.45);
 }
 :root[data-theme='dark-graphite'] .hm-seg__item--on {
-  background: #26262e;
+  background: #232B39;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.45);
 }
 

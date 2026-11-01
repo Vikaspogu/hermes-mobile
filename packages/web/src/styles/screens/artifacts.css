@@ -1,6 +1,4 @@
-/* artifacts.css — M12 Artifacts screen.
-   Source of truth: .pi/artifacts/hermes-mobile-redesign-mockups.html frame M12.
-   mockup: .scroll > .listrow* + .empty-note */
+/* artifacts.css — M12 Artifacts screen (Quiet Precision / Dark Obsidian). */
 
 .hm-artifacts-screen {
   flex: 1;
@@ -9,46 +7,46 @@
   display: flex;
   flex-direction: column;
   gap: 10px;
-  padding: 14px var(--hm-space-4);
+  padding: 14px var(--hm-space-4) 110px;
 }
 
-/* mockup: .listrow */
 .hm-artifact-row {
   display: flex;
   align-items: center;
   gap: var(--hm-space-3);
-  padding: 13px 14px;
+  padding: 12px 14px;
   background: var(--hm-card-bg);
   border: 1px solid var(--hm-color-border);
-  border-radius: var(--hm-radius-card);
+  border-radius: 18px;
   box-shadow: var(--hm-card-highlight);
   text-decoration: none;
   color: inherit;
 }
 
-/* mockup: .listrow .lr-icon (+ image gradient variant) */
 .hm-artifact-row__icon {
-  width: 44px;
-  height: 44px;
-  border-radius: var(--hm-radius-md);
+  width: 38px;
+  height: 38px;
+  border-radius: 12px;
   background: var(--hm-color-surface-2);
   border: 1px solid var(--hm-color-border);
   display: flex;
   align-items: center;
   justify-content: center;
   flex: none;
-  font-size: 18px;
+  font-size: 16px;
   color: var(--hm-color-text-2);
 }
 
 .hm-artifact-row__icon--image {
-  background: linear-gradient(135deg, #dbe4ff, #b7c6ff);
-  border: none;
+  background: var(--hm-tint-sky-badge);
+  border-color: var(--hm-tint-sky-border);
+  color: var(--hm-tint-sky-accent);
 }
 
 .hm-artifact-row__icon--chart {
-  background: var(--hm-color-primary-tint);
-  border-color: #cdd6ff;
+  background: var(--hm-tint-amber-badge);
+  border-color: var(--hm-tint-amber-border);
+  color: var(--hm-tint-amber-accent);
 }
 
 .hm-artifact-row__body {
@@ -58,32 +56,31 @@
   flex-direction: column;
 }
 
-/* mockup: .listrow .lr-title */
 .hm-artifact-row__name {
-  font-size: 15px;
-  font-weight: 650;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: -0.015em;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-/* mockup: link rows render the URL name in mono */
 .hm-artifact-row__name--mono {
   font-family: var(--hm-font-mono);
-  font-weight: 500;
+  font-weight: 600;
 }
 
-/* mockup: .listrow .lr-sub */
 .hm-artifact-row__sub {
   font-size: 12px;
+  font-family: var(--hm-font-mono);
+  font-variant-numeric: tabular-nums;
   color: var(--hm-color-text-muted);
-  margin-top: 1px;
+  margin-top: 2px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-/* mockup: .listrow .lr-right */
 .hm-artifact-row__chevron {
   margin-left: auto;
   color: var(--hm-color-text-faint);
@@ -91,7 +88,6 @@
   flex: none;
 }
 
-/* mockup: .empty-note */
 .hm-artifacts-screen__note {
   text-align: center;
   color: var(--hm-color-text-muted);
@@ -99,23 +95,4 @@
   padding: 26px 30px;
   line-height: 1.6;
   margin: 0;
-}
-
-/* Dark theme: mute the light-only tints */
-:root[data-theme='dark'] .hm-artifact-row__icon--image {
-  background: linear-gradient(135deg, #2b3766, #1b2440);
-}
-
-:root[data-theme='dark'] .hm-artifact-row__icon--chart {
-  border-color: #33418c;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme]) .hm-artifact-row__icon--image {
-    background: linear-gradient(135deg, #2b3766, #1b2440);
-  }
-
-  :root:not([data-theme]) .hm-artifact-row__icon--chart {
-    border-color: #33418c;
-  }
 }

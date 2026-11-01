@@ -227,8 +227,19 @@ export function Projects({ rest, onNavigate }: ProjectsProps) {
       ] as { id: WorkFilter; label: string }[],
     [workCounts],
   );
-  const workTasks = useMemo(() => tasks.filter((t) => matchesWorkFilter(t, workFilter)), [tasks, workFilter]);
-
+  const workTasks = useMemo(() => {
+    const rank = (s: TaskStatus): number => {
+      if (s === 'running' || s === 'in_progress') return 0;
+      if (s === 'blocked') return 1;
+      if (s === 'ready' || s === 'todo' || s === 'scheduled') return 2;
+      if (s === 'review' || s === 'triage' || s === 'backlog') return 3;
+      return 4;
+    };
+    return tasks
+      .filter((t) => matchesWorkFilter(t, workFilter))
+      .slice()
+      .sort((a, b) => rank(a.status) - rank(b.status));
+  }, [tasks, workFilter]);
   useEffect(() => {
     if (stageFilter !== 'all' && !columns.some((c) => c.status === stageFilter && c.tasks.length > 0)) {
       setStageFilter('all');
@@ -509,6 +520,44 @@ export function Projects({ rest, onNavigate }: ProjectsProps) {
         </>
       ) : (
         <div className="work-scroll">
+          <div className="hm-qp-hero work-hero" data-testid="work-hero">
+            <div className="hm-qp-hero__top">
+              <div>
+                <div className="hm-qp-hero__title">Task Operations</div>
+                <div className="hm-qp-hero__telemetry">
+                  {tasks.length} TASKS · {workCounts.active} ACTIVE · {workCounts.blocked} BLOCKED
+                </div>
+              </div>
+              <span
+                className={`hm-qp-presence ${
+                  workCounts.blocked > 0
+                    ? 'hm-qp-presence--rose'
+                    : workCounts.active > 0
+                      ? 'hm-qp-presence--amber'
+                      : 'hm-qp-presence--emerald'
+                }`}
+              >
+                <span className="hm-qp-pill__dot" aria-hidden="true" />
+                {workCounts.blocked > 0 ? 'BLOCKED' : workCounts.active > 0 ? 'ACTIVE' : 'READY'}
+              </span>
+            </div>
+            <div className="hm-qp-pills">
+              <span className="hm-qp-pill hm-qp-pill--amber">
+                <span className="hm-qp-pill__dot" aria-hidden="true" />
+                {workCounts.active} IN FLIGHT
+              </span>
+              {workCounts.blocked > 0 && (
+                <span className="hm-qp-pill hm-qp-pill--rose">
+                  <span className="hm-qp-pill__dot" aria-hidden="true" />
+                  {workCounts.blocked} BLOCKED
+                </span>
+              )}
+              <span className="hm-qp-pill hm-qp-pill--emerald">
+                <span className="hm-qp-pill__dot" aria-hidden="true" />
+                {workCounts.done} DONE
+              </span>
+            </div>
+          </div>
           <div className="work-pillrow" role="group" aria-label="Filter tasks">
             {workChips.map((chip) => (
               <button
@@ -524,21 +573,32 @@ export function Projects({ rest, onNavigate }: ProjectsProps) {
           </div>
           {error && <div className="hm-warning-banner hm-warning-banner--error">{error}</div>}
           {loading && tasks.length === 0 && <p className="hm-muted hm-loading">Loading board…</p>}
+          <div className="hm-qp-section__head">
+            <span className="hm-qp-kicker">BOARD TASKS</span>
+            <span className="hm-qp-meta-badge">{workTasks.length} ITEMS</span>
+          </div>
           <div className="work-task-list">
             {workTasks.map((task) => {
               const tone = prioTone(task.priority);
               const meta = workTaskMeta(task);
+              const rowStateClass = meta.live
+                ? ' work-task-row--active'
+                : meta.warn
+                  ? ' work-task-row--blocked'
+                  : task.status === 'done'
+                    ? ' work-task-row--done'
+                    : '';
               return (
                 <button
                   key={task.id}
                   type="button"
-                  className="work-task-row"
+                  className={`work-task-row${rowStateClass}`}
                   onClick={() => void handleOpenTask(task.id)}
                 >
                   {tone && <span className={`work-prio work-prio--${tone}`}>{tone.toUpperCase()}</span>}
                   <span className="work-task-row__body">
                     <span className="work-task-row__title">{task.title}</span>
-                    <span className={`work-task-row__meta${meta.warn ? ' work-task-row__meta--warn' : ''}`}>
+                    <span className={`work-task-row__meta${meta.warn ? ' work-task-row__meta--warn' : ''}${meta.live ? ' work-task-row__meta--live' : ''}`}>
                       {meta.live && <span className="work-pulse" aria-hidden="true" />}
                       {meta.text}
                     </span>

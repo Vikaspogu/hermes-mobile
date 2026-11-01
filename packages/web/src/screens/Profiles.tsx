@@ -208,19 +208,49 @@ export function Profiles({ rest }: ProfilesProps) {
   const currentProvider = providersBySlug.get(selectedProvider);
   const modelPickerTitle = modelProfile ? `Model for ${modelProfile.displayName ?? modelProfile.name}` : 'Profile model';
 
+  const activeProfileObj = profiles.find((p) => p.isActive) ?? profiles.find((p) => p.name === activeName);
+  const sortedProfiles = useMemo(
+    () => profiles.slice().sort((a, b) => Number(Boolean(b.isActive)) - Number(Boolean(a.isActive))),
+    [profiles],
+  );
+
   return (
     <div className="hm-profiles hm-scroll">
-      {/* M10: "+" lives in the header in the mockup; the shell owns the header,
-          so it sits in a right-aligned row directly beneath it. */}
-      <div className="hm-profiles__bar">
-        <button
-          type="button"
-          className="hm-iconbtn hm-profiles__add"
-          aria-label="New profile"
-          onClick={openSheet}
-        >
-          <Icon name="plus" size={18} />
-        </button>
+      <div className="hm-qp-hero" data-testid="profiles-hero">
+        <div className="hm-qp-hero__top">
+          <div>
+            <div className="hm-qp-hero__title">Agent Profiles</div>
+            <div className="hm-qp-hero__telemetry">
+              {profiles.length} CONFIGURED · DEFAULT {(activeName ?? 'default').toUpperCase()}
+            </div>
+          </div>
+          <div className="hm-profiles__bar">
+            <span className="hm-qp-presence hm-qp-presence--emerald">
+              <span className="hm-qp-pill__dot" aria-hidden="true" />
+              {activeProfileObj?.name ?? activeName ?? 'default'}
+            </span>
+            <button
+              type="button"
+              className="hm-iconbtn hm-profiles__add"
+              aria-label="New profile"
+              onClick={openSheet}
+            >
+              <Icon name="plus" size={18} />
+            </button>
+          </div>
+        </div>
+        <div className="hm-qp-pills">
+          <span className="hm-qp-pill hm-qp-pill--emerald">
+            <span className="hm-qp-pill__dot" aria-hidden="true" />
+            {profiles.length} PROFILES
+          </span>
+          {activeProfileObj?.model && (
+            <span className="hm-qp-pill hm-qp-pill--sky">
+              <span className="hm-qp-pill__dot" aria-hidden="true" />
+              {activeProfileObj.model}
+            </span>
+          )}
+        </div>
       </div>
 
       {error && <div className="hm-warning-banner hm-warning-banner--error">{error}</div>}
@@ -233,7 +263,14 @@ export function Profiles({ rest }: ProfilesProps) {
         </button>
       )}
 
-      {profiles.map((p) => (
+      {sortedProfiles.length > 0 && (
+        <div className="hm-qp-section__head">
+          <span className="hm-qp-kicker">RUNTIME PROFILES</span>
+          <span className="hm-qp-meta-badge">{sortedProfiles.length} TOTAL</span>
+        </div>
+      )}
+
+      {sortedProfiles.map((p) => (
         <div
           key={p.name}
           className={`hm-card hm-profile-card${p.isActive ? ' hm-profile-card--active' : ''}`}

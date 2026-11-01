@@ -69,6 +69,39 @@
   --hm-tint-coral: rgba(244, 63, 94, 0.16);
   --hm-tint-coral-border: rgba(251, 113, 133, 0.36);
   --hm-tint-coral-badge: rgba(244, 63, 94, 0.20);
+  --hm-grad-emerald: linear-gradient(135deg, rgba(16, 185, 129, 0.14) 0%, rgba(16, 20, 28, 0.92) 100%);
+  --hm-grad-amber:   linear-gradient(135deg, rgba(245, 158, 11, 0.16) 0%, rgba(16, 20, 28, 0.92) 100%);
+  --hm-grad-sky:     linear-gradient(135deg, rgba(56, 189, 248, 0.14) 0%, rgba(16, 20, 28, 0.92) 100%);
+  --hm-grad-coral:   linear-gradient(135deg, rgba(244, 63, 94, 0.16) 0%, rgba(16, 20, 28, 0.92) 100%);
+  --hm-grad-rose:    var(--hm-grad-coral);
+  --hm-tint-emerald-surface: var(--hm-grad-emerald);
+  --hm-tint-emerald-accent:  var(--hm-color-success);
+  --hm-tint-amber-surface:   var(--hm-grad-amber);
+  --hm-tint-amber-accent:    var(--hm-color-warning);
+  --hm-tint-sky-surface:     var(--hm-grad-sky);
+  --hm-tint-sky-accent:      var(--hm-color-info);
+  --hm-tint-coral-surface:   var(--hm-grad-coral);
+  --hm-tint-coral-accent:    var(--hm-color-danger);
+  --hm-tint-rose:            var(--hm-tint-coral);
+  --hm-tint-rose-surface:    var(--hm-grad-coral);
+  --hm-tint-rose-border:     var(--hm-tint-coral-border);
+  --hm-tint-rose-badge:      var(--hm-tint-coral-badge);
+  --hm-tint-rose-accent:     var(--hm-color-danger);
+  --hm-color-border-soft:    var(--hm-color-border);
+  --hm-color-border-strong:  rgba(255, 255, 255, 0.14);
+  --hm-color-card:           var(--hm-color-surface);
+  --hm-color-muted:          var(--hm-color-text-muted);
+  --hm-color-primary-soft:   var(--hm-color-primary-tint);
+  --hm-color-surface-muted:  var(--hm-color-surface-2);
+  --hm-color-surface-raised: var(--hm-color-surface-2);
+  --hm-color-text-dim:       var(--hm-color-text-faint);
+  --hm-elev-4:               var(--hm-elev-3);
+  --hm-muted:                var(--hm-color-text-muted);
+  --hm-radius-pill:          var(--hm-radius-full);
+  --hm-shadow-card:          var(--hm-card-highlight);
+  --hm-surface-2:            var(--hm-color-surface-2);
+  --hm-text-xs:              var(--hm-fs-label);
+  --hm-weight-semibold:      var(--hm-fw-semibold);
 
   /* ── Glass (floating dock, sheets) ──────────────────────────────── */
   --hm-glass-bg: rgba(15, 19, 28, 0.88);
@@ -210,6 +243,10 @@
   --hm-tint-coral: #fdeaea;
   --hm-tint-coral-border: #f7c2c5;
   --hm-tint-coral-badge: #fbd9da;
+  --hm-grad-emerald: linear-gradient(135deg, #e3fbef 0%, #ffffff 100%);
+  --hm-grad-amber:   linear-gradient(135deg, #fff7ed 0%, #ffffff 100%);
+  --hm-grad-sky:     linear-gradient(135deg, #e7f4fd 0%, #ffffff 100%);
+  --hm-grad-coral:   linear-gradient(135deg, #fdeaea 0%, #ffffff 100%);
 
   --hm-glass-bg: rgba(255, 255, 255, 0.88);
   --hm-glass-border: rgba(20, 30, 60, 0.10);
@@ -264,21 +301,7 @@
   --hm-color-warning-bg: #2a2110;
   --hm-color-danger-bg:  #2a1418;
   --hm-color-info-bg:    #16203a;
-  /* Flat legacy surfaces — don't inherit the Obsidian card gradient / tints */
-  --hm-card-bg: var(--hm-color-surface);
-  --hm-card-highlight: none;
-  --hm-tint-emerald: var(--hm-color-success-bg);
-  --hm-tint-emerald-border: var(--hm-color-success-bg);
-  --hm-tint-emerald-badge: var(--hm-color-success-bg);
-  --hm-tint-amber: var(--hm-color-warning-bg);
-  --hm-tint-amber-border: var(--hm-color-warning-bg);
-  --hm-tint-amber-badge: var(--hm-color-warning-bg);
-  --hm-tint-sky: var(--hm-color-info-bg);
-  --hm-tint-sky-border: var(--hm-color-info-bg);
-  --hm-tint-sky-badge: var(--hm-color-info-bg);
-  --hm-tint-coral: var(--hm-color-danger-bg);
-  --hm-tint-coral-border: var(--hm-color-danger-bg);
-  --hm-tint-coral-badge: var(--hm-color-danger-bg);
+  /* Uses Dark Obsidian card gradient + semantic surface tints from :root */
 }
 
 /* ── Dark · Mocha (Catppuccin Mocha, pastel mauve accent) ─────────────── */
@@ -310,65 +333,585 @@
   --hm-color-warning-bg: #383322;
   --hm-color-danger-bg:  #3d2832;
   --hm-color-info-bg:    #28304a;
-  /* Flat legacy surfaces — don't inherit the Obsidian card gradient / tints */
-  --hm-card-bg: var(--hm-color-surface);
-  --hm-card-highlight: none;
-  --hm-tint-emerald: var(--hm-color-success-bg);
-  --hm-tint-emerald-border: var(--hm-color-success-bg);
-  --hm-tint-emerald-badge: var(--hm-color-success-bg);
-  --hm-tint-amber: var(--hm-color-warning-bg);
-  --hm-tint-amber-border: var(--hm-color-warning-bg);
-  --hm-tint-amber-badge: var(--hm-color-warning-bg);
-  --hm-tint-sky: var(--hm-color-info-bg);
-  --hm-tint-sky-border: var(--hm-color-info-bg);
-  --hm-tint-sky-badge: var(--hm-color-info-bg);
-  --hm-tint-coral: var(--hm-color-danger-bg);
-  --hm-tint-coral-border: var(--hm-color-danger-bg);
-  --hm-tint-coral-badge: var(--hm-color-danger-bg);
+  /* Uses Dark Obsidian card gradient + semantic surface tints from :root */
 }
 
 /* ── Dark · Graphite (iOS-neutral graphite, system cyan accent) ───────── */
 :root[data-theme='dark-graphite'] {
-  --hm-color-bg:        #09090b;
-  --hm-color-surface:   #101013;
-  --hm-color-surface-2: #191920;
-  --hm-color-border:    #2b2b33;
+  /* Aligned with Quiet Precision / Dark Obsidian so saved dark-graphite matches */
+  --hm-color-bg:        #0B0E14;
+  --hm-color-surface:   #121620;
+  --hm-color-surface-2: #181D28;
+  --hm-color-border:    rgba(255, 255, 255, 0.06);
 
-  --hm-color-text:       #f4f4f6;
-  --hm-color-text-2:     #a3a3ac;
-  --hm-color-text-muted: #8a8a92;
-  --hm-color-text-faint: #6d6d76;
-  --hm-color-text-secondary: #8a8a92;
-  --hm-color-text-subtle: #46464e;
+  --hm-color-text:       #F8FAFC;
+  --hm-color-text-2:     #E2E8F0;
+  --hm-color-text-muted: #94A3B8;
+  --hm-color-text-faint: #64748B;
+  --hm-color-text-secondary: #94A3B8;
+  --hm-color-text-subtle: #475569;
 
-  --hm-color-primary:      #4cc3f7;
-  --hm-color-primary-tint: #10262f;
-  --hm-color-primary-text: #06131c;
+  --hm-color-primary:      #38BDF8;
+  --hm-color-primary-tint: rgba(56, 189, 248, 0.14);
+  --hm-color-primary-text: #0B1220;
 
-  --hm-color-success:    #34d17b;
-  --hm-color-warning:    #ffd60a;
-  --hm-color-danger:     #ff6f66;
-  --hm-color-running:    #4cc3f7;
-  --hm-color-success-strong: #34d17b;
-  --hm-color-warning-strong: #ffd60a;
-  --hm-color-danger-strong:  #ff6f66;
-  --hm-color-success-bg: #0f2418;
-  --hm-color-warning-bg: #2a2408;
-  --hm-color-danger-bg:  #2a1512;
-  --hm-color-info-bg:    #0e2230;
-  /* Flat legacy surfaces — don't inherit the Obsidian card gradient / tints */
-  --hm-card-bg: var(--hm-color-surface);
-  --hm-card-highlight: none;
-  --hm-tint-emerald: var(--hm-color-success-bg);
-  --hm-tint-emerald-border: var(--hm-color-success-bg);
-  --hm-tint-emerald-badge: var(--hm-color-success-bg);
-  --hm-tint-amber: var(--hm-color-warning-bg);
-  --hm-tint-amber-border: var(--hm-color-warning-bg);
-  --hm-tint-amber-badge: var(--hm-color-warning-bg);
-  --hm-tint-sky: var(--hm-color-info-bg);
-  --hm-tint-sky-border: var(--hm-color-info-bg);
-  --hm-tint-sky-badge: var(--hm-color-info-bg);
-  --hm-tint-coral: var(--hm-color-danger-bg);
-  --hm-tint-coral-border: var(--hm-color-danger-bg);
-  --hm-tint-coral-badge: var(--hm-color-danger-bg);
+  --hm-color-success:    #34D399;
+  --hm-color-warning:    #FBBF24;
+  --hm-color-danger:     #FB7185;
+  --hm-color-running:    #FBBF24;
+  --hm-color-info:       #38BDF8;
+  --hm-color-success-strong: #6EE7B7;
+  --hm-color-warning-strong: #FCD34D;
+  --hm-color-danger-strong:  #FDA4AF;
+  --hm-color-success-bg: rgba(16, 185, 129, 0.16);
+  --hm-color-warning-bg: rgba(245, 158, 11, 0.18);
+  --hm-color-danger-bg:  rgba(244, 63, 94, 0.18);
+  --hm-color-info-bg:    rgba(56, 189, 248, 0.14);
+}
+
+/* ── Quiet Precision / Dark Obsidian Shared Primitives ─────────────────── */
+.hm-mono-num {
+  font-family: var(--hm-font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.hm-qp-hero {
+  border-radius: 22px;
+  padding: 18px 20px;
+  background: var(--hm-card-bg);
+  border: 1px solid var(--hm-color-border);
+  box-shadow: var(--hm-card-highlight);
+}
+.hm-qp-hero--emerald {
+  background: var(--hm-grad-emerald);
+  border-color: var(--hm-tint-emerald-border);
+}
+.hm-qp-hero--amber {
+  background: var(--hm-grad-amber);
+  border-color: var(--hm-tint-amber-border);
+}
+.hm-qp-hero--sky {
+  background: var(--hm-grad-sky);
+  border-color: var(--hm-tint-sky-border);
+}
+.hm-qp-hero--coral,
+.hm-qp-hero--rose {
+  background: var(--hm-grad-coral);
+  border-color: var(--hm-tint-coral-border);
+}
+.hm-qp-hero__row,
+.hm-qp-hero__top,
+.hm-qp-hero__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+}
+.hm-qp-hero__kicker {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.10em;
+  color: var(--hm-color-text-faint);
+  margin-bottom: 4px;
+}
+.hm-qp-hero__title {
+  font-family: var(--hm-font-display);
+  font-size: 24px;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+  color: var(--hm-color-text);
+  margin: 0;
+}
+.hm-qp-hero__telemetry,
+.hm-qp-hero__sub {
+  margin: 6px 0 0;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--hm-color-text-muted);
+  font-variant-numeric: tabular-nums;
+  font-family: var(--hm-font-mono);
+}
+.hm-qp-hero__telemetry b,
+.hm-qp-hero__telemetry strong {
+  color: var(--hm-color-success);
+  font-weight: 600;
+}
+.hm-qp-hero--coral .hm-qp-hero__telemetry b,
+.hm-qp-hero--coral .hm-qp-hero__telemetry strong,
+.hm-qp-hero--rose .hm-qp-hero__telemetry b,
+.hm-qp-hero--rose .hm-qp-hero__telemetry strong {
+  color: var(--hm-color-danger);
+}
+.hm-qp-hero--amber .hm-qp-hero__telemetry b,
+.hm-qp-hero--amber .hm-qp-hero__telemetry strong {
+  color: var(--hm-color-warning);
+}
+
+.hm-qp-hero__presence,
+div.hm-qp-presence {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  align-items: flex-end;
+  flex-shrink: 0;
+}
+span.hm-qp-presence,
+.hm-qp-presence__pill,
+.hm-qp-hero__badge {
+  font-family: var(--hm-font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--hm-color-text-muted);
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--hm-color-border);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.hm-qp-presence--emerald,
+.hm-qp-hero__badge {
+  background: var(--hm-tint-emerald-badge);
+  border-color: var(--hm-tint-emerald-border);
+  color: var(--hm-tint-emerald-accent);
+}
+.hm-qp-presence--amber,
+.hm-qp-hero__badge--amber {
+  background: var(--hm-tint-amber-badge);
+  border-color: var(--hm-tint-amber-border);
+  color: var(--hm-tint-amber-accent);
+}
+.hm-qp-presence--sky {
+  background: var(--hm-tint-sky-badge);
+  border-color: var(--hm-tint-sky-border);
+  color: var(--hm-tint-sky-accent);
+}
+.hm-qp-presence--rose,
+.hm-qp-presence--coral,
+.hm-qp-hero__badge--rose {
+  background: var(--hm-tint-rose-badge);
+  border-color: var(--hm-tint-rose-border);
+  color: var(--hm-tint-rose-accent);
+}
+.hm-qp-presence__pill .hm-mono-num {
+  font-size: 10px;
+  color: var(--hm-color-text-subtle);
+}
+
+.hm-qp-pillrow,
+.hm-qp-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 14px;
+}
+.hm-qp-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  border-radius: 999px;
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--hm-color-border);
+  color: var(--hm-color-text-muted);
+  font-variant-numeric: tabular-nums;
+}
+button.hm-qp-pill {
+  cursor: pointer;
+  font-family: inherit;
+}
+.hm-qp-pill__dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+  box-shadow: 0 0 8px currentColor;
+  flex-shrink: 0;
+}
+.hm-qp-pill--idle {
+  background: rgba(255, 255, 255, 0.03);
+  border-color: var(--hm-color-border);
+  color: var(--hm-color-text-muted);
+}
+.hm-qp-pill--emerald {
+  background: rgba(16, 185, 129, 0.10);
+  border-color: var(--hm-tint-emerald-border);
+  color: var(--hm-color-success);
+}
+.hm-qp-pill--amber {
+  background: rgba(245, 158, 11, 0.10);
+  border-color: var(--hm-tint-amber-border);
+  color: var(--hm-color-warning);
+}
+.hm-qp-pill--sky {
+  background: rgba(56, 189, 248, 0.10);
+  border-color: var(--hm-tint-sky-border);
+  color: var(--hm-color-info);
+}
+.hm-qp-pill--coral,
+.hm-qp-pill--rose {
+  background: rgba(244, 63, 94, 0.10);
+  border-color: var(--hm-tint-coral-border);
+  color: var(--hm-color-danger);
+}
+
+/* Quick Action Button (3-up row): fixed height 60px, border-radius 16px */
+.hm-qp-qa,
+.hm-qp-qa-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+.hm-qp-qa__btn,
+.hm-qp-qa-btn {
+  height: 60px;
+  border-radius: 16px;
+  cursor: pointer;
+  background: var(--hm-card-bg);
+  border: 1px solid var(--hm-color-border);
+  box-shadow: var(--hm-card-highlight);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  color: var(--hm-color-text);
+  font-family: inherit;
+  padding: 4px 8px;
+  transition: transform 0.15s ease;
+}
+.hm-qp-qa__btn:active,
+.hm-qp-qa-btn:active {
+  transform: scale(0.96);
+}
+.hm-qp-qa__btn svg,
+.hm-qp-qa-btn svg,
+.hm-qp-qa-btn__icon {
+  color: var(--hm-color-text-muted);
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.hm-qp-qa__label,
+.hm-qp-qa-btn__label {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  line-height: 1.15;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+.hm-qp-qa__sub,
+.hm-qp-qa-btn__count {
+  font-family: var(--hm-font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--hm-color-text-subtle);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+.hm-qp-qa__btn--coral,
+.hm-qp-qa-btn--coral,
+.hm-qp-qa-btn--rose {
+  background: var(--hm-grad-coral);
+  border-color: var(--hm-tint-coral-border);
+}
+.hm-qp-qa__btn--coral svg,
+.hm-qp-qa__btn--coral .hm-qp-qa__sub,
+.hm-qp-qa-btn--coral svg,
+.hm-qp-qa-btn--coral .hm-qp-qa-btn__icon,
+.hm-qp-qa-btn--coral .hm-qp-qa-btn__count,
+.hm-qp-qa-btn--rose svg,
+.hm-qp-qa-btn--rose .hm-qp-qa-btn__icon,
+.hm-qp-qa-btn--rose .hm-qp-qa-btn__count {
+  color: var(--hm-color-danger);
+}
+.hm-qp-qa__btn--amber,
+.hm-qp-qa-btn--amber {
+  background: var(--hm-grad-amber);
+  border-color: var(--hm-tint-amber-border);
+}
+.hm-qp-qa__btn--amber svg,
+.hm-qp-qa__btn--amber .hm-qp-qa__sub,
+.hm-qp-qa-btn--amber svg,
+.hm-qp-qa-btn--amber .hm-qp-qa-btn__icon,
+.hm-qp-qa-btn--amber .hm-qp-qa-btn__count {
+  color: var(--hm-color-warning);
+}
+.hm-qp-qa__btn--emerald,
+.hm-qp-qa-btn--emerald {
+  background: var(--hm-grad-emerald);
+  border-color: var(--hm-tint-emerald-border);
+}
+.hm-qp-qa__btn--emerald svg,
+.hm-qp-qa__btn--emerald .hm-qp-qa__sub,
+.hm-qp-qa-btn--emerald svg,
+.hm-qp-qa-btn--emerald .hm-qp-qa-btn__icon,
+.hm-qp-qa-btn--emerald .hm-qp-qa-btn__count {
+  color: var(--hm-color-success);
+}
+.hm-qp-qa__btn--sky,
+.hm-qp-qa-btn--sky {
+  background: var(--hm-grad-sky);
+  border-color: var(--hm-tint-sky-border);
+}
+.hm-qp-qa__btn--sky svg,
+.hm-qp-qa__btn--sky .hm-qp-qa__sub,
+.hm-qp-qa-btn--sky svg,
+.hm-qp-qa-btn--sky .hm-qp-qa-btn__icon,
+.hm-qp-qa-btn--sky .hm-qp-qa-btn__count {
+  color: var(--hm-color-info);
+}
+
+/* Interactive Control Tile (2-up grid): fixed height 66px, border-radius 18px, "i n" / "i l" */
+.hm-qp-tiles,
+.hm-qp-grid-2 {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+.hm-qp-tile {
+  height: 66px;
+  border-radius: 18px;
+  padding: 12px 14px;
+  cursor: pointer;
+  background: var(--hm-card-bg);
+  border: 1px solid var(--hm-color-border);
+  box-shadow: var(--hm-card-highlight);
+  display: grid;
+  grid-template-columns: 38px minmax(0, 1fr);
+  grid-template-rows: auto auto;
+  grid-template-areas:
+    "i n"
+    "i l";
+  column-gap: 12px;
+  row-gap: 2px;
+  align-items: center;
+  text-align: left;
+  font-family: inherit;
+  color: var(--hm-color-text);
+  transition: transform 0.15s ease;
+}
+.hm-qp-tile:active {
+  transform: scale(0.97);
+}
+.hm-qp-tile__icon {
+  grid-area: i;
+  width: 38px;
+  height: 38px;
+  border-radius: 12px;
+  display: grid;
+  place-items: center;
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--hm-color-text-muted);
+  flex-shrink: 0;
+}
+.hm-qp-tile__name {
+  grid-area: n;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: -0.015em;
+  color: var(--hm-color-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.hm-qp-tile__state {
+  grid-area: l;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--hm-color-text-muted);
+  font-variant-numeric: tabular-nums;
+  font-family: var(--hm-font-mono);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.hm-qp-tile--emerald {
+  background: var(--hm-grad-emerald);
+  border-color: var(--hm-tint-emerald-border);
+}
+.hm-qp-tile--emerald .hm-qp-tile__icon {
+  background: var(--hm-tint-emerald-badge);
+  color: var(--hm-color-success);
+}
+.hm-qp-tile--emerald .hm-qp-tile__state {
+  color: var(--hm-color-success);
+}
+.hm-qp-tile--amber {
+  background: var(--hm-grad-amber);
+  border-color: var(--hm-tint-amber-border);
+}
+.hm-qp-tile--amber .hm-qp-tile__icon {
+  background: var(--hm-tint-amber-badge);
+  color: var(--hm-color-warning);
+}
+.hm-qp-tile--amber .hm-qp-tile__state {
+  color: var(--hm-color-warning);
+}
+.hm-qp-tile--sky {
+  background: var(--hm-grad-sky);
+  border-color: var(--hm-tint-sky-border);
+}
+.hm-qp-tile--sky .hm-qp-tile__icon {
+  background: var(--hm-tint-sky-badge);
+  color: var(--hm-color-info);
+}
+.hm-qp-tile--sky .hm-qp-tile__state {
+  color: var(--hm-color-info);
+}
+.hm-qp-tile--coral,
+.hm-qp-tile--rose {
+  background: var(--hm-grad-coral);
+  border-color: var(--hm-tint-coral-border);
+}
+.hm-qp-tile--coral .hm-qp-tile__icon,
+.hm-qp-tile--rose .hm-qp-tile__icon {
+  background: var(--hm-tint-coral-badge);
+  color: var(--hm-color-danger);
+}
+.hm-qp-tile--coral .hm-qp-tile__state,
+.hm-qp-tile--rose .hm-qp-tile__state {
+  color: var(--hm-color-danger);
+}
+
+/* Section header: Kicker (left, 11px 700 uppercase 0.10em #64748B) + Meta Badge (right, 11px 600 mono #475569) */
+.hm-qp-section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.hm-qp-sec,
+.hm-qp-sec__head,
+.hm-qp-section__head,
+.hm-qp-sect-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px;
+}
+.hm-qp-sec__kicker,
+.hm-qp-kicker,
+.hm-qp-sect-head__kicker {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.10em;
+  color: var(--hm-color-text-faint);
+}
+.hm-qp-sec__badge,
+.hm-qp-sec__meta,
+.hm-qp-meta-badge,
+.hm-qp-sect-head__meta {
+  font-family: var(--hm-font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--hm-color-text-subtle);
+}
+
+/* Telemetry card */
+.hm-qp-tele {
+  border-radius: 18px;
+  padding: 16px;
+  background: var(--hm-card-bg);
+  border: 1px solid var(--hm-color-border);
+  box-shadow: var(--hm-card-highlight);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.hm-qp-tele__row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px;
+}
+.hm-qp-tele__label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--hm-color-text-muted);
+}
+.hm-qp-tele__val {
+  font-family: var(--hm-font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--hm-color-text);
+}
+.hm-qp-tele__bar {
+  height: 4px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.05);
+  overflow: hidden;
+  margin-top: 6px;
+}
+.hm-qp-tele__fill {
+  height: 100%;
+  border-radius: 2px;
+}
+.hm-qp-tele__fill--sky {
+  background: linear-gradient(90deg, rgba(56, 189, 248, 0.4), var(--hm-color-info));
+}
+.hm-qp-tele__fill--amber {
+  background: linear-gradient(90deg, rgba(245, 158, 11, 0.4), var(--hm-color-warning));
+}
+.hm-qp-tele__fill--coral {
+  background: linear-gradient(90deg, rgba(244, 63, 94, 0.4), var(--hm-color-danger));
+}
+.hm-qp-tele__fill--emerald {
+  background: linear-gradient(90deg, rgba(16, 185, 129, 0.4), var(--hm-color-success));
+}
+
+/* Responsive 3-column desktop grid (min-width 340px per column, gap 20px, zero horizontal overflow) */
+.hm-qp-desk-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+.hm-qp-desk-col {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  min-width: 0;
+}
+@media (min-width: 1120px) {
+  .hm-qp-desk-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(340px, 1fr));
+    gap: 20px;
+    align-items: start;
+  }
+  .hm-qp-desk-grid > .hm-qp-hero {
+    grid-column: 1 / -1;
+  }
+}
+
+.hm-session-row--live,
+.hm-skill-row--guarded {
+  background: var(--hm-tint-amber-surface);
+  border-color: var(--hm-tint-amber-border);
+}
+
+.hm-skill-row--enabled {
+  background: var(--hm-tint-emerald-surface);
+  border-color: var(--hm-tint-emerald-border);
+}
+
+.hm-skill-row--disabled {
+  opacity: 0.68;
 }
