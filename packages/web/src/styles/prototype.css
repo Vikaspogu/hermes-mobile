@@ -828,7 +828,7 @@ textarea {
   background: var(--hm-color-primary);
   color: var(--hm-color-primary-text);
   border-radius: 18px 18px 5px 18px;
-  box-shadow: 0 6px 16px rgba(37, 64, 255, 0.18);
+  box-shadow: 0 6px 16px color-mix(in srgb, var(--hm-color-primary) 18%, transparent);
 }
 
 .hm-message--assistant {
