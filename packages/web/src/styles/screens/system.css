@@ -54,9 +54,10 @@
   align-items: center;
   gap: 12px;
   padding: 13px 14px;
-  background: var(--hm-color-surface);
+  background: var(--hm-card-bg);
   border: 1px solid var(--hm-color-border);
   border-radius: 14px;
+  box-shadow: var(--hm-card-highlight);
   cursor: pointer;
   text-align: left;
   width: 100%;
@@ -82,8 +83,16 @@
   font-size: 16px;
   color: var(--hm-color-text-2);
 }
-.hm-system__check-icon--ok { color: var(--hm-color-success); }
-.hm-system__check-icon--warn { color: var(--hm-color-warning-strong); }
+.hm-system__check-icon--ok {
+  background: var(--hm-tint-emerald-badge);
+  border-color: var(--hm-tint-emerald-border);
+  color: var(--hm-color-success);
+}
+.hm-system__check-icon--warn {
+  background: var(--hm-tint-amber-badge);
+  border-color: var(--hm-tint-amber-border);
+  color: var(--hm-color-warning-strong);
+}
 .hm-system__check-icon--idle { color: var(--hm-color-text-faint); }
 
 .hm-system__check-body {
