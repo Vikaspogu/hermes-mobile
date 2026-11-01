@@ -2222,18 +2222,19 @@ select:focus-visible,
 
 /* mockup: .card */
 .hm-card {
-  background: var(--hm-color-surface);
+  background: var(--hm-card-bg);
   border: 1px solid var(--hm-color-border);
-  border-radius: 14px;
+  box-shadow: var(--hm-card-highlight);
+  border-radius: var(--hm-radius-card);
   padding: 13px 14px;
 }
-.hm-card--lg { border-radius: 16px; }
+.hm-card--lg { border-radius: var(--hm-radius-xl); }
 
 /* mockup: .group-label — TODAY / NEEDS YOU section labels */
 .hm-group-label {
-  font-size: 11.5px;
+  font-size: var(--hm-fs-label);
   font-weight: 700;
-  letter-spacing: 0.07em;
+  letter-spacing: 0.10em;
   text-transform: uppercase;
   color: var(--hm-color-text-faint);
   padding: 10px 4px 2px;
@@ -2252,8 +2253,8 @@ select:focus-visible,
   cursor: pointer;
 }
 .hm-pill--on {
-  background: var(--hm-color-primary-tint);
-  border-color: #cdd6ff;
+  background: var(--hm-tint-sky);
+  border-color: var(--hm-tint-sky-border);
   color: var(--hm-color-primary);
 }
 
@@ -2286,8 +2287,8 @@ select:focus-visible,
 
 /* Dark: --hm-color-surface (#161b22) is DARKER than the surface-2 (#1c222b) seg
    track, so the active pill reads as a hole. Raise it above the track instead. */
-:root[data-theme='dark'] .hm-seg__item--on {
-  background: #28303c;
+:root:not([data-theme='light']) .hm-seg__item--on {
+  background: #232B39;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.45);
 }
 :root[data-theme='dark-indigo'] .hm-seg__item--on {
@@ -2323,7 +2324,7 @@ select:focus-visible,
   font-size: 24px;
   border: 0;
   cursor: pointer;
-  box-shadow: 0 8px 20px rgba(37, 64, 255, 0.35);
+  box-shadow: 0 8px 24px rgba(56, 189, 248, 0.30);
 }
 
 /* mockup: .metricbar — CPU/RAM/Disk meters (Disk uses warning fill) */
@@ -2378,7 +2379,7 @@ select:focus-visible,
 .hm-btn--danger-outline {
   background: var(--hm-color-surface);
   color: var(--hm-color-danger-strong);
-  border: 1px solid #eec8c6;
+  border: 1px solid var(--hm-tint-coral-border);
 }
 .hm-btn--ghost {
   background: var(--hm-color-surface-2);

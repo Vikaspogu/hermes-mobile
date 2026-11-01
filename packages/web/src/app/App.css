@@ -16,6 +16,8 @@ body {
   color: var(--hm-color-text);
   font-family: var(--hm-font-sans);
   -webkit-font-smoothing: antialiased;
+  font-feature-settings: var(--hm-feature-figtree);
+  font-variant-numeric: tabular-nums;
 }
 
 *,
