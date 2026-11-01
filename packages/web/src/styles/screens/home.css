@@ -137,14 +137,16 @@
   letter-spacing: 0.3px;
 }
 
-/* mockup .thread — status dot + body + right meta (overrides prototype.css base) */
+/* mockup .thread — Obsidian card composite + right meta (overrides prototype.css base) */
 .hm-screen .hm-thread-row {
   align-items: flex-start;
   gap: 11px;
   padding: 11px 12px;
-  border-radius: 14px;
   margin-bottom: 0;
   font: inherit;
+  background: var(--hm-card-bg);
+  border: 1px solid var(--hm-color-border);
+  box-shadow: var(--hm-card-highlight);
 }
 .hm-screen .hm-thread-row__dot {
   width: 8px;
