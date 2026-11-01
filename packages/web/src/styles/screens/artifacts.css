@@ -18,10 +18,10 @@
   align-items: center;
   gap: var(--hm-space-3);
   padding: 13px 14px;
-  background: var(--hm-color-surface);
+  background: var(--hm-card-bg);
   border: 1px solid var(--hm-color-border);
   border-radius: var(--hm-radius-card);
-  box-shadow: var(--hm-elev-1);
+  box-shadow: var(--hm-card-highlight);
   text-decoration: none;
   color: inherit;
 }

@@ -3552,9 +3552,10 @@ a {
 .hm-cron-card {
   display: flex;
   flex-direction: column;
-  background: var(--hm-color-surface);
+  background: var(--hm-card-bg);
   border: 1px solid var(--hm-color-border);
   border-radius: var(--hm-radius-card);
+  box-shadow: var(--hm-card-highlight);
   overflow: hidden;
 }
 
@@ -3944,9 +3945,10 @@ a {
   align-items: center;
   gap: var(--hm-space-3);
   padding: var(--hm-space-3) var(--hm-space-4);
-  background: var(--hm-color-surface);
+  background: var(--hm-card-bg);
   border: 1px solid var(--hm-color-border);
   border-radius: var(--hm-radius-sm);
+  box-shadow: var(--hm-card-highlight);
 }
 
 .hm-skill-row__icon {
@@ -3963,8 +3965,8 @@ a {
 }
 
 .hm-skill-row[data-tag='guarded'] .hm-skill-row__icon {
-  background: #fff7ed;
-  color: #c2790f;
+  background: var(--hm-tint-amber-badge);
+  color: var(--hm-color-warning-strong);
 }
 
 .hm-skill-row[data-tag='ops'] .hm-skill-row__icon {
