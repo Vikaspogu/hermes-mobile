@@ -180,9 +180,15 @@ textarea {
   display: grid;
   grid-auto-flow: column;
   grid-auto-columns: 1fr;
-  background: var(--hm-color-surface);
-  border-top: 1px solid var(--hm-color-border);
-  padding-bottom: env(safe-area-inset-bottom, 0px);
+  gap: 4px;
+  margin: 0 14px calc(10px + env(safe-area-inset-bottom, 0px));
+  padding: 8px;
+  background: var(--hm-glass-bg);
+  -webkit-backdrop-filter: blur(20px);
+  backdrop-filter: blur(20px);
+  border: 1px solid var(--hm-glass-border);
+  border-radius: 22px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45);
 }
 
 .hm-tab {
@@ -193,12 +199,15 @@ textarea {
   flex-direction: column;
   align-items: center;
   gap: 3px;
-  padding: 9px 4px 7px;
+  padding: 10px 4px 8px;
+  border-radius: 16px;
   color: var(--hm-color-text-faint);
   cursor: pointer;
+  transition: background var(--hm-duration-fast), color var(--hm-duration-fast);
 }
 
 .hm-tab--active {
+  background: var(--hm-tint-sky);
   color: var(--hm-color-primary);
 }
 
@@ -256,8 +265,11 @@ textarea {
   left: 0;
   right: 0;
   bottom: 0;
-  background: var(--hm-color-surface);
-  border-radius: 16px 16px 0 0;
+  background: var(--hm-glass-bg);
+  /* no backdrop-filter here: the panel sits over the already-dimmed overlay,
+     stacking two 20px blurs is a measurable cost on low-end phones */
+  border-top: 1px solid var(--hm-glass-border);
+  border-radius: 22px 22px 0 0;
   padding: 8px 14px calc(14px + env(safe-area-inset-bottom, 0px));
   box-shadow: var(--hm-elev-sheet);
   animation: hm-sheet-in 0.26s cubic-bezier(0.2, 0.8, 0.2, 1);
@@ -353,7 +365,8 @@ textarea {
   margin-bottom: 8px;
   border: 1px solid var(--hm-color-border);
   border-radius: var(--hm-radius-md);
-  background: var(--hm-color-surface);
+  background: var(--hm-card-bg);
+  box-shadow: var(--hm-card-highlight);
 }
 
 .hm-more-health__line {
@@ -384,8 +397,8 @@ textarea {
   display: flex;
   flex-direction: column;
   gap: 12px;
-  /* bottom padding clears the 54px FAB (bottom:96px) so rows scroll past it */
-  padding: 14px 16px calc(84px + env(safe-area-inset-bottom, 0px));
+  /* bottom padding clears the 54px FAB (bottom:~100px) and the glass dock */
+  padding: 14px 16px calc(110px + env(safe-area-inset-bottom, 0px));
 }
 
 .hm-chats__composer {
@@ -468,9 +481,10 @@ textarea {
 
 .hm-thread-row {
   appearance: none;
-  background: var(--hm-color-surface);
+  background: var(--hm-card-bg);
   border: 1px solid var(--hm-color-border);
   border-radius: var(--hm-radius-card);
+  box-shadow: var(--hm-card-highlight);
   display: flex;
   align-items: center;
   gap: 10px;
@@ -652,11 +666,11 @@ textarea {
   position: relative;
   text-align: left;
   padding: 14px;
-  background: var(--hm-color-surface);
+  background: var(--hm-card-bg);
   border: 1px solid var(--hm-color-border);
   border-radius: 16px;
   cursor: pointer;
-  box-shadow: 0 1px 2px rgba(20, 30, 60, 0.03);
+  box-shadow: var(--hm-card-highlight);
 }
 
 .hm-home__tile-icon {
@@ -712,7 +726,8 @@ textarea {
   gap: 11px;
   text-align: left;
   padding: 12px 13px;
-  background: var(--hm-color-surface);
+  background: var(--hm-card-bg);
+  box-shadow: var(--hm-card-highlight);
   border: 1px solid var(--hm-color-border);
   border-radius: 14px;
   cursor: pointer;
@@ -816,7 +831,7 @@ textarea {
   background: var(--hm-color-primary);
   color: var(--hm-color-primary-text);
   border-radius: 18px 18px 5px 18px;
-  box-shadow: 0 6px 16px rgba(37, 64, 255, 0.18);
+  box-shadow: 0 6px 16px color-mix(in srgb, var(--hm-color-primary) 18%, transparent);
 }
 
 .hm-message--assistant {
@@ -1614,7 +1629,8 @@ body,
 .hm-update__instruction {
   padding: 10px;
   border-radius: 13px;
-  background: var(--hm-color-surface);
+  background: var(--hm-card-bg);
+  box-shadow: var(--hm-card-highlight);
   border: 1px solid var(--hm-color-border);
 }
 
@@ -1836,9 +1852,10 @@ select:focus-visible,
 /* ── Profile rows + action sheet ────────────────────────────────────── */
 .hm-profile-row {
   appearance: none;
-  background: var(--hm-color-surface);
+  background: var(--hm-card-bg);
   border: 1px solid var(--hm-color-border);
   border-radius: var(--hm-radius-card);
+  box-shadow: var(--hm-card-highlight);
   display: flex;
   align-items: center;
   gap: 12px;
@@ -1955,9 +1972,10 @@ select:focus-visible,
 .hm-offline-card {
   margin: 48px 20px;
   padding: 28px 20px;
-  background: var(--hm-color-surface);
+  background: var(--hm-card-bg);
   border: 1px solid var(--hm-color-border);
   border-radius: var(--hm-radius-card);
+  box-shadow: var(--hm-card-highlight);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -2012,8 +2030,11 @@ select:focus-visible,
     grid-auto-rows: min-content;
     gap: 4px;
     padding: 12px 0;
-    border-top: 0;
+    margin: 0;
+    border: 0;
     border-right: 1px solid var(--hm-color-border);
+    border-radius: 0;
+    box-shadow: none;
     z-index: 50;
   }
 
@@ -2222,18 +2243,19 @@ select:focus-visible,
 
 /* mockup: .card */
 .hm-card {
-  background: var(--hm-color-surface);
+  background: var(--hm-card-bg);
   border: 1px solid var(--hm-color-border);
-  border-radius: 14px;
+  box-shadow: var(--hm-card-highlight);
+  border-radius: var(--hm-radius-card);
   padding: 13px 14px;
 }
-.hm-card--lg { border-radius: 16px; }
+.hm-card--lg { border-radius: var(--hm-radius-xl); }
 
 /* mockup: .group-label — TODAY / NEEDS YOU section labels */
 .hm-group-label {
-  font-size: 11.5px;
+  font-size: var(--hm-fs-label);
   font-weight: 700;
-  letter-spacing: 0.07em;
+  letter-spacing: 0.10em;
   text-transform: uppercase;
   color: var(--hm-color-text-faint);
   padding: 10px 4px 2px;
@@ -2252,8 +2274,8 @@ select:focus-visible,
   cursor: pointer;
 }
 .hm-pill--on {
-  background: var(--hm-color-primary-tint);
-  border-color: #cdd6ff;
+  background: var(--hm-tint-sky);
+  border-color: var(--hm-tint-sky-border);
   color: var(--hm-color-primary);
 }
 
@@ -2286,8 +2308,8 @@ select:focus-visible,
 
 /* Dark: --hm-color-surface (#161b22) is DARKER than the surface-2 (#1c222b) seg
    track, so the active pill reads as a hole. Raise it above the track instead. */
-:root[data-theme='dark'] .hm-seg__item--on {
-  background: #28303c;
+:root:not([data-theme='light']) .hm-seg__item--on {
+  background: #232B39;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.45);
 }
 :root[data-theme='dark-indigo'] .hm-seg__item--on {
@@ -2310,7 +2332,7 @@ select:focus-visible,
      indicator) and scrolls away with the content */
   position: fixed;
   right: 18px;
-  bottom: calc(64px + env(safe-area-inset-bottom, 0px) + 16px);
+  bottom: calc(84px + env(safe-area-inset-bottom, 0px) + 16px);
   z-index: 30;
   width: 54px;
   height: 54px;
@@ -2323,7 +2345,7 @@ select:focus-visible,
   font-size: 24px;
   border: 0;
   cursor: pointer;
-  box-shadow: 0 8px 20px rgba(37, 64, 255, 0.35);
+  box-shadow: 0 8px 24px rgba(56, 189, 248, 0.30);
 }
 
 /* mockup: .metricbar — CPU/RAM/Disk meters (Disk uses warning fill) */
@@ -2378,7 +2400,7 @@ select:focus-visible,
 .hm-btn--danger-outline {
   background: var(--hm-color-surface);
   color: var(--hm-color-danger-strong);
-  border: 1px solid #eec8c6;
+  border: 1px solid var(--hm-tint-coral-border);
 }
 .hm-btn--ghost {
   background: var(--hm-color-surface-2);

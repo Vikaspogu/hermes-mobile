@@ -14,7 +14,7 @@ describe('font loading', () => {
     expect(link).toContain('crossorigin');
     expect(link).toContain('type="font/ttf"');
     const href = link.match(/href="([^"]+)"/u)?.[1] ?? '';
-    expect(href).toBe('./src/assets/fonts/hanken-grotesk-400.ttf');
+    expect(href).toBe('./src/assets/fonts/figtree-var.ttf');
     expect(existsSync(join(webRoot, href))).toBe(true);
   });
 

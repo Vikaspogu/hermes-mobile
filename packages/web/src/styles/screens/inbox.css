@@ -77,7 +77,8 @@
   align-items: center;
   gap: 12px;
   padding: 13px 14px;
-  background: var(--hm-color-surface);
+  background: var(--hm-card-bg);
+  box-shadow: var(--hm-card-highlight);
   border: 1px solid var(--hm-color-border);
   border-radius: 14px;
 }
@@ -95,9 +96,13 @@
   color: var(--hm-color-text-2);
 }
 .hm-notice__icon--danger {
+  background: var(--hm-tint-coral-badge);
+  border-color: var(--hm-tint-coral-border);
   color: var(--hm-color-danger);
 }
 .hm-notice__icon--success {
+  background: var(--hm-tint-emerald-badge);
+  border-color: var(--hm-tint-emerald-border);
   color: var(--hm-color-success);
 }
 .hm-notice__body {

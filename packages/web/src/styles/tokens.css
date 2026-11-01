@@ -1,49 +1,78 @@
 /* Hermes Mobile Design Tokens — CSS Variables */
-/* Prototype: /home/stasstep/PWAHermesprototype/hermes pwa design prototype */
+/* "Quiet Precision / Dark Obsidian" — dark, tactile, high-contrast system.
+   Obsidian is the DEFAULT (:root). Light is opt-in via [data-theme='light'].
+   Legacy token names (--hm-color-primary/success/warning/danger/running) are
+   kept as aliases so every existing .hm-* class keeps working. */
 
 :root {
   /* ── Fonts ──────────────────────────────────────────────────────── */
-  --hm-font-display: 'Bodoni Moda', Georgia, serif;
-  --hm-font-sans: 'Hanken Grotesk', system-ui, -apple-system, sans-serif;
+  --hm-font-display: 'Figtree', system-ui, -apple-system, sans-serif;
+  --hm-font-sans: 'Figtree', system-ui, -apple-system, sans-serif;
   --hm-font-mono: 'JetBrains Mono', 'SF Mono', 'Cascadia Code', Consolas, monospace;
 
-  /* ── Surface ────────────────────────────────────────────────────── */
-  --hm-color-bg:        #f4f6fc;
-  --hm-color-surface:   #ffffff;
-  --hm-color-surface-2: #f5f7fd;
-  --hm-color-border:    #e7eaf3;
+  /* ── Surface (deep carbon obsidian, never pure black) ───────────── */
+  --hm-color-bg:        #0B0E14;
+  --hm-color-surface:   #121620;
+  --hm-color-surface-2: #181D28;
+  --hm-color-border:    rgba(255, 255, 255, 0.06);
+
+  /* Card composite: tinted gradient + hairline + top specular highlight */
+  --hm-card-bg: linear-gradient(180deg, rgba(24, 29, 40, 0.88) 0%, rgba(16, 20, 28, 0.92) 100%);
+  --hm-card-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.04);
 
   /* ── Text ───────────────────────────────────────────────────────── */
-  --hm-color-text:       #161a27;
-  --hm-color-text-2:     #2b3346;
-  --hm-color-text-muted: #6b7384;
-  --hm-color-text-faint: #9aa2b4;
-  --hm-color-text-secondary: #868fa1;
-  --hm-color-text-subtle: #c4cad8;
+  --hm-color-text:       #F8FAFC;
+  --hm-color-text-2:     #E2E8F0;
+  --hm-color-text-muted: #94A3B8;
+  --hm-color-text-faint: #64748B;
+  --hm-color-text-secondary: #94A3B8;
+  --hm-color-text-subtle: #475569;
 
-  /* ── Primary (blue) ─────────────────────────────────────────────── */
-  --hm-color-primary:      #2540ff;
-  --hm-color-primary-tint: #eef1ff;
-  --hm-color-primary-text: #ffffff;
+  /* ── Primary = Sky (climate / interactive accent) ───────────────── */
+  --hm-color-primary:      #38BDF8;
+  --hm-color-primary-tint: rgba(56, 189, 248, 0.14);
+  --hm-color-primary-text: #0B1220;
 
   /* Backward-compat aliases used by existing .hm-* classes */
   --hm-color-accent:      var(--hm-color-primary);
   --hm-color-accent-weak: var(--hm-color-primary-tint);
   --hm-color-on-accent:   var(--hm-color-primary-text);
 
-  /* ── Semantic ───────────────────────────────────────────────────── */
-  --hm-color-success:    #15a06a;
-  --hm-color-warning:    #d98a16;
-  --hm-color-danger:     #dc4b46;
-  --hm-color-running:    #2540ff;
-  --hm-color-success-strong: #065f46;
-  --hm-color-warning-strong: #92400e;
-  --hm-color-danger-strong:  #991b1b;
+  /* ── Semantic states ────────────────────────────────────────────── */
+  /* Emerald: secure / passed / docked · Amber: active / in-use / running
+     Sky: climate / telemetry · Coral: alert / waiting / failed          */
+  --hm-color-success:    #34D399;
+  --hm-color-warning:    #FBBF24;
+  --hm-color-danger:     #FB7185;
+  --hm-color-running:    #FBBF24;
+  --hm-color-info:       #38BDF8;
+  --hm-color-success-strong: #6EE7B7;
+  --hm-color-warning-strong: #FCD34D;
+  --hm-color-danger-strong:  #FDA4AF;
 
-  --hm-color-success-bg: #e3fbef;
-  --hm-color-warning-bg: #fff7ed;
-  --hm-color-danger-bg:  #fdeaea;
-  --hm-color-info-bg:    #e7f4fd;
+  /* Quiet dark backgrounds per state (for badges, chips, banners) */
+  --hm-color-success-bg: rgba(16, 185, 129, 0.16);
+  --hm-color-warning-bg: rgba(245, 158, 11, 0.18);
+  --hm-color-danger-bg:  rgba(244, 63, 94, 0.18);
+  --hm-color-info-bg:    rgba(56, 189, 248, 0.14);
+
+  /* Semantic tint sets: active surface tint / border / icon badge / accent */
+  --hm-tint-emerald: rgba(16, 185, 129, 0.14);
+  --hm-tint-emerald-border: rgba(52, 211, 153, 0.30);
+  --hm-tint-emerald-badge: rgba(16, 185, 129, 0.18);
+  --hm-tint-amber: rgba(245, 158, 11, 0.16);
+  --hm-tint-amber-border: rgba(251, 191, 36, 0.34);
+  --hm-tint-amber-badge: rgba(245, 158, 11, 0.20);
+  --hm-tint-sky: rgba(56, 189, 248, 0.14);
+  --hm-tint-sky-border: rgba(56, 189, 248, 0.30);
+  --hm-tint-sky-badge: rgba(56, 189, 248, 0.18);
+  --hm-tint-coral: rgba(244, 63, 94, 0.16);
+  --hm-tint-coral-border: rgba(251, 113, 133, 0.36);
+  --hm-tint-coral-badge: rgba(244, 63, 94, 0.20);
+
+  /* ── Glass (floating dock, sheets) ──────────────────────────────── */
+  --hm-glass-bg: rgba(15, 19, 28, 0.88);
+  --hm-glass-border: rgba(255, 255, 255, 0.08);
 
   /* ── Spacing (4 px base) ────────────────────────────────────────── */
   --hm-space-1: 4px;
@@ -57,24 +86,24 @@
   /* ── Radius ─────────────────────────────────────────────────────── */
   --hm-radius-xs:   6px;
   --hm-radius-sm:   8px;
-  --hm-radius-md:   11px;
-  --hm-radius-card: 14px;
-  --hm-radius-lg:   15px;
-  --hm-radius-xl:   16px;
+  --hm-radius-md:   12px;
+  --hm-radius-card: 18px;
+  --hm-radius-lg:   16px;
+  --hm-radius-xl:   22px;
   --hm-radius-full: 999px;
 
   /* ── Elevation ──────────────────────────────────────────────────── */
-  --hm-elev-1:     0 1px 2px rgba(20, 30, 60, 0.04), 0 1px 1px rgba(20, 30, 60, 0.03);
-  --hm-elev-2:     0 4px 12px rgba(20, 30, 60, 0.08);
-  --hm-elev-3:     0 6px 20px rgba(37, 64, 255, 0.07);
-  --hm-elev-sheet: 0 -8px 28px rgba(20, 30, 60, 0.14);
-  --hm-elev-drawer: 14px 0 40px rgba(15, 20, 40, 0.18);
+  --hm-elev-1:     0 1px 2px rgba(0, 0, 0, 0.28), 0 1px 1px rgba(0, 0, 0, 0.20);
+  --hm-elev-2:     0 4px 12px rgba(0, 0, 0, 0.34);
+  --hm-elev-3:     0 6px 20px rgba(0, 0, 0, 0.40);
+  --hm-elev-sheet: 0 -8px 28px rgba(0, 0, 0, 0.46);
+  --hm-elev-drawer: 14px 0 40px rgba(0, 0, 0, 0.50);
 
   /* ── Touch ──────────────────────────────────────────────────────── */
   --hm-tap-min: 44px;
 
-  /* ── Typography ─────────────────────────────────────────────────── */
-  --hm-fs-display: 28px;
+  /* ── Typography (Figtree UI, JetBrains Mono telemetry) ───────────── */
+  --hm-fs-display: 24px;
   --hm-fs-title:   20px;
   --hm-fs-heading: 16px;
   --hm-fs-body:    15px;
@@ -86,6 +115,8 @@
   --hm-fw-medium:   500;
   --hm-fw-semibold: 600;
   --hm-fw-bold:     700;
+
+  --hm-feature-figtree: "cv02", "cv03", "cv04", "cv11";
 
   /* ── Motion ─────────────────────────────────────────────────────── */
   --hm-duration-fast:   150ms;
@@ -134,62 +165,63 @@
   50%, 100% { opacity: 0; }
 }
 
-/* ── Dark theme ─────────────────────────────────────────────────────── */
-:root[data-theme='dark'] {
-  --hm-color-bg:        #0e1116;
-  --hm-color-surface:   #161b22;
-  --hm-color-surface-2: #1c222b;
-  --hm-color-border:    #2a313c;
+/* ── Light theme (opt-in; kept for users who prefer it) ──────────────── */
+:root[data-theme='light'] {
+  --hm-color-bg:        #f4f6fc;
+  --hm-color-surface:   #ffffff;
+  --hm-color-surface-2: #f5f7fd;
+  --hm-color-border:    #e7eaf3;
 
-  --hm-color-text:       #e6e9ee;
-  --hm-color-text-2:     #c8cdd8;
-  --hm-color-text-muted: #9aa3b0;
-  --hm-color-text-faint: #6b7382;
+  --hm-card-bg: linear-gradient(180deg, #ffffff 0%, #fbfcff 100%);
+  --hm-card-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.9);
 
-  --hm-color-primary:      #5c7cff;
-  --hm-color-primary-tint: #1b2440;
-  --hm-color-primary-text: #0e1116;
+  --hm-color-text:       #161a27;
+  --hm-color-text-2:     #2b3346;
+  --hm-color-text-muted: #6b7384;
+  --hm-color-text-faint: #9aa2b4;
+  --hm-color-text-secondary: #868fa1;
+  --hm-color-text-subtle: #c4cad8;
 
-  --hm-color-success:    #51cf66;
-  --hm-color-warning:    #ffc14d;
-  --hm-color-danger:     #ff6b6b;
-  --hm-color-running:    #5c7cff;
-  --hm-color-success-strong: #4ade80;
-  --hm-color-warning-strong: #fbbf24;
-  --hm-color-danger-strong:  #f87171;
-  --hm-color-success-bg: #11261a;
-  --hm-color-warning-bg: #2a2110;
-  --hm-color-danger-bg:  #2a1414;
+  --hm-color-primary:      #2540ff;
+  --hm-color-primary-tint: #eef1ff;
+  --hm-color-primary-text: #ffffff;
+
+  --hm-color-success:    #15a06a;
+  --hm-color-warning:    #d98a16;
+  --hm-color-danger:     #dc4b46;
+  --hm-color-running:    #2540ff;
+  --hm-color-success-strong: #065f46;
+  --hm-color-warning-strong: #92400e;
+  --hm-color-danger-strong:  #991b1b;
+  --hm-color-success-bg: #e3fbef;
+  --hm-color-warning-bg: #fff7ed;
+  --hm-color-danger-bg:  #fdeaea;
+  --hm-color-info-bg:    #e7f4fd;
+
+  --hm-tint-emerald: #e3fbef;
+  --hm-tint-emerald-border: #b6ecd4;
+  --hm-tint-emerald-badge: #d5f6e7;
+  --hm-tint-amber: #fff7ed;
+  --hm-tint-amber-border: #fcd9a8;
+  --hm-tint-amber-badge: #fdeed3;
+  --hm-tint-sky: #e7f4fd;
+  --hm-tint-sky-border: #b3ddf5;
+  --hm-tint-sky-badge: #d6eefb;
+  --hm-tint-coral: #fdeaea;
+  --hm-tint-coral-border: #f7c2c5;
+  --hm-tint-coral-badge: #fbd9da;
+
+  --hm-glass-bg: rgba(255, 255, 255, 0.88);
+  --hm-glass-border: rgba(20, 30, 60, 0.10);
+
+  --hm-elev-1:     0 1px 2px rgba(20, 30, 60, 0.04), 0 1px 1px rgba(20, 30, 60, 0.03);
+  --hm-elev-2:     0 4px 12px rgba(20, 30, 60, 0.08);
+  --hm-elev-3:     0 6px 20px rgba(37, 64, 255, 0.07);
+  --hm-elev-sheet: 0 -8px 28px rgba(20, 30, 60, 0.14);
+  --hm-elev-drawer: 14px 0 40px rgba(15, 20, 40, 0.18);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme]) {
-    --hm-color-bg:        #0e1116;
-    --hm-color-surface:   #161b22;
-    --hm-color-surface-2: #1c222b;
-    --hm-color-border:    #2a313c;
-
-    --hm-color-text:       #e6e9ee;
-    --hm-color-text-2:     #c8cdd8;
-    --hm-color-text-muted: #9aa3b0;
-    --hm-color-text-faint: #6b7382;
-
-    --hm-color-primary:      #5c7cff;
-    --hm-color-primary-tint: #1b2440;
-    --hm-color-primary-text: #0e1116;
-
-    --hm-color-success:    #51cf66;
-    --hm-color-warning:    #ffc14d;
-    --hm-color-danger:     #ff6b6b;
-    --hm-color-running:    #5c7cff;
-    --hm-color-success-strong: #4ade80;
-    --hm-color-warning-strong: #fbbf24;
-    --hm-color-danger-strong:  #f87171;
-    --hm-color-success-bg: #11261a;
-    --hm-color-warning-bg: #2a2110;
-    --hm-color-danger-bg:  #2a1414;
-  }
-}
+/* ── Dark (explicit) = Obsidian: no override needed, :root default is Obsidian. ── */
 
 /* ── Reduced motion ─────────────────────────────────────────────────── */
 @media (prefers-reduced-motion: reduce) {
@@ -232,6 +264,21 @@
   --hm-color-warning-bg: #2a2110;
   --hm-color-danger-bg:  #2a1418;
   --hm-color-info-bg:    #16203a;
+  /* Flat legacy surfaces — don't inherit the Obsidian card gradient / tints */
+  --hm-card-bg: var(--hm-color-surface);
+  --hm-card-highlight: none;
+  --hm-tint-emerald: var(--hm-color-success-bg);
+  --hm-tint-emerald-border: var(--hm-color-success-bg);
+  --hm-tint-emerald-badge: var(--hm-color-success-bg);
+  --hm-tint-amber: var(--hm-color-warning-bg);
+  --hm-tint-amber-border: var(--hm-color-warning-bg);
+  --hm-tint-amber-badge: var(--hm-color-warning-bg);
+  --hm-tint-sky: var(--hm-color-info-bg);
+  --hm-tint-sky-border: var(--hm-color-info-bg);
+  --hm-tint-sky-badge: var(--hm-color-info-bg);
+  --hm-tint-coral: var(--hm-color-danger-bg);
+  --hm-tint-coral-border: var(--hm-color-danger-bg);
+  --hm-tint-coral-badge: var(--hm-color-danger-bg);
 }
 
 /* ── Dark · Mocha (Catppuccin Mocha, pastel mauve accent) ─────────────── */
@@ -263,6 +310,21 @@
   --hm-color-warning-bg: #383322;
   --hm-color-danger-bg:  #3d2832;
   --hm-color-info-bg:    #28304a;
+  /* Flat legacy surfaces — don't inherit the Obsidian card gradient / tints */
+  --hm-card-bg: var(--hm-color-surface);
+  --hm-card-highlight: none;
+  --hm-tint-emerald: var(--hm-color-success-bg);
+  --hm-tint-emerald-border: var(--hm-color-success-bg);
+  --hm-tint-emerald-badge: var(--hm-color-success-bg);
+  --hm-tint-amber: var(--hm-color-warning-bg);
+  --hm-tint-amber-border: var(--hm-color-warning-bg);
+  --hm-tint-amber-badge: var(--hm-color-warning-bg);
+  --hm-tint-sky: var(--hm-color-info-bg);
+  --hm-tint-sky-border: var(--hm-color-info-bg);
+  --hm-tint-sky-badge: var(--hm-color-info-bg);
+  --hm-tint-coral: var(--hm-color-danger-bg);
+  --hm-tint-coral-border: var(--hm-color-danger-bg);
+  --hm-tint-coral-badge: var(--hm-color-danger-bg);
 }
 
 /* ── Dark · Graphite (iOS-neutral graphite, system cyan accent) ───────── */
@@ -294,4 +356,19 @@
   --hm-color-warning-bg: #2a2408;
   --hm-color-danger-bg:  #2a1512;
   --hm-color-info-bg:    #0e2230;
+  /* Flat legacy surfaces — don't inherit the Obsidian card gradient / tints */
+  --hm-card-bg: var(--hm-color-surface);
+  --hm-card-highlight: none;
+  --hm-tint-emerald: var(--hm-color-success-bg);
+  --hm-tint-emerald-border: var(--hm-color-success-bg);
+  --hm-tint-emerald-badge: var(--hm-color-success-bg);
+  --hm-tint-amber: var(--hm-color-warning-bg);
+  --hm-tint-amber-border: var(--hm-color-warning-bg);
+  --hm-tint-amber-badge: var(--hm-color-warning-bg);
+  --hm-tint-sky: var(--hm-color-info-bg);
+  --hm-tint-sky-border: var(--hm-color-info-bg);
+  --hm-tint-sky-badge: var(--hm-color-info-bg);
+  --hm-tint-coral: var(--hm-color-danger-bg);
+  --hm-tint-coral-border: var(--hm-color-danger-bg);
+  --hm-tint-coral-badge: var(--hm-color-danger-bg);
 }

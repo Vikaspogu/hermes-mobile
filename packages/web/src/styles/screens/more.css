@@ -12,10 +12,10 @@
 }
 
 .hm-more-health {
-  background: var(--hm-color-surface);
+  background: var(--hm-card-bg);
   border: 1px solid var(--hm-color-border-soft);
   border-radius: 14px;
-  box-shadow: var(--hm-elev-1);
+  box-shadow: var(--hm-card-highlight);
   padding: 14px;
   display: flex;
   flex-direction: column;
@@ -56,10 +56,10 @@
   gap: 12px;
   width: 100%;
   text-align: left;
-  background: var(--hm-color-surface);
+  background: var(--hm-card-bg);
   border: 1px solid var(--hm-color-border-soft);
   border-radius: 14px;
-  box-shadow: var(--hm-elev-1);
+  box-shadow: var(--hm-card-highlight);
   padding: 12px 14px;
   cursor: pointer;
 }

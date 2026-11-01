@@ -32,7 +32,7 @@
 }
 .hm-profile-card--active {
   background: var(--hm-color-primary-tint);
-  border-color: #cdd6ff;
+  border-color: color-mix(in srgb, var(--hm-color-primary) 35%, transparent);
 }
 
 .hm-profile-card__main {
