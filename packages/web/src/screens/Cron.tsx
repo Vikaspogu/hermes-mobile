@@ -283,8 +283,39 @@ export function Cron({ rest, onNavigate }: CronProps) {
 
       {error && <div className="hm-warning-banner hm-warning-banner--error">{error}</div>}
       {loading && jobs.length === 0 && <p className="hm-muted hm-loading">Loading schedules…</p>}
-
       <div className="hm-cron__list">
+        <div className="hm-qp-hero work-hero" data-testid="cron-hero">
+          <div className="hm-qp-hero__top">
+            <div>
+              <div className="hm-qp-hero__title">Automation &amp; Cron</div>
+              <div className="hm-qp-hero__telemetry">
+                {loading && jobs.length === 0
+                  ? 'SYNCING SCHEDULES…'
+                  : `${jobs.filter((j) => !isPaused(j)).length} ENABLED · ${jobs.filter((j) => isPaused(j)).length} PAUSED`}
+              </div>
+            </div>
+            <span className="hm-qp-presence hm-qp-presence--sky">
+              <span className="hm-qp-pill__dot" aria-hidden="true" />
+              SCHEDULER
+            </span>
+          </div>
+          <div className="hm-qp-pills">
+            <span className="hm-qp-pill hm-qp-pill--sky">
+              <span className="hm-qp-pill__dot" aria-hidden="true" />
+              {loading && jobs.length === 0 ? 'SYNCING' : `${jobs.filter((j) => !isPaused(j)).length} ACTIVE`}
+            </span>
+            <span className="hm-qp-pill hm-qp-pill--emerald">
+              <span className="hm-qp-pill__dot" aria-hidden="true" />
+              {loading && jobs.length === 0 ? 'STANDBY' : `${jobs.length} TOTAL`}
+            </span>
+          </div>
+        </div>
+
+        <div className="hm-qp-section__head">
+          <span className="hm-qp-kicker">SCHEDULED JOBS</span>
+          <span className="hm-qp-meta-badge">{jobs.length} JOBS</span>
+        </div>
+
         {jobs.length === 0 && !loading && (
           <div className="hm-empty-state hm-empty-state--inline">
             <p className="hm-body-semibold">No schedules yet</p>
@@ -292,54 +323,62 @@ export function Cron({ rest, onNavigate }: CronProps) {
           </div>
         )}
 
-        {jobs.map((job) => {
-          const title = getJobTitle(job);
-          const paused = isPaused(job);
-          const scheduleText = describeSchedule(
-            job.schedule,
-            job.scheduleDisplay ?? job.expression,
-            ENGLISH_SCHEDULE_STRINGS,
-          );
-          const next = relFuture(job.nextRun);
-          const lastLabel =
-            job.lastError || (job.lastStatus && job.lastStatus !== 'ok')
+        {jobs
+          .slice()
+          .sort((a, b) => Number(isPaused(a)) - Number(isPaused(b)))
+          .map((job) => {
+            const title = getJobTitle(job);
+            const paused = isPaused(job);
+            const scheduleText = describeSchedule(
+              job.schedule,
+              job.scheduleDisplay ?? job.expression,
+              ENGLISH_SCHEDULE_STRINGS,
+            );
+            const next = relFuture(job.nextRun);
+            const hasErr = Boolean(job.lastError || (job.lastStatus && job.lastStatus !== 'ok'));
+            const lastLabel = hasErr
               ? '✗'
               : job.lastRun || job.lastStatus === 'ok'
                 ? '✓'
                 : '—';
-          const meta = `${to12h(scheduleText)} · next ${next ?? '—'} · last ${lastLabel}`;
-          return (
-            <div
-              key={`${job.profile}:${job.id}`}
-              className={`work-listrow${paused ? ' work-listrow--paused' : ''}`}
-            >
-              <button
-                type="button"
-                className="work-listrow__main"
-                onClick={() => openDetail(job)}
-                aria-label={`Open ${title}`}
+            const meta = `${to12h(scheduleText)} · next ${next ?? '—'} · last ${lastLabel}`;
+            const stateClass = paused
+              ? ' work-listrow--paused'
+              : hasErr
+                ? ' work-listrow--error'
+                : ' work-listrow--active';
+            return (
+              <div
+                key={`${job.profile}:${job.id}`}
+                className={`work-listrow${stateClass}`}
               >
-                <span className="work-listrow__icon" aria-hidden="true">
-                  {jobEmoji(job)}
-                </span>
-                <span className="work-listrow__body">
-                  <span className="work-listrow__name">{title}</span>
-                  <span className="work-listrow__meta">{meta}</span>
-                </span>
-              </button>
-              <label className="hm-toggle" onClick={(e) => e.stopPropagation()}>
-                <input
-                  type="checkbox"
-                  checked={!paused}
-                  disabled={actionLoading === `pause:${job.id}` || actionLoading === `resume:${job.id}`}
-                  onChange={() => void handlePauseResume(job)}
-                  aria-label={paused ? `${title} paused` : `${title} enabled`}
-                />
-                <span className="hm-toggle__track" aria-hidden="true" />
-              </label>
-            </div>
-          );
-        })}
+                <button
+                  type="button"
+                  className="work-listrow__main"
+                  onClick={() => openDetail(job)}
+                  aria-label={`Open ${title}`}
+                >
+                  <span className="work-listrow__icon" aria-hidden="true">
+                    {jobEmoji(job)}
+                  </span>
+                  <span className="work-listrow__body">
+                    <span className="work-listrow__name">{title}</span>
+                    <span className="work-listrow__meta">{meta}</span>
+                  </span>
+                </button>
+                <label className="hm-toggle" onClick={(e) => e.stopPropagation()}>
+                  <input
+                    type="checkbox"
+                    checked={!paused}
+                    disabled={actionLoading === `pause:${job.id}` || actionLoading === `resume:${job.id}`}
+                    onChange={() => void handlePauseResume(job)}
+                    aria-label={paused ? `${title} paused` : `${title} enabled`}
+                  />
+                  <span className="hm-toggle__track" aria-hidden="true" />
+                </label>
+              </div>
+            );
+          })}
       </div>
 
       <p className="work-footnote">

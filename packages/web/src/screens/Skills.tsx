@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import type { RestClient } from '@hermes-pwa/core';
 import { Icon, type IconName } from '../components/Icon';
 
@@ -93,8 +93,39 @@ export function Skills({ rest }: SkillsProps) {
       .finally(() => setLoading(false));
   }, [rest]);
 
+  const sortedSkills = useMemo(
+    () => skills.slice().sort((a, b) => Number(b.enabled) - Number(a.enabled)),
+    [skills],
+  );
+  const enabledCount = useMemo(() => skills.filter((s) => s.enabled).length, [skills]);
+
   return (
     <div className="hm-skills">
+      <div className="hm-qp-hero" data-testid="skills-hero">
+        <div className="hm-qp-hero__top">
+          <div>
+            <div className="hm-qp-hero__title">Capability Registry</div>
+            <div className="hm-qp-hero__telemetry">
+              {enabledCount} ENABLED · {skills.length} TOTAL
+            </div>
+          </div>
+          <span className="hm-qp-presence hm-qp-presence--sky">
+            <span className="hm-qp-pill__dot" aria-hidden="true" />
+            TOOLSET
+          </span>
+        </div>
+        <div className="hm-qp-pills">
+          <span className="hm-qp-pill hm-qp-pill--emerald">
+            <span className="hm-qp-pill__dot" aria-hidden="true" />
+            {enabledCount} ACTIVE
+          </span>
+          <span className="hm-qp-pill hm-qp-pill--sky">
+            <span className="hm-qp-pill__dot" aria-hidden="true" />
+            {skills.length} REGISTERED
+          </span>
+        </div>
+      </div>
+
       <p className="hm-skills__subtitle">Skills &amp; tools available to the active profile.</p>
 
       {error && <div className="hm-warning-banner hm-warning-banner--error">{error}</div>}
@@ -105,24 +136,35 @@ export function Skills({ rest }: SkillsProps) {
           <p>No skills available</p>
         </div>
       ) : (
-        <div className="hm-skills__list">
-          {skills.map((skill) => (
-            <div key={skill.id} className="hm-skill-row" data-testid="skill-row" data-tag={skill.tag}>
-              <span className="hm-skill-row__icon" aria-hidden="true">
-                {skill.icon && isIconName(skill.icon) ? (
-                  <Icon name={skill.icon} size={18} />
-                ) : (
-                  skill.icon ?? '⚡'
-                )}
-              </span>
-              <span className="hm-skill-row__body">
-                <span className="hm-skill-row__name">{skill.name}</span>
-                <span className="hm-skill-row__desc hm-muted">{skill.description}</span>
-              </span>
-              <span className="hm-skill-row__tag">{TAG_LABEL[skill.tag]}</span>
-            </div>
-          ))}
-        </div>
+        <>
+          <div className="hm-qp-section__head">
+            <span className="hm-qp-kicker">REGISTERED SKILLS</span>
+            <span className="hm-qp-meta-badge">{skills.length} TOOLS</span>
+          </div>
+          <div className="hm-skills__list">
+            {sortedSkills.map((skill) => (
+              <div
+                key={skill.id}
+                className={`hm-skill-row${skill.enabled ? ' hm-skill-row--enabled' : ' hm-skill-row--disabled'}${skill.tag === 'guarded' ? ' hm-skill-row--guarded' : ''}`}
+                data-testid="skill-row"
+                data-tag={skill.tag}
+              >
+                <span className="hm-skill-row__icon" aria-hidden="true">
+                  {skill.icon && isIconName(skill.icon) ? (
+                    <Icon name={skill.icon} size={18} />
+                  ) : (
+                    skill.icon ?? '⚡'
+                  )}
+                </span>
+                <span className="hm-skill-row__body">
+                  <span className="hm-skill-row__name">{skill.name}</span>
+                  <span className="hm-skill-row__desc hm-muted">{skill.description}</span>
+                </span>
+                <span className="hm-skill-row__tag">{TAG_LABEL[skill.tag]}</span>
+              </div>
+            ))}
+          </div>
+        </>
       )}
     </div>
   );

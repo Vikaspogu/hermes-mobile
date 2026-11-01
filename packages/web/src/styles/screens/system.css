@@ -1,15 +1,14 @@
-/* system.css — M13 System screen (mockup-parity v2).
-   Uses shared atoms from prototype.css: hm-card, hm-dot, hm-metricbar,
-   hm-btn (--ghost / --danger-outline), hm-group-label. */
+/* system.css — M13 System screen (Quiet Precision / Dark Obsidian).
+   Uses shared atoms from prototype.css & theme.css: hm-qp-hero, hm-qp-section,
+   hm-qp-kicker, hm-qp-meta-badge, hm-card, hm-dot, hm-metricbar, hm-btn. */
 
 .hm-system {
-  gap: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
 }
 
-/* mockup: .dock-title — "● Gateway running" + uptime on the right */
 .hm-system__gateway-title {
-  font-size: 13.5px;
-  font-weight: 700;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -22,33 +21,47 @@
 }
 .hm-system__gateway-uptime {
   font-size: 12px;
-  font-weight: 400;
+  font-family: var(--hm-font-mono);
+  font-variant-numeric: tabular-nums;
+  font-weight: 500;
   color: var(--hm-color-text-muted);
+  margin-top: 4px;
 }
 
-/* mockup: .dock-row — Restart… / Stop… side by side */
 .hm-system__gateway-actions {
   display: flex;
   gap: 10px;
-  margin-top: 10px;
+  margin-top: 12px;
 }
 .hm-system__gateway-actions .hm-btn {
   font-size: 13px;
   font-weight: 600;
 }
 
-/* mockup: stats card — label above each metricbar, 10px between metrics */
+.hm-system__metrics {
+  background: var(--hm-card-bg);
+  border: 1px solid var(--hm-color-border);
+  border-radius: 18px;
+  box-shadow: var(--hm-card-highlight);
+}
 .hm-system__metric + .hm-system__metric {
   margin-top: 10px;
 }
 .hm-system__metric-label {
   font-size: 12px;
   font-family: var(--hm-font-mono);
+  font-variant-numeric: tabular-nums;
   color: var(--hm-color-text-muted);
   margin-bottom: 4px;
 }
 
-/* mockup: .listrow — health-check row */
+.hm-system__checks-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* Health-check row — Quiet Precision Dark Obsidian card + semantic active tint */
 .hm-system__check {
   display: flex;
   align-items: center;
@@ -56,24 +69,37 @@
   padding: 13px 14px;
   background: var(--hm-card-bg);
   border: 1px solid var(--hm-color-border);
-  border-radius: 14px;
+  border-radius: 18px;
   box-shadow: var(--hm-card-highlight);
   cursor: pointer;
   text-align: left;
   width: 100%;
   font: inherit;
   color: var(--hm-color-text);
+  transition: transform 0.14s ease, border-color 0.14s ease;
+}
+.hm-system__check--ok {
+  background: var(--hm-tint-emerald-surface);
+  border-color: var(--hm-tint-emerald-border);
+}
+.hm-system__check--warn {
+  background: var(--hm-tint-rose-surface);
+  border-color: var(--hm-tint-rose-border);
+}
+.hm-system__check--running {
+  background: var(--hm-tint-amber-surface);
+  border-color: var(--hm-tint-amber-border);
 }
 .hm-system__check:disabled {
   opacity: 0.6;
   cursor: default;
 }
 
-/* mockup: .lr-icon — 38px rounded-square status icon */
+/* 38px x 38px rounded-12px status icon squircle */
 .hm-system__check-icon {
   width: 38px;
   height: 38px;
-  border-radius: 11px;
+  border-radius: 12px;
   background: var(--hm-color-surface-2);
   border: 1px solid var(--hm-color-border);
   display: flex;
@@ -86,34 +112,45 @@
 .hm-system__check-icon--ok {
   background: var(--hm-tint-emerald-badge);
   border-color: var(--hm-tint-emerald-border);
-  color: var(--hm-color-success);
+  color: var(--hm-tint-emerald-accent);
 }
 .hm-system__check-icon--warn {
-  background: var(--hm-tint-amber-badge);
-  border-color: var(--hm-tint-amber-border);
-  color: var(--hm-color-warning-strong);
+  background: var(--hm-tint-rose-badge);
+  border-color: var(--hm-tint-rose-border);
+  color: var(--hm-tint-rose-accent);
 }
 .hm-system__check-icon--idle { color: var(--hm-color-text-faint); }
 
 .hm-system__check-body {
   flex: 1;
+  min-width: 0;
   display: flex;
   flex-direction: column;
 }
 .hm-system__check-title {
-  font-size: 14.5px;
-  font-weight: 600;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: -0.015em;
+  color: var(--hm-color-text);
 }
 .hm-system__check-sub {
   font-size: 12px;
+  font-family: var(--hm-font-mono);
+  font-variant-numeric: tabular-nums;
   color: var(--hm-color-text-muted);
-  margin-top: 1px;
+  margin-top: 2px;
+}
+.hm-system__check--ok .hm-system__check-sub {
+  color: var(--hm-tint-emerald-accent);
+}
+.hm-system__check--warn .hm-system__check-sub {
+  color: var(--hm-tint-rose-accent);
 }
 
-/* mockup: .lr-right "fix" link */
 .hm-system__check-fix {
   margin-left: auto;
-  color: var(--hm-color-primary);
-  font-size: 12.5px;
+  color: var(--hm-tint-rose-accent);
+  font-family: var(--hm-font-mono);
+  font-size: 12px;
   font-weight: 600;
 }

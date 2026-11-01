@@ -124,6 +124,24 @@ export function Artifacts({ rest }: ArtifactsProps) {
             </div>
           ) : (
             <>
+              <div className="hm-qp-hero" data-testid="artifacts-hero">
+                <div className="hm-qp-hero__top">
+                  <div>
+                    <div className="hm-qp-hero__title">Session Outputs</div>
+                    <div className="hm-qp-hero__telemetry">
+                      {artifacts.length} ARTIFACTS · SESSION {sessionId.slice(0, 8).toUpperCase()}
+                    </div>
+                  </div>
+                  <span className="hm-qp-presence hm-qp-presence--sky">
+                    <span className="hm-qp-pill__dot" aria-hidden="true" />
+                    INDEXED
+                  </span>
+                </div>
+              </div>
+              <div className="hm-qp-section__head">
+                <span className="hm-qp-kicker">GENERATED FILES</span>
+                <span className="hm-qp-meta-badge">{artifacts.length} ITEMS</span>
+              </div>
               {artifacts.map((a) => (
                 <ArtifactRow key={a.id} artifact={a} />
               ))}

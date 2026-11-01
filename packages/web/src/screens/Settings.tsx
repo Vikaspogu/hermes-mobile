@@ -204,17 +204,49 @@ export function Settings({ rest, onNavigate, onLogout }: SettingsProps) {
       {modelError && <div className="hm-warning-banner hm-warning-banner--error">{modelError}</div>}
       {pushError && <div className="hm-warning-banner hm-warning-banner--error">{pushError}</div>}
 
-      <div className="hm-group-label hm-settings__group-label--first">Connection</div>
+      <div className="hm-qp-hero" data-testid="settings-hero">
+        <div className="hm-qp-hero__top">
+          <div>
+            <div className="hm-qp-hero__title">Client Preferences</div>
+            <div className="hm-qp-hero__telemetry">
+              PROFILE {(activeName || 'default').toUpperCase()} · {modelLabel}
+            </div>
+          </div>
+          <span className="hm-qp-presence hm-qp-presence--emerald">
+            <span className="hm-qp-pill__dot" aria-hidden="true" />
+            CONFIGURED
+          </span>
+        </div>
+        <div className="hm-qp-pills">
+          <span className="hm-qp-pill hm-qp-pill--sky">
+            <span className="hm-qp-pill__dot" aria-hidden="true" />
+            {THEME_LABELS[theme]}
+          </span>
+          <span className={`hm-qp-pill ${devicePushEnabled ? 'hm-qp-pill--emerald' : 'hm-qp-pill--amber'}`}>
+            <span className="hm-qp-pill__dot" aria-hidden="true" />
+            PUSH {devicePushEnabled ? 'ON' : 'OFF'}
+          </span>
+        </div>
+      </div>
+
+      <div className="hm-qp-section__head">
+        <span className="hm-qp-kicker hm-group-label hm-settings__group-label--first">Connection</span>
+        <span className="hm-qp-meta-badge">2 ITEMS</span>
+      </div>
       <Row title="Gateway URL" sub={gatewayUrl} mono right={<Chevron />} />
       <Row
         title="Model"
         sub={`${modelLabel} · managed in Profiles`}
+        mono
         right={<span className="hm-set-row__link">Profiles ›</span>}
         onClick={() => onNavigate('profiles')}
         ariaLabel="Manage model in Profiles"
       />
 
-      <div className="hm-group-label">Notifications</div>
+      <div className="hm-qp-section__head">
+        <span className="hm-qp-kicker hm-group-label">Notifications</span>
+        <span className="hm-qp-meta-badge">3 TOGGLES</span>
+      </div>
       <Row
         title="Enable on this device"
         right={
@@ -250,7 +282,10 @@ export function Settings({ rest, onNavigate, onLogout }: SettingsProps) {
         <p className="hm-settings__note">iPhone/iPad: install Hermes Mobile to Home Screen before enabling notifications.</p>
       )}
 
-      <div className="hm-group-label">Appearance</div>
+      <div className="hm-qp-section__head">
+        <span className="hm-qp-kicker hm-group-label">Appearance</span>
+        <span className="hm-qp-meta-badge">THEME</span>
+      </div>
       <Row
         title="Theme"
         sub={THEME_LABELS[theme]}
@@ -259,12 +294,15 @@ export function Settings({ rest, onNavigate, onLogout }: SettingsProps) {
         ariaLabel={`Theme: ${THEME_LABELS[theme]}. Tap to change.`}
       />
 
-      <div className="hm-group-label">About</div>
+      <div className="hm-qp-section__head">
+        <span className="hm-qp-kicker hm-group-label">About</span>
+        <span className="hm-qp-meta-badge">v{HERMES_PWA_VERSION_LABEL}</span>
+      </div>
       <Row
         title={`Hermes PWA v${HERMES_PWA_VERSION_LABEL}`}
         sub={`Gateway ${stats?.version ?? '—'} · plugin hermes-pwa`}
+        mono
       />
-
       <button type="button" className="hm-btn hm-btn--danger-outline hm-settings__logout" onClick={onLogout}>
         Log out
       </button>

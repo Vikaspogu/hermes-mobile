@@ -123,20 +123,53 @@
   color: var(--hm-color-text-muted);
 }
 
-/* Collapsed tool steps → mockup .steps card */
+/* Tool steps — Quiet Precision Dark Obsidian card + Amber active tint when running */
+.hm-chat .hm-tool-group {
+  background: var(--hm-card-bg);
+  border: 1px solid var(--hm-color-border);
+  border-radius: 18px;
+  box-shadow: var(--hm-card-highlight);
+}
+.hm-chat .hm-tool-group--running {
+  background: var(--hm-tint-amber-surface);
+  border-color: var(--hm-tint-amber-border);
+}
+.hm-chat .hm-tool-group--running .hm-tool-group__header-icon {
+  background: var(--hm-tint-amber-badge);
+  color: var(--hm-tint-amber-accent);
+  border-color: var(--hm-tint-amber-border);
+}
+.hm-chat .hm-tool-group__header-meta,
+.hm-chat .hm-tool-group__row-count {
+  font-family: var(--hm-font-mono);
+  font-variant-numeric: tabular-nums;
+}
 .hm-chat .hm-tool-group--open .hm-tool-group__header {
   border-bottom: 1px solid var(--hm-color-border);
   padding-bottom: 8px;
 }
 
-/* Live status → mockup .working line (pulse dot + primary text, no avatar) */
+/* Inline approval — Amber (low risk) / Coral Rose (high risk) semantic active tint */
+.hm-approval-inline {
+  background: var(--hm-tint-amber-surface);
+  border: 1px solid var(--hm-tint-amber-border);
+  border-radius: 16px;
+  box-shadow: var(--hm-card-highlight);
+}
+.hm-approval-inline--high {
+  background: var(--hm-tint-rose-surface);
+  border-color: var(--hm-tint-rose-border);
+}
+
+/* Live status → pulse dot + Sky Cyan accent text, no avatar */
 .hm-chat .hm-message__header .hm-message__avatar { display: none; }
 .hm-chat .hm-live-status--inline {
   gap: 8px;
   padding: 6px 4px;
   font-size: 12.5px;
-  font-weight: 500;
-  color: var(--hm-color-primary);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--hm-tint-sky-accent);
 }
 .hm-chat .hm-live-status--inline::before {
   content: '';
@@ -144,7 +177,8 @@
   width: 7px;
   height: 7px;
   border-radius: 50%;
-  background: var(--hm-color-primary);
+  background: var(--hm-tint-sky-accent);
+  box-shadow: 0 0 8px var(--hm-tint-sky-accent);
   animation: hm-thread-pulse 1.2s infinite;
 }
 .hm-chat .hm-live-status__dots { display: none; }
@@ -158,15 +192,25 @@
   align-items: center;
   gap: 8px;
   padding: 6px 2px;
-  font-size: 12.5px;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
   color: var(--hm-color-text-muted);
 }
-.hm-chat__record-mark { color: var(--hm-color-success); font-weight: 700; }
-.hm-chat__record-mark--reject { color: var(--hm-color-danger); }
+.hm-chat__record-mark { color: var(--hm-tint-emerald-accent); font-weight: 700; }
+.hm-chat__record-mark--reject { color: var(--hm-tint-rose-accent); }
 .hm-chat__record-tool { font-family: var(--hm-font-mono); font-size: 12px; }
 
-/* Approval dock extras beyond the shared atoms */
-.hm-approval-dock__title-text--high { color: var(--hm-color-danger-strong); }
+/* Approval dock — Amber (low risk) / Coral Rose (high risk) semantic glass dock */
+.hm-approval-dock {
+  background: var(--hm-tint-amber-surface);
+  border-top: 1px solid var(--hm-tint-amber-border);
+  box-shadow: var(--hm-card-highlight);
+}
+.hm-approval-dock--high {
+  background: var(--hm-tint-rose-surface);
+  border-top-color: var(--hm-tint-rose-border);
+}
+.hm-approval-dock__title-text--high { color: var(--hm-tint-rose-accent); }
 .hm-approval-dock--high .hm-approval-dock__row > .hm-btn--danger-outline {
   flex: none;
   width: 110px;

@@ -45,34 +45,38 @@
 }
 
 .hm-more-list {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 10px;
 }
 
 .hm-more-row {
-  display: flex;
+  box-sizing: border-box;
+  display: grid;
+  grid-template-columns: 38px minmax(0, 1fr);
   align-items: center;
-  gap: 12px;
+  gap: 10px;
   width: 100%;
+  height: 66px;
   text-align: left;
   background: var(--hm-card-bg);
-  border: 1px solid var(--hm-color-border-soft);
-  border-radius: 14px;
+  border: 1px solid var(--hm-color-border);
+  border-radius: 18px;
   box-shadow: var(--hm-card-highlight);
   padding: 12px 14px;
   cursor: pointer;
 }
 
 .hm-more-row__icon {
-  width: 40px;
-  height: 40px;
-  border-radius: 11px;
-  background: var(--hm-color-primary-soft);
+  width: 38px;
+  height: 38px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.06);
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  font-size: 19px;
+  font-size: 17px;
   flex: none;
 }
 
@@ -85,21 +89,26 @@
 }
 
 .hm-more-row__label {
-  font-size: 15px;
-  font-weight: 650;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: -0.015em;
   color: var(--hm-color-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .hm-more-row__sub {
-  font-size: 12.5px;
-  color: var(--hm-color-text-dim);
+  font-family: var(--hm-font-mono);
+  font-size: 11.5px;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  color: var(--hm-color-text-muted);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
 .hm-more-row__chev {
-  color: var(--hm-color-text-faint);
-  font-size: 18px;
-  flex: none;
+  display: none;
 }

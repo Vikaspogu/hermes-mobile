@@ -1,7 +1,7 @@
 {
   "name": "@hermes-pwa/web",
   "private": true,
-  "version": "0.1.2-beta",
+  "version": "0.1.10",
   "type": "module",
   "dependencies": {
     "remark-gfm": "^4.0.1"

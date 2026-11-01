@@ -123,8 +123,9 @@ function SessionRow({
   ].filter(Boolean);
   const archiveLabel = session.archived ? 'Restore session' : 'Archive session';
 
+  const isLive = Boolean(session.isActive || session.active);
   return (
-    <div className="hm-session-row" data-testid="session-row">
+    <div className={`hm-session-row${isLive ? ' hm-session-row--live' : ''}`} data-testid="session-row">
       <button className="hm-session-row__open" onClick={() => void onSelect(session)} aria-label={`Open session: ${sessionTitle(session)}`}>
         <StatusDot session={session} />
         <span className="hm-session-row__body">
@@ -312,7 +313,27 @@ export function Sessions({ rpc, rest, onSessionOpen }: SessionsProps) {
       )}
 
       {total > 0 && (
-        <p className="hm-sessions__stats">{statsLine}</p>
+        <section className="hm-qp-hero" aria-label="Session telemetry">
+          <div className="hm-qp-hero__top">
+            <div>
+              <div className="hm-qp-hero__title">Sessions</div>
+              <p className="hm-sessions__stats hm-qp-hero__telemetry" style={{ margin: 0 }}>{statsLine}</p>
+            </div>
+            <span className="hm-qp-presence">{activeName ?? 'default'}</span>
+          </div>
+          <div className="hm-qp-pills">
+            <span className="hm-qp-pill hm-qp-pill--emerald">
+              <span className="hm-qp-pill__dot" aria-hidden="true" />
+              {total} TOTAL
+            </span>
+            {live > 0 && (
+              <span className="hm-qp-pill hm-qp-pill--amber">
+                <span className="hm-qp-pill__dot" aria-hidden="true" />
+                {live} LIVE
+              </span>
+            )}
+          </div>
+        </section>
       )}
 
       {(cronMode ? cronRuns.error : error) && (

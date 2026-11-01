@@ -110,7 +110,7 @@ export function ApprovalInline({ rpc, toolName, tool }: ApprovalInlineProps) {
   }
 
   return (
-    <div className="hm-approval-inline" data-slot="tool-approval-inline">
+    <div className={`hm-approval-inline${approval.highImpact ? ' hm-approval-inline--high' : ''}`} data-slot="tool-approval-inline">
       <div className="hm-approval-inline__header">
         <span className="hm-approval-inline__icon">
           <Icon name="shield" size={17} />

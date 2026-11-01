@@ -641,13 +641,13 @@ export function AppShell({ connectionState, rpc, rest, onRetry, connectionError 
   }
 
 
-  const MORE_ITEMS: { key: Screen; label: string; icon: IconName; sub?: string }[] = [
-    { key: 'profiles', label: 'Profiles', icon: 'profiles', sub: activeProfile ? `${activeProfileLabel} · ${activeModel}` : activeModel },
-    { key: 'agents', label: 'Agents', icon: 'agents' },
-    { key: 'cron', label: 'Schedules', icon: 'cron' },
-    { key: 'artifacts', label: 'Artifacts', icon: 'file' },
-    { key: 'command', label: 'System', icon: 'system', sub: gatewayLabel },
-    { key: 'settings', label: 'Settings', icon: 'settings' },
+  const MORE_ITEMS: { key: Screen; label: string; icon: IconName; sub?: string; tone?: 'emerald' | 'amber' | 'sky' }[] = [
+    { key: 'profiles', label: 'Profiles', icon: 'profiles', sub: activeProfile ? `${activeProfileLabel} · ${activeModel}` : activeModel, tone: 'emerald' },
+    { key: 'agents', label: 'Agents', icon: 'agents', sub: 'Subagent tree' },
+    { key: 'cron', label: 'Schedules', icon: 'cron', sub: 'Recurring jobs', tone: 'sky' },
+    { key: 'artifacts', label: 'Artifacts', icon: 'file', sub: 'Session files' },
+    { key: 'command', label: 'System', icon: 'system', sub: gatewayLabel, tone: gatewayHealth === 'running' ? 'emerald' : 'amber' },
+    { key: 'settings', label: 'Settings', icon: 'settings', sub: 'Connection & theme' },
   ];
 
   const TABS: { key: Screen | 'more'; label: string; icon: IconName; badge?: number | undefined }[] = [
@@ -814,15 +814,23 @@ export function AppShell({ connectionState, rpc, rest, onRetry, connectionError 
                 </span>
               </div>
             )}
+            <div className="hm-qp-sec__head">
+              <span className="hm-qp-sec__kicker">Control Deck</span>
+              <span className="hm-qp-sec__meta">{MORE_ITEMS.length} TILES</span>
+            </div>
             <div className="hm-more-sheet__list">
               {MORE_ITEMS.map((item) => (
-                <button key={item.key} type="button" className="hm-more-row" onClick={() => navigate(item.key)}>
-                  <span className="hm-more-row__icon" aria-hidden="true"><Icon name={item.icon} size={20} /></span>
+                <button
+                  key={item.key}
+                  type="button"
+                  className={`hm-more-row${item.tone ? ` hm-more-row--${item.tone}` : ''}`}
+                  onClick={() => navigate(item.key)}
+                >
+                  <span className="hm-more-row__icon" aria-hidden="true"><Icon name={item.icon} size={18} /></span>
                   <span className="hm-more-row__text">
                     <span className="hm-more-row__label">{item.label}</span>
                     {item.sub && <span className="hm-more-row__sub">{item.sub}</span>}
                   </span>
-                  <Icon name="chevR" size={16} />
                 </button>
               ))}
             </div>

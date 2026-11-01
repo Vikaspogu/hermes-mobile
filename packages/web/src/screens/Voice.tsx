@@ -973,6 +973,16 @@ export function Voice({ onClose }: { onClose?: () => void }) {
   };
   const connecting = !live && stage !== '';
 
+  const stateTint = err
+    ? 'rose'
+    : callState === 'listening'
+      ? 'emerald'
+      : callState === 'speaking'
+        ? 'sky'
+        : callState === 'idle'
+          ? 'idle'
+          : 'amber';
+
   return (
     <div className="hm-voice">
       {onClose && (
@@ -986,6 +996,49 @@ export function Voice({ onClose }: { onClose?: () => void }) {
           </div>
         </header>
       )}
+      <section className="hm-qp-hero" aria-label="Voice session summary">
+        <div className="hm-qp-hero__head">
+          <div>
+            <div className="hm-qp-hero__kicker">VOICE ENGINE · REALTIME</div>
+            <h2 className="hm-qp-hero__title">{sessionTitle ?? 'Voice Session'}</h2>
+            <p className="hm-qp-hero__sub">
+              Codex realtime · {items.length} turns · {live ? 'live audio' : 'standby'}
+            </p>
+          </div>
+          <span
+            className={`hm-qp-hero__badge${
+              err
+                ? ' hm-qp-hero__badge--rose'
+                : live && !muted
+                  ? ''
+                  : live && muted
+                    ? ' hm-qp-hero__badge--amber'
+                    : ' hm-qp-hero__badge--amber'
+            }`}
+          >
+            <span className="hm-qp-pill__dot" aria-hidden="true" />
+            {err ? 'ERROR' : live ? (muted ? 'MUTED' : 'LIVE') : connecting ? 'CONNECTING' : 'READY'}
+          </span>
+        </div>
+        <div className="hm-qp-pills">
+          <span className={`hm-qp-pill hm-qp-pill--${stateTint}`}>
+            <span className="hm-qp-pill__dot" aria-hidden="true" />
+            {err ? 'Error' : `State · ${callState}`}
+          </span>
+          <span className={`hm-qp-pill hm-qp-pill--${items.length > 0 ? 'sky' : 'idle'}`}>
+            <span className="hm-qp-pill__dot" aria-hidden="true" />
+            {items.length} transcript
+          </span>
+          <span
+            className={`hm-qp-pill hm-qp-pill--${
+              live ? (muted ? 'amber' : 'emerald') : 'idle'
+            }`}
+          >
+            <span className="hm-qp-pill__dot" aria-hidden="true" />
+            {live ? (muted ? 'Mic muted' : 'Mic active') : 'Mic standby'}
+          </span>
+        </div>
+      </section>
       <div className={`hm-voice__stage hm-voice__stage--${callState}`}>
         <div className={`hm-voice__orb hm-voice__orb--${callState}`} aria-hidden="true">
           <VoiceOrb state={callState} micRef={micLevelRef} remoteRef={remoteLevelRef} />
@@ -1030,6 +1083,10 @@ export function Voice({ onClose }: { onClose?: () => void }) {
         </div>
       )}
 
+      <div className="hm-qp-sect-head">
+        <span className="hm-qp-sect-head__kicker">TRANSCRIPT STREAM</span>
+        <span className="hm-qp-sect-head__meta">{items.length} ITEMS</span>
+      </div>
       <div
         className="hm-voice__transcript"
         ref={transcriptRef}

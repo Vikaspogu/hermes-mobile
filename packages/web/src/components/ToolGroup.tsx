@@ -72,7 +72,7 @@ export function ToolGroup({ tools, rpc, streaming, durationMs }: ToolGroupProps)
   const showRows = open || runningCount > 0;
 
   return (
-    <div className={`hm-tool-group${showRows ? ' hm-tool-group--open' : ''}`}>
+    <div className={`hm-tool-group${showRows ? ' hm-tool-group--open' : ''}${runningCount > 0 ? ' hm-tool-group--running' : ''}`}>
       <button
         type="button"
         className="hm-tool-group__header"

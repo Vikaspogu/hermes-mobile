@@ -317,18 +317,56 @@ export function CommandCenter({ rest }: SystemScreenProps) {
         fix: true,
       });
 
+  const passedCount = checks.filter((c) => c.status === 'passed').length;
+  const failedCount = checks.filter((c) => c.status === 'failed').length;
+
   return (
     <div className="hm-command hm-system hm-scroll">
       {error && <div className="hm-warning-banner hm-warning-banner--error">{error}</div>}
 
-      <div className="hm-card hm-system__gateway" data-testid="gateway-card">
-        <div className="hm-system__gateway-title">
-          <span className="hm-system__gateway-name">
-            <span className="hm-dot" aria-hidden="true" />
-            Gateway running
+      <div className="hm-qp-hero hm-card hm-system__gateway" data-testid="gateway-card">
+        <div className="hm-qp-hero__top">
+          <div>
+            <div className="hm-qp-hero__title hm-system__gateway-title">
+              <span className="hm-system__gateway-name">
+                <span className="hm-dot" aria-hidden="true" />
+                Gateway running
+              </span>
+            </div>
+            <div className="hm-qp-hero__telemetry hm-system__gateway-uptime">
+              up {fmtUptime(stats?.uptimeSeconds)}
+            </div>
+          </div>
+          <span className="hm-qp-presence hm-qp-presence--emerald">
+            <span className="hm-qp-pill__dot" aria-hidden="true" />
+            ONLINE
           </span>
-          <span className="hm-system__gateway-uptime">up {fmtUptime(stats?.uptimeSeconds)}</span>
         </div>
+
+        <div className="hm-qp-pills">
+          {failedCount > 0 ? (
+            <span className="hm-qp-pill hm-qp-pill--rose">
+              <span className="hm-qp-pill__dot" aria-hidden="true" />
+              {failedCount} ISSUE{failedCount === 1 ? '' : 'S'}
+            </span>
+          ) : (
+            <span className="hm-qp-pill hm-qp-pill--emerald">
+              <span className="hm-qp-pill__dot" aria-hidden="true" />
+              ALL CHECKS OK
+            </span>
+          )}
+          <span className="hm-qp-pill hm-qp-pill--sky">
+            <span className="hm-qp-pill__dot" aria-hidden="true" />
+            {backups.length} BACKUP{backups.length === 1 ? '' : 'S'}
+          </span>
+          {opsRunning && (
+            <span className="hm-qp-pill hm-qp-pill--amber">
+              <span className="hm-qp-pill__dot" aria-hidden="true" />
+              ACTIVE OP
+            </span>
+          )}
+        </div>
+
         <div className="hm-system__gateway-actions">
           <button
             type="button"
@@ -350,70 +388,91 @@ export function CommandCenter({ rest }: SystemScreenProps) {
       </div>
 
       {(stats?.cpuPercent != null || stats?.memoryMb != null || stats?.diskUsedMb != null) && (
-        <div className="hm-card hm-system__metrics">
-          {stats!.cpuPercent != null && (
-            <div className="hm-system__metric">
-              <div className="hm-system__metric-label">CPU {Math.round(stats!.cpuPercent)}%</div>
-              <div className="hm-metricbar">
-                <div className="hm-metricbar__fill" style={{ width: `${Math.min(100, stats!.cpuPercent)}%` }} />
+        <section className="hm-qp-section">
+          <div className="hm-qp-section__head">
+            <span className="hm-qp-kicker">TELEMETRY &amp; RESOURCES</span>
+            <span className="hm-qp-meta-badge">LIVE</span>
+          </div>
+          <div className="hm-card hm-system__metrics">
+            {stats!.cpuPercent != null && (
+              <div className="hm-system__metric">
+                <div className="hm-system__metric-label">CPU {Math.round(stats!.cpuPercent)}%</div>
+                <div className="hm-metricbar">
+                  <div className="hm-metricbar__fill" style={{ width: `${Math.min(100, stats!.cpuPercent)}%` }} />
+                </div>
               </div>
-            </div>
-          )}
-          {stats!.memoryMb != null && (
-            <div className="hm-system__metric">
-              <div className="hm-system__metric-label">
-                RAM {fmtGbShort(stats!.memoryMb)} / {fmtGb(stats!.memoryTotalMb)}
+            )}
+            {stats!.memoryMb != null && (
+              <div className="hm-system__metric">
+                <div className="hm-system__metric-label">
+                  RAM {fmtGbShort(stats!.memoryMb)} / {fmtGb(stats!.memoryTotalMb)}
+                </div>
+                <div className="hm-metricbar">
+                  <div className="hm-metricbar__fill" style={{ width: `${Math.min(100, stats!.memoryPercent ?? 0)}%` }} />
+                </div>
               </div>
-              <div className="hm-metricbar">
-                <div className="hm-metricbar__fill" style={{ width: `${Math.min(100, stats!.memoryPercent ?? 0)}%` }} />
+            )}
+            {stats!.diskUsedMb != null && (
+              <div className="hm-system__metric">
+                <div className="hm-system__metric-label">
+                  Disk {fmtGbShort(stats!.diskUsedMb)} / {fmtGb(stats!.diskTotalMb)}
+                </div>
+                <div className="hm-metricbar">
+                  <div
+                    className="hm-metricbar__fill hm-metricbar__fill--warn"
+                    style={{ width: `${Math.min(100, stats!.diskPercent ?? 0)}%` }}
+                  />
+                </div>
               </div>
-            </div>
-          )}
-          {stats!.diskUsedMb != null && (
-            <div className="hm-system__metric">
-              <div className="hm-system__metric-label">
-                Disk {fmtGbShort(stats!.diskUsedMb)} / {fmtGb(stats!.diskTotalMb)}
-              </div>
-              <div className="hm-metricbar">
-                <div
-                  className="hm-metricbar__fill hm-metricbar__fill--warn"
-                  style={{ width: `${Math.min(100, stats!.diskPercent ?? 0)}%` }}
-                />
-              </div>
-            </div>
-          )}
-        </div>
+            )}
+          </div>
+        </section>
       )}
 
-      <div className="hm-group-label">Health checks</div>
-      {checks.map((check) => (
-        <button
-          key={check.key}
-          type="button"
-          className="hm-system__check"
-          disabled={opsRunning === check.key}
-          onClick={() => void runCheck(check.key)}
-          aria-label={check.fix ? `${check.label} — fix` : check.label}
-        >
-          <span
-            className={`hm-system__check-icon${
-              check.status === 'passed'
-                ? ' hm-system__check-icon--ok'
-                : check.status === 'failed'
-                  ? ' hm-system__check-icon--warn'
-                  : ' hm-system__check-icon--idle'
-            }`}
-            aria-hidden="true"
-          >
-            {check.status === 'passed' ? '✓' : check.status === 'failed' ? '⚠' : check.status === 'running' ? '…' : '○'}
-          </span>
-          <span className="hm-system__check-body">
-            <span className="hm-system__check-title">{check.label}</span>
-            <span className="hm-system__check-sub">{check.sub}</span>
-          </span>
-          {check.fix && <span className="hm-system__check-fix">fix</span>}
-        </button>
-      ))}
+      <section className="hm-qp-section">
+        <div className="hm-qp-section__head">
+          <span className="hm-qp-kicker hm-group-label">Health checks</span>
+          <span className="hm-qp-meta-badge">{passedCount}/{checks.length} PASSED</span>
+        </div>
+        <div className="hm-system__checks-grid">
+          {checks.map((check) => (
+            <button
+              key={check.key}
+              type="button"
+              className={`hm-system__check${
+                check.status === 'passed'
+                  ? ' hm-system__check--ok'
+                  : check.status === 'failed'
+                    ? ' hm-system__check--warn'
+                    : check.status === 'running'
+                      ? ' hm-system__check--running'
+                      : ''
+              }`}
+              disabled={opsRunning === check.key}
+              onClick={() => void runCheck(check.key)}
+              aria-label={check.fix ? `${check.label} — fix` : check.label}
+            >
+              <span
+                className={`hm-system__check-icon${
+                  check.status === 'passed'
+                    ? ' hm-system__check-icon--ok'
+                    : check.status === 'failed'
+                      ? ' hm-system__check-icon--warn'
+                      : ' hm-system__check-icon--idle'
+                }`}
+                aria-hidden="true"
+              >
+                {check.status === 'passed' ? '✓' : check.status === 'failed' ? '⚠' : check.status === 'running' ? '…' : '○'}
+              </span>
+              <span className="hm-system__check-body">
+                <span className="hm-system__check-title">{check.label}</span>
+                <span className="hm-system__check-sub">{check.sub}</span>
+              </span>
+              {check.fix && <span className="hm-system__check-fix">fix</span>}
+            </button>
+          ))}
+        </div>
+      </section>
 
       {terminal?.open && (
         <div className="hm-sheet hm-command__terminal" role="dialog" aria-modal="true" aria-label={`${terminal.title} terminal`}>

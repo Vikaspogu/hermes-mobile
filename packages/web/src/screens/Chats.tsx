@@ -79,7 +79,9 @@ interface ThreadGroup {
 }
 
 export function groupThreads(sessions: Session[]): ThreadGroup[] {
-  const sorted = [...sessions].sort((a, b) => freshness(b) - freshness(a));
+  const sorted = [...sessions].sort(
+    (a, b) => Number(isLive(b)) - Number(isLive(a)) || freshness(b) - freshness(a),
+  );
   const today = sorted.filter((s) => isToday(toMs(freshness(s))));
   const yesterday = sorted.filter(
     (s) => !isToday(toMs(freshness(s))) && isYesterday(toMs(freshness(s))),
@@ -95,7 +97,7 @@ export function groupThreads(sessions: Session[]): ThreadGroup[] {
   return groups.filter((g) => g.items.length > 0);
 }
 
-export function Chats({ rpc, rest, onNavigate, sidebar, onRetry }: ChatsProps) {
+export function Chats({ rpc, rest, onNavigate, sidebar, onOpenVoice, onRetry }: ChatsProps) {
   const { sessions, load } = useSessionsStore();
   const activeName = useProfilesStore((s) => s.activeName);
   const { startNewSession, resumeSessionIntoChat } = useChatStore();
@@ -115,9 +117,16 @@ export function Chats({ rpc, rest, onNavigate, sidebar, onRetry }: ChatsProps) {
 
   const [filter, setFilter] = useState<'threads' | 'cron' | 'all'>('threads');
 
+  const nonArchived = useMemo(() => sessions.filter((s) => !s.archived), [sessions]);
+  const liveCount = useMemo(() => nonArchived.filter((s) => isLive(s)).length, [nonArchived]);
+  const cronCount = useMemo(
+    () => nonArchived.filter((s) => sessionSourceId(s) === 'cron').length,
+    [nonArchived],
+  );
+  const threadCount = nonArchived.length - cronCount;
+
   const threads = useMemo(() => {
-    const visible = sessions.filter((s) => {
-      if (s.archived) return false;
+    const visible = nonArchived.filter((s) => {
       const isCron = sessionSourceId(s) === 'cron';
       if (filter === 'threads') return !isCron;
       if (filter === 'cron') return isCron;
@@ -126,22 +135,21 @@ export function Chats({ rpc, rest, onNavigate, sidebar, onRetry }: ChatsProps) {
     const q = query.trim().toLowerCase();
     const filtered = q ? visible.filter((s) => (s.title ?? '').toLowerCase().includes(q)) : visible;
     return groupThreads(filtered);
-  }, [sessions, query, filter]);
+  }, [nonArchived, query, filter]);
 
   async function openThread(session: Session) {
     await resumeSessionIntoChat(rest, rpc, session.id, session.profile ?? activeName);
     onNavigate('chat');
   }
 
-
-
-  const connectionState = useConnectionStore((s) => s.state);
+  const rawConnectionState = useConnectionStore((s) => s.state);
+  const connectionState = typeof rawConnectionState === 'string' ? rawConnectionState : 'offline';
   const connectionError = useConnectionStore((s) => s.error);
   const connected = connectionState === 'connected';
   const ptr = usePullToRefresh(() => window.location.reload());
 
   return (
-    <div className="hm-home">
+    <div className={`hm-home${sidebar ? ' hm-home--sidebar' : ''}`}>
       {!sidebar && (
         <header className="hm-app-header hm-home__header" data-testid="home-header">
           <BrandMark />
@@ -150,7 +158,7 @@ export function Chats({ rpc, rest, onNavigate, sidebar, onRetry }: ChatsProps) {
             aria-label={connected ? 'Connected' : 'Not connected'}
             role="status"
           />
-          <span className="hm-app-header__sub">{activeName ?? 'default'}</span>
+          <span className="hm-app-header__sub hm-mono">{activeName ?? 'default'}</span>
           {connectionState !== 'offline' && (
             <ConnectionBanner state={connectionState} error={connectionError} onRetry={onRetry} />
           )}
@@ -182,6 +190,91 @@ export function Chats({ rpc, rest, onNavigate, sidebar, onRetry }: ChatsProps) {
             </svg>
           </div>
         )}
+
+        {!sidebar && (
+          <section className="hm-qp-hero hm-home__hero" aria-label="Operational summary">
+            <div className="hm-qp-hero__top">
+              <div>
+                <div className="hm-qp-hero__title">Threads</div>
+                <div className="hm-qp-hero__telemetry">
+                  PROFILE {(activeName ?? 'default').toUpperCase()} · {threadCount} THREADS · {liveCount} LIVE
+                </div>
+              </div>
+              <div className="hm-qp-hero__presence">
+                <span className="hm-qp-presence">{connected ? 'ONLINE' : connectionState.toUpperCase()}</span>
+              </div>
+            </div>
+            <div className="hm-qp-pills">
+              <span className={`hm-qp-pill ${connected ? 'hm-qp-pill--emerald' : 'hm-qp-pill--rose'}`}>
+                <span className="hm-qp-pill__dot" aria-hidden="true" />
+                {connected ? 'GATEWAY LOCKED' : 'GATEWAY OFFLINE'}
+              </span>
+              {liveCount > 0 && (
+                <span className="hm-qp-pill hm-qp-pill--amber">
+                  <span className="hm-qp-pill__dot" aria-hidden="true" />
+                  {liveCount} STREAMING
+                </span>
+              )}
+              {cronCount > 0 && (
+                <span className="hm-qp-pill hm-qp-pill--sky">
+                  <span className="hm-qp-pill__dot" aria-hidden="true" />
+                  {cronCount} CRON
+                </span>
+              )}
+              {pendingApprovals > 0 && (
+                <span className="hm-qp-pill hm-qp-pill--rose">
+                  <span className="hm-qp-pill__dot" aria-hidden="true" />
+                  {pendingApprovals} APPROVAL{pendingApprovals !== 1 ? 'S' : ''}
+                </span>
+              )}
+            </div>
+          </section>
+        )}
+
+        {!sidebar && (
+          <div className="hm-qp-qa-grid" role="group" aria-label="Quick actions">
+            <button
+              type="button"
+              className="hm-qp-qa-btn hm-qp-qa-btn--emerald"
+              data-testid="chats-qa-new"
+              onClick={() => {
+                startNewSession(activeName);
+                onNavigate('chat');
+              }}
+            >
+              <span className="hm-qp-qa-btn__icon" aria-hidden="true">
+                <Icon name="plus" size={16} />
+              </span>
+              <span className="hm-qp-qa-btn__label">New Chat</span>
+              <span className="hm-qp-qa-btn__count">{threadCount} ACTIVE</span>
+            </button>
+            <button
+              type="button"
+              className="hm-qp-qa-btn hm-qp-qa-btn--sky"
+              data-testid="chats-qa-voice"
+              onClick={() => (onOpenVoice ? onOpenVoice() : onNavigate('voice'))}
+            >
+              <span className="hm-qp-qa-btn__icon" aria-hidden="true">
+                <Icon name="mic" size={16} />
+              </span>
+              <span className="hm-qp-qa-btn__label">Voice</span>
+              <span className="hm-qp-qa-btn__count">DUPLEX</span>
+            </button>
+            <button
+              type="button"
+              className={`hm-qp-qa-btn${pendingApprovals > 0 ? ' hm-qp-qa-btn--rose' : ''}`}
+              data-testid="chats-qa-inbox"
+              onClick={() => onNavigate('approvals')}
+            >
+              <span className="hm-qp-qa-btn__icon" aria-hidden="true">
+                <Icon name="shield" size={16} />
+              </span>
+              <span className="hm-qp-qa-btn__label">Approvals</span>
+              <span className="hm-qp-qa-btn__count">{pendingApprovals} WAIT</span>
+            </button>
+          </div>
+        )}
+
         {!sidebar && pendingApprovals > 0 && (
           <button
             className="hm-banner hm-home__approval-banner"
@@ -262,46 +355,53 @@ export function Chats({ rpc, rest, onNavigate, sidebar, onRetry }: ChatsProps) {
           )}
           {threads.map((group) => (
             <Fragment key={group.key}>
-              <div className="hm-group-label">{group.label}</div>
-              {group.items.map((s) => (
-                <button
-                  key={s.id}
-                  className="hm-thread-row"
-                  onClick={() => void openThread(s)}
-                  data-testid="thread-row"
-                >
-                  {sessionSourceId(s) === 'cron' ? (
-                    <span className="hm-thread-row__cronicon" aria-hidden="true">
-                      <Icon name="cron" size={16} />
-                    </span>
-                  ) : (
-                    <span
-                      className={`hm-thread-row__dot ${isLive(s) ? 'hm-thread-row__dot--live' : 'hm-thread-row__dot--idle'}`}
-                      aria-hidden="true"
-                    />
-                  )}
-                  <span className="hm-thread-row__body">
-                    <span className="hm-thread-row__title">{s.title?.trim() || 'Untitled'}</span>
-                    <span className="hm-thread-row__preview">
-                      {s.previewText ??
-                        ([
-                          sessionSourceLabel(sessionSourceId(s) ?? '') ?? undefined,
-                          s.messageCount ? `${s.messageCount} msgs` : undefined,
-                        ]
-                          .filter(Boolean)
-                          .join(' · ') ||
-                          'Session')}
-                    </span>
-                    {sessionSourceId(s) === 'cron' && (
-                      <span className="hm-chip hm-thread-row__crontag">Cron</span>
+              <div className="hm-group-label hm-qp-sec__head">
+                <span className="hm-qp-sec__kicker">{group.label}</span>
+                <span className="hm-qp-sec__meta">{group.items.length}</span>
+              </div>
+              {group.items.map((s) => {
+                const live = isLive(s);
+                const isCron = sessionSourceId(s) === 'cron';
+                return (
+                  <button
+                    key={s.id}
+                    className={`hm-thread-row${live ? ' hm-thread-row--live' : ''}${isCron ? ' hm-thread-row--cron' : ''}`}
+                    onClick={() => void openThread(s)}
+                    data-testid="thread-row"
+                  >
+                    {isCron ? (
+                      <span className="hm-thread-row__cronicon" aria-hidden="true">
+                        <Icon name="cron" size={16} />
+                      </span>
+                    ) : (
+                      <span
+                        className={`hm-thread-row__dot ${live ? 'hm-thread-row__dot--live' : 'hm-thread-row__dot--idle'}`}
+                        aria-hidden="true"
+                      />
                     )}
-                  </span>
-                  <span className="hm-thread-row__meta">
-                    {fmtAge(freshness(s))}
-                    {isLive(s) && <span className="hm-thread-row__live">● live</span>}
-                  </span>
-                </button>
-              ))}
+                    <span className="hm-thread-row__body">
+                      <span className="hm-thread-row__title">{s.title?.trim() || 'Untitled'}</span>
+                      <span className="hm-thread-row__preview">
+                        {s.previewText ??
+                          ([
+                            sessionSourceLabel(sessionSourceId(s) ?? '') ?? undefined,
+                            s.messageCount ? `${s.messageCount} msgs` : undefined,
+                          ]
+                            .filter(Boolean)
+                            .join(' · ') ||
+                            'Session')}
+                      </span>
+                      {isCron && (
+                        <span className="hm-chip hm-thread-row__crontag">Cron</span>
+                      )}
+                    </span>
+                    <span className="hm-thread-row__meta">
+                      {fmtAge(freshness(s))}
+                      {live && <span className="hm-thread-row__live">● live</span>}
+                    </span>
+                  </button>
+                );
+              })}
             </Fragment>
           ))}
         </div>

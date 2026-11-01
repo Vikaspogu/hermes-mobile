@@ -39,4 +39,13 @@ describe('groupThreads', () => {
     const groups = groupThreads([session('earlier', nowSec - 5 * DAY)]);
     expect(groups.map((g) => g.key)).toEqual(['earlier']);
   });
+
+  it('sorts live sessions ahead of idle sessions within a bucket', () => {
+    const nowSec = Math.floor(Date.now() / 1000);
+    const groups = groupThreads([
+      { ...session('today-idle', nowSec - 60), isActive: false },
+      { ...session('today-live', nowSec - 3600), isActive: true },
+    ]);
+    expect(groups[0]?.items.map((s) => s.id)).toEqual(['today-live', 'today-idle']);
+  });
 });

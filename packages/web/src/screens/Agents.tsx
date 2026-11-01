@@ -58,7 +58,7 @@ function RecentRow({ node }: { node: SpawnNode }) {
     !ok && lastNote ? lastNote : '',
   ].filter(Boolean);
   return (
-    <div className="hm-agents-row" data-testid="agents-recent-row">
+    <div className={`hm-agents-row${ok ? '' : ' hm-agents-row--err'}`} data-testid="agents-recent-row">
       <div className={`hm-agents-row__icon ${ok ? 'hm-agents-row__icon--ok' : 'hm-agents-row__icon--err'}`} aria-label={node.status}>
         {ok ? '✓' : '✕'}
       </div>
@@ -119,8 +119,50 @@ export function Agents({ rpc }: AgentsProps) {
     );
   }
 
+  const failedCount = recentNodes.filter((n) => n.status !== 'completed').length;
+  const completedCount = recentNodes.length - failedCount;
+
   return (
     <div className="hm-agents hm-scroll">
+      <div className="hm-qp-hero" data-testid="agents-hero">
+        <div className="hm-qp-hero__top">
+          <div>
+            <div className="hm-qp-hero__title">Subagent Fleet</div>
+            <div className="hm-qp-hero__telemetry">
+              {activeNodes.length} RUNNING · {recentNodes.length} FINISHED
+            </div>
+          </div>
+          <span
+            className={`hm-qp-presence ${
+              activeNodes.length > 0
+                ? 'hm-qp-presence--amber'
+                : failedCount > 0
+                  ? 'hm-qp-presence--rose'
+                  : 'hm-qp-presence--emerald'
+            }`}
+          >
+            <span className="hm-qp-pill__dot" aria-hidden="true" />
+            {activeNodes.length > 0 ? 'DELEGATING' : failedCount > 0 ? 'ATTENTION' : 'STANDBY'}
+          </span>
+        </div>
+        <div className="hm-qp-pills">
+          <span className="hm-qp-pill hm-qp-pill--amber">
+            <span className="hm-qp-pill__dot" aria-hidden="true" />
+            {activeNodes.length} IN FLIGHT
+          </span>
+          <span className="hm-qp-pill hm-qp-pill--emerald">
+            <span className="hm-qp-pill__dot" aria-hidden="true" />
+            {completedCount} SUCCEEDED
+          </span>
+          {failedCount > 0 && (
+            <span className="hm-qp-pill hm-qp-pill--rose">
+              <span className="hm-qp-pill__dot" aria-hidden="true" />
+              {failedCount} FAILED
+            </span>
+          )}
+        </div>
+      </div>
+
       <div className="hm-seg" role="tablist">
         <button
           type="button"
@@ -142,11 +184,24 @@ export function Agents({ rpc }: AgentsProps) {
         </button>
       </div>
 
-      {tab === 'active' && activeNodes.map((node) => <ActiveCard key={node.id} node={node} nowMs={nowMs} />)}
+      {tab === 'active' && (
+        <>
+          <div className="hm-qp-section__head">
+            <span className="hm-qp-kicker">ACTIVE DELEGATIONS</span>
+            <span className="hm-qp-meta-badge">{activeNodes.length} LIVE</span>
+          </div>
+          {activeNodes.map((node) => (
+            <ActiveCard key={node.id} node={node} nowMs={nowMs} />
+          ))}
+        </>
+      )}
 
       {tab === 'recent' && recentNodes.length > 0 && (
         <>
-          <p className="hm-group-label">Recent</p>
+          <div className="hm-qp-section__head">
+            <span className="hm-qp-kicker hm-group-label">Recent</span>
+            <span className="hm-qp-meta-badge">{recentNodes.length} RUNS</span>
+          </div>
           {recentNodes.map((node) => (
             <RecentRow key={node.id} node={node} />
           ))}
