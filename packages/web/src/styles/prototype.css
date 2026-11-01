@@ -365,7 +365,8 @@ textarea {
   margin-bottom: 8px;
   border: 1px solid var(--hm-color-border);
   border-radius: var(--hm-radius-md);
-  background: var(--hm-color-surface);
+  background: var(--hm-card-bg);
+  box-shadow: var(--hm-card-highlight);
 }
 
 .hm-more-health__line {
@@ -480,9 +481,10 @@ textarea {
 
 .hm-thread-row {
   appearance: none;
-  background: var(--hm-color-surface);
+  background: var(--hm-card-bg);
   border: 1px solid var(--hm-color-border);
   border-radius: var(--hm-radius-card);
+  box-shadow: var(--hm-card-highlight);
   display: flex;
   align-items: center;
   gap: 10px;
@@ -664,11 +666,11 @@ textarea {
   position: relative;
   text-align: left;
   padding: 14px;
-  background: var(--hm-color-surface);
+  background: var(--hm-card-bg);
   border: 1px solid var(--hm-color-border);
   border-radius: 16px;
   cursor: pointer;
-  box-shadow: 0 1px 2px rgba(20, 30, 60, 0.03);
+  box-shadow: var(--hm-card-highlight);
 }
 
 .hm-home__tile-icon {
@@ -724,7 +726,8 @@ textarea {
   gap: 11px;
   text-align: left;
   padding: 12px 13px;
-  background: var(--hm-color-surface);
+  background: var(--hm-card-bg);
+  box-shadow: var(--hm-card-highlight);
   border: 1px solid var(--hm-color-border);
   border-radius: 14px;
   cursor: pointer;
@@ -1626,7 +1629,8 @@ body,
 .hm-update__instruction {
   padding: 10px;
   border-radius: 13px;
-  background: var(--hm-color-surface);
+  background: var(--hm-card-bg);
+  box-shadow: var(--hm-card-highlight);
   border: 1px solid var(--hm-color-border);
 }
 
@@ -1848,9 +1852,10 @@ select:focus-visible,
 /* ── Profile rows + action sheet ────────────────────────────────────── */
 .hm-profile-row {
   appearance: none;
-  background: var(--hm-color-surface);
+  background: var(--hm-card-bg);
   border: 1px solid var(--hm-color-border);
   border-radius: var(--hm-radius-card);
+  box-shadow: var(--hm-card-highlight);
   display: flex;
   align-items: center;
   gap: 12px;
@@ -1967,9 +1972,10 @@ select:focus-visible,
 .hm-offline-card {
   margin: 48px 20px;
   padding: 28px 20px;
-  background: var(--hm-color-surface);
+  background: var(--hm-card-bg);
   border: 1px solid var(--hm-color-border);
   border-radius: var(--hm-radius-card);
+  box-shadow: var(--hm-card-highlight);
   display: flex;
   flex-direction: column;
   align-items: center;

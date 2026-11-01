@@ -206,10 +206,10 @@ a {
 .hm-ios-card,
 .hm-auth-required,
 .hm-ready-card {
-  background: var(--hm-color-surface);
+  background: var(--hm-card-bg);
   border: 1px solid var(--hm-color-border);
   border-radius: var(--hm-radius-lg);
-  box-shadow: var(--hm-elev-1);
+  box-shadow: var(--hm-card-highlight);
   padding: var(--hm-space-4);
 }
 
@@ -524,7 +524,8 @@ a {
   padding: var(--hm-space-3) var(--hm-space-3);
   border: 1.5px solid var(--hm-color-border);
   border-radius: var(--hm-radius-card);
-  background: var(--hm-color-surface);
+  background: var(--hm-card-bg);
+  box-shadow: var(--hm-card-highlight);
   cursor: pointer;
   text-align: left;
   font-family: var(--hm-font-sans);
@@ -1395,9 +1396,9 @@ a {
   margin-bottom: var(--hm-space-2);
   border-radius: var(--hm-radius-lg);
   border: 1px solid var(--hm-color-border);
-  background: var(--hm-color-surface);
+  background: var(--hm-card-bg);
   overflow: hidden;
-  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04), 0 1px 4px -1px rgba(15, 23, 42, 0.06);
+  box-shadow: var(--hm-card-highlight);
 }
 
 .hm-todo-panel__header {
@@ -1891,9 +1892,10 @@ a {
 
 /* Card */
 .hm-card {
-  background: var(--hm-color-surface);
+  background: var(--hm-card-bg);
   border: 1px solid var(--hm-color-border);
   border-radius: var(--hm-radius-lg);
+  box-shadow: var(--hm-card-highlight);
   padding: var(--hm-space-4);
   display: flex;
   flex-direction: column;
@@ -1942,11 +1944,11 @@ a {
 }
 
 .hm-approval-card {
-  background: var(--hm-color-surface);
+  background: var(--hm-card-bg);
   border: 1px solid var(--hm-color-border);
   border-radius: var(--hm-radius-lg);
   overflow: hidden;
-  box-shadow: 0 1px 3px rgba(20, 30, 60, 0.04);
+  box-shadow: var(--hm-card-highlight);
 }
 
 .hm-approval-card__header {
@@ -2196,9 +2198,10 @@ a {
 .hm-projects__workers {
   margin: 0 var(--hm-space-4) var(--hm-space-3);
   padding: 11px 13px;
-  background: var(--hm-color-surface);
+  background: var(--hm-card-bg);
   border: 1px solid var(--hm-color-border);
   border-radius: var(--hm-radius-card);
+  box-shadow: var(--hm-card-highlight);
 }
 
 .hm-projects__workers-title {
@@ -2308,9 +2311,10 @@ a {
 }
 
 .hm-task-card {
-  background: var(--hm-color-surface);
+  background: var(--hm-card-bg);
   border: 1px solid var(--hm-color-border);
   border-radius: var(--hm-radius-lg);
+  box-shadow: var(--hm-card-highlight);
   padding: 11px 12px;
   display: flex;
   flex-direction: column;
@@ -2318,7 +2322,6 @@ a {
   text-align: left;
   color: var(--hm-color-text);
   cursor: pointer;
-  box-shadow: 0 1px 2px rgba(20, 30, 60, 0.03);
 }
 
 .hm-task-card__title {
@@ -2717,7 +2720,8 @@ a {
 }
 
 .hm-agent-card {
-  background: var(--hm-color-surface);
+  background: var(--hm-card-bg);
+  box-shadow: var(--hm-card-highlight);
   border: 1px solid var(--hm-color-border);
   border-radius: var(--hm-radius-lg);
   padding: var(--hm-space-4);
@@ -3130,9 +3134,10 @@ a {
   flex-direction: column;
   gap: 2px;
   padding: 12px;
-  background: var(--hm-color-surface);
+  background: var(--hm-card-bg);
   border: 1px solid var(--hm-color-border);
   border-radius: 13px;
+  box-shadow: var(--hm-card-highlight);
 }
 
 .hm-command__resource-label {
@@ -3169,9 +3174,10 @@ a {
   display: flex;
   flex-direction: column;
   gap: 0;
-  background: var(--hm-color-surface);
+  background: var(--hm-card-bg);
   border: 1px solid var(--hm-color-border);
   border-radius: 14px;
+  box-shadow: var(--hm-card-highlight);
   overflow: hidden;
 }
 
@@ -3276,8 +3282,9 @@ a {
   gap: 8px;
   padding: 11px 12px;
   border: 1px solid var(--hm-color-border);
-  background: var(--hm-color-surface);
+  background: var(--hm-card-bg);
   border-radius: 13px;
+  box-shadow: var(--hm-card-highlight);
   color: var(--hm-color-text);
   font-family: inherit;
   text-align: left;
@@ -3356,8 +3363,9 @@ a {
   align-items: center;
   gap: 8px;
   padding: 11px 13px;
-  background: var(--hm-color-surface);
+  background: var(--hm-card-bg);
   border: 1px solid var(--hm-color-border);
+  box-shadow: var(--hm-card-highlight);
   border-radius: 12px;
 }
 
@@ -3771,9 +3779,10 @@ a {
   align-items: center;
   gap: var(--hm-space-3);
   padding: var(--hm-space-3) var(--hm-space-4);
-  background: var(--hm-color-surface);
+  background: var(--hm-card-bg);
   border: 1px solid var(--hm-color-border);
   border-radius: var(--hm-radius-sm);
+  box-shadow: var(--hm-card-highlight);
 }
 
 .hm-artifact-row__icon {
@@ -4159,9 +4168,10 @@ a {
   align-items: flex-start;
   gap: 3px;
   padding: var(--hm-space-4);
-  background: var(--hm-color-surface);
+  background: var(--hm-card-bg);
   border: 1px solid var(--hm-color-border);
   border-radius: var(--hm-radius-card);
+  box-shadow: var(--hm-card-highlight);
   cursor: pointer;
   text-align: left;
   position: relative;
@@ -4180,7 +4190,7 @@ a {
 }
 
 .hm-home__tile--approvals {
-  background: var(--hm-color-surface);
+  background: var(--hm-card-bg);
 }
 
 .hm-home__tile-badge {
@@ -4223,9 +4233,10 @@ a {
   align-items: center;
   gap: var(--hm-space-3);
   padding: var(--hm-space-3) var(--hm-space-3);
-  background: var(--hm-color-surface);
+  background: var(--hm-card-bg);
   border: 1px solid var(--hm-color-border);
   border-radius: var(--hm-radius-sm);
+  box-shadow: var(--hm-card-highlight);
   text-align: left;
   cursor: pointer;
   width: 100%;
