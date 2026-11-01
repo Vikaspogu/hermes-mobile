@@ -2934,9 +2934,10 @@ a {
   align-items: flex-start;
   gap: var(--hm-space-3);
   padding: var(--hm-space-3) var(--hm-space-4);
-  border-radius: var(--hm-radius-sm);
-  background: var(--hm-color-surface);
+  background: var(--hm-card-bg);
   border: 1px solid var(--hm-color-border);
+  border-radius: var(--hm-radius-sm);
+  box-shadow: var(--hm-card-highlight);
   text-align: left;
   width: 100%;
   transition: background 0.12s;
@@ -4283,10 +4284,10 @@ a {
   flex-direction: column;
   gap: var(--hm-space-2);
   padding: 13px;
-  background: var(--hm-color-surface);
+  background: var(--hm-card-bg);
   border: 1.5px solid var(--hm-color-border);
   border-radius: 15px;
-  box-shadow: 0 1px 2px rgba(20, 30, 60, 0.03);
+  box-shadow: var(--hm-card-highlight);
 }
 
 .hm-agent-card--active {

@@ -264,8 +264,6 @@
   --hm-color-warning-bg: #2a2110;
   --hm-color-danger-bg:  #2a1418;
   --hm-color-info-bg:    #16203a;
-}
-
   /* Flat legacy surfaces — don't inherit the Obsidian card gradient / tints */
   --hm-card-bg: var(--hm-color-surface);
   --hm-card-highlight: none;
@@ -281,6 +279,7 @@
   --hm-tint-coral: var(--hm-color-danger-bg);
   --hm-tint-coral-border: var(--hm-color-danger-bg);
   --hm-tint-coral-badge: var(--hm-color-danger-bg);
+}
 
 /* ── Dark · Mocha (Catppuccin Mocha, pastel mauve accent) ─────────────── */
 :root[data-theme='dark-mocha'] {
@@ -311,8 +310,6 @@
   --hm-color-warning-bg: #383322;
   --hm-color-danger-bg:  #3d2832;
   --hm-color-info-bg:    #28304a;
-}
-
   /* Flat legacy surfaces — don't inherit the Obsidian card gradient / tints */
   --hm-card-bg: var(--hm-color-surface);
   --hm-card-highlight: none;
@@ -328,6 +325,7 @@
   --hm-tint-coral: var(--hm-color-danger-bg);
   --hm-tint-coral-border: var(--hm-color-danger-bg);
   --hm-tint-coral-badge: var(--hm-color-danger-bg);
+}
 
 /* ── Dark · Graphite (iOS-neutral graphite, system cyan accent) ───────── */
 :root[data-theme='dark-graphite'] {
@@ -358,8 +356,6 @@
   --hm-color-warning-bg: #2a2408;
   --hm-color-danger-bg:  #2a1512;
   --hm-color-info-bg:    #0e2230;
-}
-
   /* Flat legacy surfaces — don't inherit the Obsidian card gradient / tints */
   --hm-card-bg: var(--hm-color-surface);
   --hm-card-highlight: none;
@@ -375,3 +371,4 @@
   --hm-tint-coral: var(--hm-color-danger-bg);
   --hm-tint-coral-border: var(--hm-color-danger-bg);
   --hm-tint-coral-badge: var(--hm-color-danger-bg);
+}
