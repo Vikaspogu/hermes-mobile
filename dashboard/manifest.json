@@ -3,7 +3,7 @@
   "label": "Mobile",
   "description": "Install Hermes Mobile as a PWA on iOS and Android",
   "icon": "Smartphone",
-  "version": "0.1.2-beta",
+  "version": "0.1.10",
   "tab": { "path": "/mobile", "position": "after:sessions" },
   "entry": "dist/index.js",
   "css": "dist/style.css",
