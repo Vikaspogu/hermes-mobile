@@ -18,7 +18,7 @@
 
 .hm-screen .hm-chats {
   gap: 12px;
-  padding-bottom: 110px;
+  padding-bottom: calc(110px + env(safe-area-inset-bottom, 0px));
 }
 
 .hm-screen .hm-chats__list {

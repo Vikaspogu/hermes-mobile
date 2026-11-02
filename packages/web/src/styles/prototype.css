@@ -174,25 +174,39 @@ textarea {
 
 /* ── Bottom tab bar ─────────────────────────────────────────────────── */
 .hm-tabbar {
-  position: sticky;
-  bottom: 0;
+  /* Floats over the screen so content scrolls behind it; scrollers keep
+     ~110px bottom padding so their last row clears the pill. */
+  position: fixed;
+  /* Centered via left/right + auto margin, not transform: WebKit can misplace
+     backdrop-filter on transformed elements. */
+  left: 0;
+  right: 0;
+  bottom: calc(12px + env(safe-area-inset-bottom, 0px));
   z-index: 40;
   display: grid;
   grid-auto-flow: column;
   grid-auto-columns: 84px;
   gap: 4px;
   width: fit-content;
-  margin: 0 auto calc(12px + env(safe-area-inset-bottom, 0px));
+  margin: 0 auto;
   padding: 6px;
-  background: var(--hm-glass-bg);
-  -webkit-backdrop-filter: blur(20px);
-  backdrop-filter: blur(20px);
+  background: var(--hm-glass-bg); /* fallback where color-mix is unsupported */
+  /* ~0.48 effective alpha: 55% of the token's own 0.88 alpha. */
+  background: color-mix(in srgb, var(--hm-glass-bg) 55%, transparent);
+  -webkit-backdrop-filter: blur(16px) saturate(140%);
+  backdrop-filter: blur(16px) saturate(140%);
   border: 1px solid var(--hm-glass-border);
   border-radius: 24px;
   box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45);
 }
 /* Thread view: the composer owns the bottom edge; back arrow returns to Chats. */
 .hm-tabbar--chat { display: none; }
+/* Scrollers that sit above the floating pill without their own clearance. */
+.hm-screen .hm-command,
+.hm-screen .hm-sessions,
+.hm-screen .hm-projects__board {
+  padding-bottom: calc(110px + env(safe-area-inset-bottom, 0px));
+}
 
 .hm-tab {
   appearance: none;
@@ -476,7 +490,7 @@ textarea {
   display: flex;
   flex-direction: column;
   gap: 12px;
-  /* bottom padding clears the 54px FAB (bottom:~100px) and the glass dock */
+  /* bottom padding clears the floating nav pill */
   padding: 14px 16px calc(110px + env(safe-area-inset-bottom, 0px));
 }
 
@@ -2105,6 +2119,8 @@ select:focus-visible,
     position: fixed;
     top: 0;
     left: 0;
+    right: auto;
+    background: var(--hm-glass-bg);
     bottom: 0;
     width: 64px;
     grid-auto-flow: row;
