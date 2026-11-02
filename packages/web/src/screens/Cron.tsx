@@ -341,7 +341,8 @@ export function Cron({ rest, onNavigate }: CronProps) {
               : job.lastRun || job.lastStatus === 'ok'
                 ? '✓'
                 : '—';
-            const meta = `${to12h(scheduleText)} · next ${next ?? '—'} · last ${lastLabel}`;
+            const nextText = (next ?? '—').replace(/\s+/g, '\u00A0');
+            const meta = `${to12h(scheduleText)} · next\u00A0${nextText} · last\u00A0${lastLabel}`;
             const stateClass = paused
               ? ' work-listrow--paused'
               : hasErr
@@ -379,11 +380,10 @@ export function Cron({ rest, onNavigate }: CronProps) {
               </div>
             );
           })}
+        <p className="work-footnote">
+          Cron expressions live in the edit sheet — you read plain English here.
+        </p>
       </div>
-
-      <p className="work-footnote">
-        Cron expressions live in the edit sheet — you read plain English here.
-      </p>
 
       <button
         type="button"

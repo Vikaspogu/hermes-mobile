@@ -7,12 +7,43 @@
 .hm-chat__history-skeleton {
   width: 78%;
   height: 64px;
-  border-radius: var(--hm-radius-card);
-  background: var(--hm-color-surface-2);
+  border-radius: 18px 18px 18px 6px;
+  background: linear-gradient(
+    90deg,
+    rgba(24, 29, 40, 0.88) 0%,
+    rgba(56, 189, 248, 0.14) 50%,
+    rgba(24, 29, 40, 0.88) 100%
+  );
+  background-size: 200% 100%;
+  border: 1px solid var(--hm-color-border);
+  box-shadow: var(--hm-card-highlight);
+  animation: hm-skeleton-shimmer 1.6s ease-in-out infinite;
 }
 
 .hm-chat__history-skeleton:nth-child(2) {
   align-self: flex-end;
-  width: 55%;
-  height: 44px;
+  width: 58%;
+  height: 46px;
+  border-radius: 18px 18px 5px 18px;
+  border-color: var(--hm-tint-sky-border);
+  animation-delay: 0.2s;
+}
+
+.hm-chat__history-skeleton:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+@keyframes hm-skeleton-shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hm-chat__history-skeleton {
+    animation: none;
+  }
 }

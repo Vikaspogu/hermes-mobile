@@ -2,12 +2,16 @@
   padding: 0;
   max-width: 85%;
   background: transparent;
+  border: 0;
+  box-shadow: none;
 }
 
 .hm-message__bubble {
-  padding: var(--hm-space-3) var(--hm-space-4);
-  border-radius: 20px;
-  background: var(--hm-color-accent-weak);
+  padding: 11px 14px;
+  border-radius: 18px 18px 5px 18px;
+  background: var(--hm-tint-sky-surface);
+  border: 1px solid var(--hm-tint-sky-border);
+  box-shadow: var(--hm-card-highlight);
   color: var(--hm-color-text);
   white-space: pre-wrap;
 }
@@ -40,10 +44,11 @@
 .hm-chat .hm-message--assistant {
   width: 100%;
   max-width: 100%;
-  padding: 0;
-  border: 0;
-  border-radius: 0;
-  background: transparent;
+  padding: 12px 14px;
+  border: 1px solid var(--hm-color-border);
+  border-radius: 18px 18px 18px 6px;
+  background: var(--hm-card-bg);
+  box-shadow: var(--hm-card-highlight);
 }
 
 .hm-message__meta {

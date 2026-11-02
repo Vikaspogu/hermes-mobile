@@ -85,17 +85,22 @@ function sessionSearchText(session: Session): string {
 }
 
 function StatusDot({ session }: { session: Session }) {
-  const isLive = session.isActive || session.active;
+  const isLive = Boolean(session.isActive || session.active);
   const color = isLive ? 'var(--hm-color-running)' : 'var(--hm-color-text-faint)';
   return (
     <span
-      className="hm-session-dot"
-      style={{
-        background: color,
-        animation: isLive ? 'hm-pulse 1.8s infinite' : undefined,
-      }}
+      className={`hm-session-row__icon${isLive ? ' hm-session-row__icon--live' : ''}`}
       aria-hidden="true"
-    />
+    >
+      <Icon name="chat" size={16} />
+      <span
+        className="hm-session-dot"
+        style={{
+          background: color,
+          animation: isLive ? 'hm-pulse 1.8s infinite' : undefined,
+        }}
+      />
+    </span>
   );
 }
 
