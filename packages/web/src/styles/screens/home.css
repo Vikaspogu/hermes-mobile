@@ -66,7 +66,7 @@
   font-size: 16px;
 }
 
-/* Floating new-chat button */
+/* Floating action button (Cron, Projects) */
 .hm-fab {
   position: fixed;
   right: 20px;
@@ -140,6 +140,11 @@
   background: var(--hm-tint-sky-badge);
   border-color: var(--hm-tint-sky-border);
   color: var(--hm-tint-sky-accent);
+}
+.hm-screen .hm-thread-row__icon {
+  background: var(--hm-tint-emerald-badge);
+  border-color: var(--hm-tint-emerald-border);
+  color: var(--hm-tint-emerald-accent);
 }
 .hm-screen .hm-thread-row__icon--live {
   background: var(--hm-tint-amber-badge);

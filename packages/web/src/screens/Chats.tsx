@@ -201,7 +201,7 @@ export function Chats({ rpc, rest, onNavigate, sidebar, onOpenVoice, onRetry }: 
                 </div>
               </div>
               <div className="hm-qp-hero__presence">
-                <span className="hm-qp-presence">{connected ? 'ONLINE' : connectionState.toUpperCase()}</span>
+                <span className={`hm-qp-presence ${connected ? 'hm-qp-presence--emerald' : 'hm-qp-presence--amber'}`}>{connected ? 'ONLINE' : connectionState.toUpperCase()}</span>
               </div>
             </div>
             <div className="hm-qp-pills">
@@ -295,21 +295,6 @@ export function Chats({ rpc, rest, onNavigate, sidebar, onOpenVoice, onRetry }: 
             <span className="hm-home__approval-chevron" aria-hidden="true">
               ›
             </span>
-          </button>
-        )}
-
-        {!sidebar && (
-          <button
-            type="button"
-            className="hm-fab"
-            aria-label="New chat"
-            data-testid="chats-new-chat"
-            onClick={() => {
-              startNewSession(activeName);
-              onNavigate('chat');
-            }}
-          >
-            <Icon name="plus" size={24} />
           </button>
         )}
 
