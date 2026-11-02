@@ -267,13 +267,14 @@ describe('AppShell', () => {
     expect(row).toHaveTextContent('3 msgs');
   });
 
-  it('starts a new chat from the home FAB', async () => {
+  it('starts a new chat from the New Chat quick action and hides the tab bar', async () => {
     render(<AppShell connectionState="connected" rpc={rpcMock} rest={restMock} />);
     expect(screen.getByRole('heading', { name: 'Chats' })).toBeInTheDocument();
 
-    fireEvent.click(screen.getByTestId('chats-new-chat'));
+    fireEvent.click(screen.getByTestId('chats-qa-new'));
 
     await waitFor(() => expect(screen.getByLabelText('Message input')).toBeInTheDocument());
+    expect(screen.getByRole('navigation', { name: 'Primary' })).toHaveClass('hm-tabbar--chat');
   });
 
   it('shows the tab bar with Chats active', () => {
@@ -281,6 +282,7 @@ describe('AppShell', () => {
     expect(screen.getByRole('heading', { name: 'Chats' })).toBeInTheDocument();
     const nav = screen.getByRole('navigation', { name: 'Primary' });
     expect(within(nav).getByRole('button', { name: 'Chats' })).toHaveAttribute('aria-current', 'page');
+    expect(nav).not.toHaveClass('hm-tabbar--chat');
     expect(within(nav).getByRole('button', { name: 'Inbox' })).toBeInTheDocument();
     expect(within(nav).queryByRole('button', { name: 'Work' })).not.toBeInTheDocument();
     expect(within(nav).getByRole('button', { name: 'More' })).toBeInTheDocument();
@@ -711,7 +713,7 @@ describe('AppShell', () => {
       fireEvent.click(within(homeBanners[0]!).getByRole('button', { name: /Retry now/i }));
       expect(onRetry).toHaveBeenCalledTimes(1);
 
-      fireEvent.click(screen.getByTestId('chats-new-chat'));
+      fireEvent.click(screen.getByTestId('chats-qa-new'));
       act(() => {
         vi.advanceTimersByTime(1500);
       });

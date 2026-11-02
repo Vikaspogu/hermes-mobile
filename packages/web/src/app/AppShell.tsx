@@ -752,7 +752,7 @@ export function AppShell({ connectionState, rpc, rest, onRetry, connectionError 
       </main>
 
       {/* ── Bottom tab bar ─────────────────────────────────────────── */}
-      <nav className="hm-tabbar" aria-label="Primary">
+      <nav className={`hm-tabbar${screen === 'chat' ? ' hm-tabbar--chat' : ''}`} aria-label="Primary">
         {TABS.map((tab) => {
           if (tab.key === 'more') {
             return (

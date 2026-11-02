@@ -64,6 +64,41 @@ regenerated `dashboard/dist`** in the same change.
   carries the answer.
 - The server version is gated (`MIN_SUPPORTED_HERMES_VERSION` → `unsupported` state). The probe is fail-open.
 
+## Deploying to the live `hermes-agent` pod
+
+Run this only when the user explicitly asks to deploy. That request authorizes the commit, push, PR, merge,
+and `home-ops` bump below.
+
+Deploy the current `hermes-mobile` changes end-to-end to the live `hermes-agent` pod on the `home-ops` cluster:
+
+1. **Build and verify `hermes-mobile` locally**
+   - Run `npm run typecheck && npm run lint && npm test && npm run build`.
+   - Confirm `dashboard/dist/` (including `dashboard/dist/mobile/index.html` and hashed assets) is regenerated
+     and staged alongside source changes (`git add -A ':!.pi'`).
+
+2. **Commit, open PR, run CI, and merge to `main`**
+   - Commit with DCO sign-off (`git commit -s -m "<type>(<scope>): <summary>"`).
+   - Push the branch to `origin` and open a PR against `main` (`gh pr create --base main`).
+   - Trigger the CI workflow (`gh workflow run ci.yml --ref <branch>`), watch the run to completion
+     (`gh run watch <run-id> --exit-status`), and squash-merge the PR
+     (`gh pr merge <pr-number> --squash --delete-branch=false`).
+   - Fetch `origin/main` and record the merged commit SHA (`NEW_SHA=$(git rev-parse origin/main)`).
+
+3. **Bump `HERMES_PWA_REF` in `home-ops`**
+   - In `/home/agent/git-repos/home-ops/components/ai/hermes-agent/values.yaml`, update `HERMES_PWA_REF` under
+     the `install-plugins` initContainer `env` block to `$NEW_SHA`.
+   - Commit, `git pull --rebase`, and push to `origin/main` in `/home/agent/git-repos/home-ops`.
+
+4. **Refresh ArgoCD and verify the pod rollout**
+   - Trigger an ArgoCD refresh:
+     `kubectl -n argo-system annotate application hermes-agent argocd.argoproj.io/refresh=normal --overwrite`
+   - Confirm ArgoCD synced the new `home-ops` revision:
+     `kubectl -n argo-system get application hermes-agent -o jsonpath='{.status.sync.revision}{"\n"}'`
+   - Wait for the `Recreate` deployment rollout in namespace `ai`:
+     `kubectl -n ai rollout status deployment/hermes-agent --timeout=180s`
+   - Verify the live pod has the new `dashboard/dist/mobile/index.html` asset hashes:
+     `kubectl -n ai exec deployment/hermes-agent -c app -- cat /opt/data/plugins/hermes-pwa/dashboard/dist/mobile/index.html`
+
 ## Git safety — always preserve a rollback path
 
 Mandatory for any non-trivial edit:
