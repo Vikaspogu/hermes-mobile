@@ -375,9 +375,14 @@ export function Chats({ rpc, rest, onNavigate, sidebar, onOpenVoice, onRetry }: 
                       </span>
                     ) : (
                       <span
-                        className={`hm-thread-row__dot ${live ? 'hm-thread-row__dot--live' : 'hm-thread-row__dot--idle'}`}
+                        className={`hm-thread-row__icon${live ? ' hm-thread-row__icon--live' : ''}`}
                         aria-hidden="true"
-                      />
+                      >
+                        <Icon name="chat" size={16} />
+                        <span
+                          className={`hm-thread-row__dot ${live ? 'hm-thread-row__dot--live' : 'hm-thread-row__dot--idle'}`}
+                        />
+                      </span>
                     )}
                     <span className="hm-thread-row__body">
                       <span className="hm-thread-row__title">{s.title?.trim() || 'Untitled'}</span>

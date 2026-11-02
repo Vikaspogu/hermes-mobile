@@ -265,6 +265,10 @@ textarea {
   left: 0;
   right: 0;
   bottom: 0;
+  box-sizing: border-box;
+  max-height: calc(100dvh - env(safe-area-inset-top, 0px) - 24px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
   background: var(--hm-glass-bg);
   /* no backdrop-filter here: the panel sits over the already-dimmed overlay,
      stacking two 20px blurs is a measurable cost on low-end phones */
@@ -407,8 +411,7 @@ textarea {
 }
 
 .hm-more-row__sub {
-  font-family: var(--hm-font-mono);
-  font-size: 11.5px;
+  font-size: 12px;
   font-weight: 500;
   font-variant-numeric: tabular-nums;
   color: var(--hm-color-text-muted);
@@ -442,7 +445,10 @@ textarea {
 .hm-more-health__line {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 8px;
+  min-width: 0;
+  overflow-wrap: anywhere;
   font-size: 13px;
   color: var(--hm-color-text);
 }
@@ -626,10 +632,6 @@ textarea {
   padding: 18px 16px 30px;
 }
 
-.hm-home__hero {
-  text-align: center;
-  padding: 8px 0 2px;
-}
 
 .hm-home__wordmark {
   font-family: var(--hm-font-display);
@@ -898,10 +900,10 @@ textarea {
 
 .hm-message--user {
   align-self: flex-end;
-  background: var(--hm-color-primary);
-  color: var(--hm-color-primary-text);
-  border-radius: 18px 18px 5px 18px;
-  box-shadow: 0 6px 16px color-mix(in srgb, var(--hm-color-primary) 18%, transparent);
+  padding: 0;
+  background: transparent;
+  border: 0;
+  box-shadow: none;
 }
 
 .hm-message--assistant {
@@ -2684,9 +2686,19 @@ select:focus-visible,
   align-items: center;
   gap: var(--hm-space-3, 12px);
 }
+.hm-brand-hero .hm-brand {
+  flex-direction: column;
+  gap: 12px;
+}
+.hm-brand-hero .hm-wordmark {
+  font-size: 24px;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  color: var(--hm-color-text);
+}
 .hm-brand-hero .hm-brand__mark {
-  width: 44px;
-  height: 44px;
+  width: 56px;
+  height: 56px;
   animation: hm-brand-float 2.6s ease-in-out infinite;
 }
 .hm-brand-hero .hm-brand__mark circle {
@@ -2701,7 +2713,29 @@ select:focus-visible,
 .hm-brand-hero .hm-brand__mark circle:nth-of-type(6) { animation-delay: 0.75s; }
 .hm-brand-hero .hm-brand__mark circle:nth-of-type(7) { animation-delay: 0.9s; }
 .hm-brand-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px;
+  border-radius: 999px;
+  background: var(--hm-tint-sky-badge);
+  border: 1px solid var(--hm-tint-sky-border);
+  color: var(--hm-tint-sky-accent);
+  font-family: var(--hm-font-mono);
+  font-size: 11.5px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
   animation: hm-brand-breathe 2.6s ease-in-out infinite;
+}
+.hm-brand-status::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--hm-tint-sky-accent);
+  box-shadow: 0 0 8px var(--hm-tint-sky-accent);
 }
 @keyframes hm-brand-float {
   0%, 100% { transform: translateY(0); }

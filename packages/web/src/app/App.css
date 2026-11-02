@@ -2106,8 +2106,28 @@ a {
 }
 
 .hm-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
   padding: var(--hm-space-4);
   text-align: center;
+  font-family: var(--hm-font-mono);
+  font-size: 11.5px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--hm-tint-sky-accent);
+}
+.hm-loading::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--hm-tint-sky-accent);
+  box-shadow: 0 0 8px var(--hm-tint-sky-accent);
+  animation: hm-pulse 1.4s ease-in-out infinite;
 }
 
 /* Projects / Kanban */
@@ -2161,14 +2181,16 @@ a {
 
 .hm-projects__board-menu {
   position: absolute;
-  top: 96px;
+  top: 122px;
   left: var(--hm-space-4);
   right: var(--hm-space-4);
-  z-index: 10;
-  background: var(--hm-color-surface);
-  border: 1px solid var(--hm-color-border);
+  z-index: 30;
+  background: var(--hm-glass-bg);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--hm-glass-border);
   border-radius: var(--hm-radius-card);
-  box-shadow: 0 8px 24px rgba(20, 30, 60, 0.1);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45);
   padding: var(--hm-space-2);
   display: flex;
   flex-direction: column;
@@ -2653,6 +2675,13 @@ a {
   margin-bottom: 0;
 }
 
+.hm-projects__field .hm-input,
+.hm-projects__field .hm-select,
+.hm-projects__field .hm-textarea {
+  width: 100%;
+  box-sizing: border-box;
+}
+
 .hm-projects__goal-mode {
   margin: 4px 0;
 }
@@ -2924,27 +2953,51 @@ a {
   gap: 2px;
 }
 
-.hm-session-dot {
-  display: inline-block;
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
+.hm-session-row__icon {
+  position: relative;
+  width: 38px;
+  height: 38px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--hm-color-border);
+  color: var(--hm-color-text-muted);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   flex-shrink: 0;
-  margin-top: 4px;
+}
+
+.hm-session-row__icon--live {
+  background: var(--hm-tint-amber-badge);
+  border-color: var(--hm-tint-amber-border);
+  color: var(--hm-tint-amber-accent);
+}
+
+.hm-session-dot {
+  position: absolute;
+  right: -2px;
+  bottom: -2px;
+  display: inline-block;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  border: 2px solid var(--hm-color-bg);
+  flex-shrink: 0;
 }
 
 .hm-session-row {
   display: flex;
-  align-items: flex-start;
-  gap: var(--hm-space-3);
-  padding: var(--hm-space-3) var(--hm-space-4);
+  align-items: center;
+  gap: 12px;
+  min-height: 66px;
+  padding: 12px 14px;
   background: var(--hm-card-bg);
   border: 1px solid var(--hm-color-border);
-  border-radius: var(--hm-radius-sm);
+  border-radius: 18px;
   box-shadow: var(--hm-card-highlight);
   text-align: left;
   width: 100%;
-  transition: background 0.12s;
+  transition: background 0.12s, border-color 0.12s;
 }
 
 .hm-session-row--live {
@@ -2954,8 +3007,8 @@ a {
 
 .hm-session-row__open {
   display: flex;
-  align-items: flex-start;
-  gap: var(--hm-space-3);
+  align-items: center;
+  gap: 12px;
   flex: 1;
   min-width: 0;
   padding: 0;
@@ -2985,16 +3038,14 @@ a {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 4px;
-  min-height: 32px;
-  padding: 5px 8px;
-  border-radius: 9px;
+  min-width: var(--hm-tap-min);
+  min-height: var(--hm-tap-min);
+  padding: 0 8px;
+  border-radius: var(--hm-radius-sm);
   border: 1px solid var(--hm-color-border);
-  background: var(--hm-color-surface);
+  background: var(--hm-color-surface-2);
   color: var(--hm-color-text-muted);
-  font-size: 0.72rem;
-  font-weight: var(--hm-fw-semibold);
-  font-family: inherit;
+  font-size: 0.78rem;
   cursor: pointer;
 }
 
@@ -3017,8 +3068,9 @@ a {
 }
 
 .hm-session-row__title {
-  font-size: var(--hm-fs-body);
-  font-weight: var(--hm-fw-medium);
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: -0.015em;
   color: var(--hm-color-text);
   white-space: nowrap;
   overflow: hidden;
@@ -3030,7 +3082,9 @@ a {
   align-items: center;
   flex-wrap: wrap;
   gap: var(--hm-space-2);
-  font-size: 0.72rem;
+  font-size: 12px;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
   color: var(--hm-color-text-muted);
 }
 
@@ -3555,11 +3609,12 @@ a {
 
 .hm-cron__list {
   flex: 1;
+  min-height: 0;
   overflow-y: auto;
   display: flex;
   flex-direction: column;
-  gap: var(--hm-space-3);
-  padding: 0 var(--hm-space-4) var(--hm-space-4);
+  gap: 10px;
+  padding: 0 18px calc(130px + env(safe-area-inset-bottom, 0px));
 }
 
 .hm-cron-card {

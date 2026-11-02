@@ -159,6 +159,9 @@
   display: flex;
   align-items: center;
   gap: 12px;
+  min-height: 66px;
+  box-sizing: border-box;
+  flex-shrink: 0;
   padding: 12px 14px;
   background: var(--hm-card-bg);
   border: 1px solid var(--hm-color-border);
@@ -237,10 +240,11 @@
 
 .work-listrow__meta {
   font-size: 12px;
-  font-family: var(--hm-font-mono);
+  font-weight: 500;
   font-variant-numeric: tabular-nums;
   color: var(--hm-color-text-muted);
   margin-top: 2px;
+  line-height: 1.35;
 }
 
 .work-listrow--active .work-listrow__meta {
@@ -254,16 +258,19 @@
 .work-footnote {
   text-align: center;
   color: var(--hm-color-text-muted);
-  font-size: 13.5px;
-  padding: 26px 30px;
-  line-height: 1.6;
+  font-size: 12px;
+  padding: 12px 68px 8px;
+  line-height: 1.4;
   margin: 0;
 }
 
 /* FAB clearance: keep the last schedule row's toggle out from under the + button. */
 .hm-cron__list {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
   display: flex;
   flex-direction: column;
   gap: 10px;
-  padding: 10px 16px 140px;
+  padding: 10px 16px calc(130px + env(safe-area-inset-bottom, 0px));
 }
