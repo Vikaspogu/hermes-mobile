@@ -1,7 +1,7 @@
 {
   "name": "hermes-pwa",
   "label": "Mobile",
-  "description": "Install Hermes Mobile as a PWA on iOS and Android",
+  "description": "Install I.V.A.N as a PWA on iOS and Android",
   "icon": "Smartphone",
   "version": "0.1.10",
   "tab": { "path": "/mobile", "position": "after:sessions" },

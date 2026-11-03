@@ -53,7 +53,7 @@ function installControllerChangeReloadPrompt(): void {
     if (reloadPromptShown) return;
     reloadPromptShown = true;
     const shouldReload = typeof window.confirm === 'function'
-      ? window.confirm('A new Hermes Mobile version is ready. Reload now?')
+      ? window.confirm('A new I.V.A.N version is ready. Reload now?')
       : true;
     if (shouldReload) {
       window.location.reload();

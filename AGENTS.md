@@ -19,15 +19,15 @@ actions, watch activity, browse kanban, view agents/system, install to home scre
 
 ## Where to find what (authoritative docs)
 
-| Topic | Source of truth |
-|---|---|
-| System map, structure, data flow, WS events, state machine, ADRs | [`ARCHITECTURE.md`](./ARCHITECTURE.md) |
-| TS/React conventions, naming, transport rules, perf budget | [`CODING_RULES.md`](./CODING_RULES.md) |
-| Fork/branch/PR flow, commit + DCO sign-off, quality gates, CI/CD, merge rules | [`CONTRIBUTING.md`](./CONTRIBUTING.md) |
-| Design tokens, theming, components | [`DESIGN_SYSTEM.md`](./DESIGN_SYSTEM.md) |
-| Security model + known gaps | [`docs/SECURITY.md`](./docs/SECURITY.md) |
-| Install / network / rollback | [`docs/INSTALL.md`](./docs/INSTALL.md) · [`docs/NETWORK_TAILSCALE.md`](./docs/NETWORK_TAILSCALE.md) · [`docs/ROLLBACK_AND_REINSTALL.md`](./docs/ROLLBACK_AND_REINSTALL.md) |
-| Positioning, licensing, clean-room rationale | [`docs/THIRD_PARTY_CLIENT.md`](./docs/THIRD_PARTY_CLIENT.md) |
+| Topic                                                                         | Source of truth                                                                                                                                                            |
+| ----------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| System map, structure, data flow, WS events, state machine, ADRs              | [`ARCHITECTURE.md`](./ARCHITECTURE.md)                                                                                                                                     |
+| TS/React conventions, naming, transport rules, perf budget                    | [`CODING_RULES.md`](./CODING_RULES.md)                                                                                                                                     |
+| Fork/branch/PR flow, commit + DCO sign-off, quality gates, CI/CD, merge rules | [`CONTRIBUTING.md`](./CONTRIBUTING.md)                                                                                                                                     |
+| Design tokens, theming, components                                            | [`DESIGN_SYSTEM.md`](./DESIGN_SYSTEM.md)                                                                                                                                   |
+| Security model + known gaps                                                   | [`docs/SECURITY.md`](./docs/SECURITY.md)                                                                                                                                   |
+| Install / network / rollback                                                  | [`docs/INSTALL.md`](./docs/INSTALL.md) · [`docs/NETWORK_TAILSCALE.md`](./docs/NETWORK_TAILSCALE.md) · [`docs/ROLLBACK_AND_REINSTALL.md`](./docs/ROLLBACK_AND_REINSTALL.md) |
+| Positioning, licensing, clean-room rationale                                  | [`docs/THIRD_PARTY_CLIENT.md`](./docs/THIRD_PARTY_CLIENT.md)                                                                                                               |
 
 ## The three ground rules (non-negotiable)
 

@@ -351,7 +351,7 @@ export const useConnectionStore = create<ConnectionStore>((set, get) => {
         if (!isSupportedHermesVersion(status.version)) {
           set({
             state: 'unsupported',
-            error: `Hermes Mobile requires Hermes ${MIN_SUPPORTED_HERMES_VERSION} or newer. Current server: ${status.version}.`,
+            error: `I.V.A.N requires Hermes ${MIN_SUPPORTED_HERMES_VERSION} or newer. Current server: ${status.version}.`,
           });
           return;
         }

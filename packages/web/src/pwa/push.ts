@@ -42,7 +42,7 @@ export function getPushCapability(): PushCapability {
     return {
       supported: false,
       permission,
-      reason: 'On iPhone/iPad, install Hermes Mobile to Home Screen first; Safari tabs cannot receive Web Push.',
+      reason: 'On iPhone/iPad, install I.V.A.N to Home Screen first; Safari tabs cannot receive Web Push.',
       iosStandaloneRequired,
       installedStandalone,
     };
@@ -79,7 +79,7 @@ export async function enablePushNotifications(
   rest: RestClient,
   vapidPublicKey: string,
   profile: string,
-  label = 'Hermes Mobile',
+  label = 'I.V.A.N',
 ): Promise<PushSubscriptionSafe> {
   const capability = getPushCapability();
   if (!capability.supported) {
@@ -137,7 +137,7 @@ export async function syncPushSubscription(
   rest: RestClient,
   vapidPublicKey: string,
   profile: string,
-  label = 'Hermes Mobile',
+  label = 'I.V.A.N',
 ): Promise<boolean> {
   const capability = getPushCapability();
   if (!capability.supported) return false;

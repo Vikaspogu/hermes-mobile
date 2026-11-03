@@ -792,7 +792,7 @@ async def push_test(request: Request, profile: str = "default") -> JSONResponse:
         raise HTTPException(status_code=404, detail="subscription not found")
     payload: dict[str, object] = {
         "type": "test",
-        "title": "Hermes Mobile test",
+        "title": "I.V.A.N test",
         "body": "Notifications are connected.",
         "tag": "hermes-pwa-test",
         "url": "./index.html#/settings",
@@ -909,10 +909,10 @@ def _app_link_svg(app_url: str) -> str:
         f'    <tspan x="180" dy="{18 if i == 0 else 20}" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="13" fill="#14171c">{line}</tspan>'
         for i, line in enumerate(lines)
     )
-    return f"""<svg xmlns="http://www.w3.org/2000/svg" width="360" height="360" viewBox="0 0 360 360" role="img" aria-label="Hermes Mobile app link card">
+    return f"""<svg xmlns="http://www.w3.org/2000/svg" width="360" height="360" viewBox="0 0 360 360" role="img" aria-label="I.V.A.N app link card">
   <rect width="360" height="360" rx="16" fill="#ffffff" stroke="#e2e5ea" stroke-width="2"/>
   <rect x="24" y="24" width="312" height="56" rx="12" fill="#3b5bdb"/>
-  <text x="180" y="58" text-anchor="middle" font-family="system-ui, sans-serif" font-size="16" font-weight="600" fill="#ffffff">Hermes Mobile</text>
+  <text x="180" y="58" text-anchor="middle" font-family="system-ui, sans-serif" font-size="16" font-weight="600" fill="#ffffff">I.V.A.N</text>
   <text x="180" y="118" text-anchor="middle" font-family="system-ui, sans-serif" font-size="12" fill="#5b626d">Open this URL on your phone</text>
   <text x="180" y="142" text-anchor="middle">
 {tspan_blocks}

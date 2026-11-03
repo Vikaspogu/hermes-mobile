@@ -59,8 +59,8 @@ describe('service worker source', () => {
   it('sanitizes push payloads and falls back safely for malformed data', () => {
     expect(serviceWorkerSource).toContain('event.data ? event.data.json() : {}');
     expect(serviceWorkerSource).toContain("data = { body: event.data ? event.data.text() : '' }");
-    expect(serviceWorkerSource).toContain("'Hermes Mobile'");
-    expect(serviceWorkerSource).toContain("'Hermes has an update.'");
+    expect(serviceWorkerSource).toContain("'I.V.A.N'");
+    expect(serviceWorkerSource).toContain("'I.V.A.N has an update.'");
     expect(serviceWorkerSource).toContain("data.url.startsWith('./')");
     expect(serviceWorkerSource).toContain("'./index.html'");
     expect(serviceWorkerSource).toContain("requireInteraction: data.type === 'approval.request'");

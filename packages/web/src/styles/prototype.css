@@ -2726,12 +2726,6 @@ select:focus-visible,
   transform-origin: center;
   animation: hm-brand-twinkle 2.6s ease-in-out infinite;
 }
-.hm-brand-hero .hm-brand__mark circle:nth-of-type(2) { animation-delay: 0.15s; }
-.hm-brand-hero .hm-brand__mark circle:nth-of-type(3) { animation-delay: 0.3s; }
-.hm-brand-hero .hm-brand__mark circle:nth-of-type(4) { animation-delay: 0.45s; }
-.hm-brand-hero .hm-brand__mark circle:nth-of-type(5) { animation-delay: 0.6s; }
-.hm-brand-hero .hm-brand__mark circle:nth-of-type(6) { animation-delay: 0.75s; }
-.hm-brand-hero .hm-brand__mark circle:nth-of-type(7) { animation-delay: 0.9s; }
 .hm-brand-status {
   display: inline-flex;
   align-items: center;

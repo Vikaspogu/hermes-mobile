@@ -688,7 +688,7 @@ describe('AppShell', () => {
     render(<AppShell connectionState="connected" rpc={rpcMock} rest={restMock} />);
 
     await waitFor(() => expect(restMock.pushSubscribe).toHaveBeenCalledWith(
-      { subscription: subscription.toJSON(), label: 'Hermes Mobile' },
+      { subscription: subscription.toJSON(), label: 'I.V.A.N' },
       'dev',
     ));
   });

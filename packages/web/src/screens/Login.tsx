@@ -37,7 +37,7 @@ export function Login({ store, error }: LoginProps) {
             <span className="hm-qp-presence">PWA</span>
           </div>
           <p className="hm-subtitle" style={{ marginTop: 10, marginBottom: 0 }}>
-            Use your Dashboard credentials. Hermes Mobile shares the same session.
+            Use your Dashboard credentials. I.V.A.N shares the same session.
           </p>
           <div className="hm-qp-pills">
             <span className={`hm-qp-pill ${error || passwordSignInUnsupported ? 'hm-qp-pill--rose' : 'hm-qp-pill--emerald'}`}>

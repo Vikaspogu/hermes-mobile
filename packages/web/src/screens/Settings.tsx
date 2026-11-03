@@ -279,7 +279,7 @@ export function Settings({ rest, onNavigate, onLogout }: SettingsProps) {
         }
       />
       {pushCapability.iosStandaloneRequired && !devicePushEnabled && (
-        <p className="hm-settings__note">iPhone/iPad: install Hermes Mobile to Home Screen before enabling notifications.</p>
+        <p className="hm-settings__note">iPhone/iPad: install I.V.A.N to Home Screen before enabling notifications.</p>
       )}
 
       <div className="hm-qp-section__head">

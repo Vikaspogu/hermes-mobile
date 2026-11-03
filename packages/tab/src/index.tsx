@@ -238,7 +238,7 @@ function MobileTab() {
     <div className="hm-mobile-tab">
       <div className="hm-mobile-tab__hero">
         <p className="hm-mobile-tab__eyebrow">Hermes PWA</p>
-        <h1 className="hm-mobile-tab__title">Hermes Mobile</h1>
+        <h1 className="hm-mobile-tab__title">I.V.A.N</h1>
         <p className="hm-mobile-tab__subtitle">
           Installable mobile control plane for Hermes Agent. Run diagnostics below, then open the
           app on your phone or copy the URL.
@@ -279,8 +279,8 @@ function MobileTab() {
           <p>Scan the QR code with your phone camera, then on Android Chrome install the app, or on iPhone use Safari → Share → Add to Home Screen.</p>
           <code>{appUrl}</code>
         </div>
-        <div className="hm-install-card__qr" aria-label="QR code for Hermes Mobile app URL">
-          <img src={appQrDataUrl} alt="QR code for Hermes Mobile app URL" />
+        <div className="hm-install-card__qr" aria-label="QR code for I.V.A.N app URL">
+          <img src={appQrDataUrl} alt="QR code for I.V.A.N app URL" />
           <span>Scan to open on phone</span>
         </div>
       </div>
