@@ -28,7 +28,7 @@ export class LazyScreenErrorBoundary extends Component<LazyScreenErrorBoundaryPr
       return (
         <section className="hm-empty" role="alert" aria-live="assertive" data-testid="lazy-screen-error">
           <h2>Screen failed to load</h2>
-          <p className="hm-muted">Reload Hermes Mobile to fetch the latest app bundle.</p>
+          <p className="hm-muted">Reload I.V.A.N to fetch the latest app bundle.</p>
           <button type="button" className="hm-primary" onClick={this.reload}>
             Reload
           </button>

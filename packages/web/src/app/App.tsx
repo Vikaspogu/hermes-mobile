@@ -56,7 +56,7 @@ export function App() {
       <div className="hm-app-shell">
         <div className="hm-empty-state">
           <div className="hm-brand-hero" aria-hidden="true">
-            <BrandMark wordmark="Ivan" />
+            <BrandMark />
           </div>
           <p className="hm-muted hm-brand-status">Connecting…</p>
         </div>
@@ -90,7 +90,7 @@ export function App() {
       <div className="hm-app-shell">
         <div className="hm-empty-state">
           <div className="hm-brand-hero hm-brand-hero--static" aria-hidden="true">
-            <BrandMark wordmark="Ivan" />
+            <BrandMark />
           </div>
           <p className="hm-muted">{connection.error ?? fallback}</p>
           {canRetry ? (

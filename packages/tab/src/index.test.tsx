@@ -49,7 +49,7 @@ describe('MobileTab', () => {
 
   it('renders hero with title', () => {
     render(<MobileTab />);
-    expect(screen.getByText('Hermes Mobile')).toBeInTheDocument();
+    expect(screen.getByText('I.V.A.N')).toBeInTheDocument();
     expect(screen.getByText(/Installable mobile control plane/)).toBeInTheDocument();
   });
 
@@ -61,7 +61,7 @@ describe('MobileTab', () => {
 
   it('renders a QR code for the mobile app URL', async () => {
     render(<MobileTab />);
-    const qr = await screen.findByRole('img', { name: /QR code for Hermes Mobile app URL/i });
+    const qr = await screen.findByRole('img', { name: /QR code for I.V.A.N app URL/i });
     expect(qr).toHaveAttribute('src', expect.stringMatching(/^data:image\/gif;base64,/));
     expect(screen.getByText('Scan to open on phone')).toBeInTheDocument();
   });
@@ -245,7 +245,7 @@ describe('mount', () => {
     const container = document.createElement('div');
     const cleanup = mount(container);
     await waitFor(() => {
-      expect(container.textContent).toContain('Hermes Mobile');
+      expect(container.textContent).toContain('I.V.A.N');
     }, { timeout: 3000 });
     cleanup();
     expect(container.innerHTML).toBe('');

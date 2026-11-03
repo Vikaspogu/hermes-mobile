@@ -1,6 +1,6 @@
 {
-  "name": "Hermes Mobile",
-  "short_name": "Hermes",
+  "name": "I.V.A.N",
+  "short_name": "I.V.A.N",
   "id": "./index.html",
   "start_url": "./index.html",
   "scope": "./",
@@ -8,7 +8,7 @@
   "orientation": "portrait",
   "background_color": "#0e1116",
   "theme_color": "#0e1116",
-  "description": "Mobile control plane for Hermes Agent.",
+  "description": "I.V.A.N — personal agent control plane for Hermes Agent.",
   "icons": [
     {
       "src": "icons/icon-192.png",

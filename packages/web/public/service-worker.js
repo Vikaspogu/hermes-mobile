@@ -1,5 +1,5 @@
 const CACHE_PREFIX = 'hermes-mobile-';
-const CACHE_VERSION = 'hermes-mobile-v64';
+const CACHE_VERSION = 'hermes-mobile-v65';
 const SHELL_CACHE = `${CACHE_VERSION}:shell`;
 const RUNTIME_ASSET_CACHE = 'hermes-mobile-runtime-assets';
 const RUNTIME_ASSET_CACHE_MAX_ENTRIES = 60;
@@ -84,8 +84,8 @@ function safeNotificationPayload(event) {
       data = {};
     }
   }
-  const title = typeof data.title === 'string' && data.title.trim() ? data.title : 'Hermes Mobile';
-  const body = typeof data.body === 'string' && data.body.trim() ? data.body : 'Hermes has an update.';
+  const title = typeof data.title === 'string' && data.title.trim() ? data.title : 'I.V.A.N';
+  const body = typeof data.body === 'string' && data.body.trim() ? data.body : 'I.V.A.N has an update.';
   const tag = typeof data.tag === 'string' && data.tag.trim() ? data.tag : 'hermes-mobile';
   const url = typeof data.url === 'string' && data.url.startsWith('./') ? data.url : './index.html';
   return {
