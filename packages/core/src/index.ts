@@ -30,6 +30,7 @@ export type { GatewayStatus } from './domain/status';
 export type { AuthProvider, LoginBody, LoginResult, WsTicket } from './domain/auth';
 export type { Session, Message, MessageRole, ToolCall } from './domain/session';
 export {
+  findSessionByAlias,
   normalizeSessionSource,
   sessionPinId,
   sessionCurrentSourceId,

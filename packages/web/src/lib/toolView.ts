@@ -159,7 +159,10 @@ function findFirstUrl(args: Record<string, unknown>, result: Record<string, unkn
   return '';
 }
 
-function toolStatus(tool: ToolCall, resultRecord: Record<string, unknown>): ToolStatus {
+export function toolStatus(
+  tool: ToolCall,
+  resultRecord: Record<string, unknown> = parseMaybeObject(tool.output),
+): ToolStatus {
   if (tool.output === undefined) return 'running';
   if (resultRecord.error || resultRecord.status === 'error') return 'error';
   return 'success';

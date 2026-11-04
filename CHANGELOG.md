@@ -5,6 +5,12 @@ All notable changes are documented here. The format follows
 
 ## Unreleased
 
+### Changed
+
+- Richer home and chat colors: teal summary, violet voice controls, amber running chats,
+  coral approval states, blue user messages, and green completed tools. Failed tools
+  remain distinct from successful work. Both dark and light themes are supported.
+
 ### Added
 
 - **Cron push notifications.** Each cron run sends one push to the profile's PWA devices
