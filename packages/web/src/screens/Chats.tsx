@@ -1,13 +1,14 @@
 import { Fragment, useEffect, useMemo, useState } from 'react';
+import { useShallow } from 'zustand/react/shallow';
 import {
   useActivityStore,
   useConnectionStore,
   useSessionsStore,
   useProfilesStore,
   useChatStore,
+  findSessionByAlias,
   sessionSourceId,
   sessionSourceLabel,
-  type Approval,
   type Session,
   type RpcClient,
   type RestClient,
@@ -16,6 +17,7 @@ import { Icon } from '../components/Icon';
 import { BrandMark } from '../components/BrandMark';
 import { ConnectionBanner } from '../components/ConnectionBanner';
 import { usePullToRefresh } from '../components/usePullToRefresh';
+import { selectPendingApprovals } from '../lib/pendingApprovals';
 // ponytail: prototype.css's trailing @import of screens/*.css is dropped by Vite
 // (spec: @import must lead the file), so the screen pulls its own styles.
 import '../styles/screens/home.css';
@@ -101,13 +103,16 @@ export function Chats({ rpc, rest, onNavigate, sidebar, onOpenVoice, onRetry }: 
   const { sessions, load } = useSessionsStore();
   const activeName = useProfilesStore((s) => s.activeName);
   const { startNewSession, resumeSessionIntoChat } = useChatStore();
-  const pendingApprovals = useActivityStore(
-    (s) => s.items.filter((i) => i.kind === 'approval' && i.status === 'needs_you').length,
+  const approvals = useActivityStore(
+    useShallow((s) => selectPendingApprovals(s.items)),
   );
-  const firstPendingSession = useActivityStore(
-    (s) =>
-      s.items.find((i): i is Approval => i.kind === 'approval' && i.status === 'needs_you')
-        ?.session,
+  const pendingApprovals = approvals.length;
+  const firstPendingSession = approvals[0]?.session;
+  const blockedSessionIds = useMemo(
+    () => new Set(approvals.map((approval) =>
+      findSessionByAlias(sessions, approval.sourceSessionId || approval.sessionId)?.id,
+    )),
+    [approvals, sessions],
   );
   const [query, setQuery] = useState('');
 
@@ -250,7 +255,7 @@ export function Chats({ rpc, rest, onNavigate, sidebar, onOpenVoice, onRetry }: 
             </button>
             <button
               type="button"
-              className="hm-qp-qa-btn hm-qp-qa-btn--sky"
+              className="hm-qp-qa-btn hm-qp-qa-btn--violet"
               data-testid="chats-qa-voice"
               onClick={() => (onOpenVoice ? onOpenVoice() : onNavigate('voice'))}
             >
@@ -347,10 +352,12 @@ export function Chats({ rpc, rest, onNavigate, sidebar, onOpenVoice, onRetry }: 
               {group.items.map((s) => {
                 const live = isLive(s);
                 const isCron = sessionSourceId(s) === 'cron';
+                const blocked = blockedSessionIds.has(s.id);
                 return (
                   <button
                     key={s.id}
-                    className={`hm-thread-row${live ? ' hm-thread-row--live' : ''}${isCron ? ' hm-thread-row--cron' : ''}`}
+                    className={`hm-thread-row${live && !blocked ? ' hm-thread-row--live' : ''}${isCron ? ' hm-thread-row--cron' : ''}${blocked ? ' hm-thread-row--blocked' : ''}`}
+                    data-source={sessionSourceId(s)}
                     onClick={() => void openThread(s)}
                     data-testid="thread-row"
                   >
@@ -360,19 +367,17 @@ export function Chats({ rpc, rest, onNavigate, sidebar, onOpenVoice, onRetry }: 
                       </span>
                     ) : (
                       <span
-                        className={`hm-thread-row__icon${live ? ' hm-thread-row__icon--live' : ''}`}
+                        className="hm-thread-row__icon"
                         aria-hidden="true"
                       >
-                        <Icon name="chat" size={16} />
-                        <span
-                          className={`hm-thread-row__dot ${live ? 'hm-thread-row__dot--live' : 'hm-thread-row__dot--idle'}`}
-                        />
+                        <Icon name={blocked ? 'shield' : 'chat'} size={16} />
+                        {live && !blocked && <span className="hm-thread-row__dot hm-thread-row__dot--live" />}
                       </span>
                     )}
                     <span className="hm-thread-row__body">
                       <span className="hm-thread-row__title">{s.title?.trim() || 'Untitled'}</span>
                       <span className="hm-thread-row__preview">
-                        {s.previewText ??
+                        {blocked ? 'Waiting on approval' : s.previewText ??
                           ([
                             sessionSourceLabel(sessionSourceId(s) ?? '') ?? undefined,
                             s.messageCount ? `${s.messageCount} msgs` : undefined,
@@ -387,7 +392,7 @@ export function Chats({ rpc, rest, onNavigate, sidebar, onOpenVoice, onRetry }: 
                     </span>
                     <span className="hm-thread-row__meta">
                       {fmtAge(freshness(s))}
-                      {live && <span className="hm-thread-row__live">● live</span>}
+                      {live && !blocked && <span className="hm-thread-row__live">● live</span>}
                     </span>
                   </button>
                 );

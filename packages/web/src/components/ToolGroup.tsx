@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import type { RpcClient, ToolCall } from '@hermes-pwa/core';
 import { Icon } from './Icon';
 import { ApprovalInline } from './ApprovalInline';
-import { buildToolView, truncate } from '../lib/toolView';
+import { buildToolView, toolStatus, truncate } from '../lib/toolView';
 
 interface ToolGroupProps {
   tools: ToolCall[];
@@ -24,7 +24,7 @@ function ToolRow({ tool, rpc, streaming }: ToolRowProps) {
   const isRunning = isPendingTool && streaming;
 
   return (
-    <div className={`hm-tool-group__row ${isPendingTool ? 'hm-tool-group__row--running' : 'hm-tool-group__row--done'}`}>
+    <div className={`hm-tool-group__row hm-tool-group__row--${view.status === 'success' ? 'done' : view.status}`}>
       <button
         type="button"
         className="hm-tool-group__row-button"
@@ -66,13 +66,14 @@ export function formatWorkDuration(ms: number): string {
 
 export function ToolGroup({ tools, rpc, streaming, durationMs }: ToolGroupProps) {
   const runningCount = tools.filter((t) => t.output === undefined).length;
-  const stateLabel = runningCount > 0 ? 'running' : 'done';
+  const hasError = tools.some((tool) => toolStatus(tool) === 'error');
+  const stateLabel = runningCount > 0 ? 'running' : hasError ? 'failed' : 'done';
   const [open, setOpen] = useState(false);
   // Collapsed by default; running tools stay visible so live progress and approvals are never hidden.
   const showRows = open || runningCount > 0;
 
   return (
-    <div className={`hm-tool-group${showRows ? ' hm-tool-group--open' : ''}${runningCount > 0 ? ' hm-tool-group--running' : ''}`}>
+    <div className={`hm-tool-group hm-tool-group--${stateLabel}${showRows ? ' hm-tool-group--open' : ''}`}>
       <button
         type="button"
         className="hm-tool-group__header"
@@ -80,13 +81,13 @@ export function ToolGroup({ tools, rpc, streaming, durationMs }: ToolGroupProps)
         aria-expanded={showRows}
       >
         <span className="hm-tool-group__header-icon">
-          <Icon name="settings" size={12} />
+          <Icon name={runningCount > 0 ? 'settings' : hasError ? 'alert' : 'check'} size={12} />
         </span>
         <span className="hm-tool-group__header-text">
           <span className="hm-tool-group__header-meta">
             {runningCount > 0
               ? `${tools.length} ${tools.length === 1 ? 'step' : 'steps'} · ${stateLabel}`
-              : durationMs !== undefined && durationMs >= 1000
+              : !hasError && durationMs !== undefined && durationMs >= 1000
                 ? `Worked for ${formatWorkDuration(durationMs)}`
                 : `${tools.length} ${tools.length === 1 ? 'step' : 'steps'} · ${stateLabel}`}
           </span>

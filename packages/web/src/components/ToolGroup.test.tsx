@@ -6,6 +6,33 @@ import type { RpcClient } from '@hermes-pwa/core';
 const rpcMock = { request: vi.fn(), onFrame: vi.fn(), events: new EventTarget() } as unknown as RpcClient;
 
 describe('ToolGroup', () => {
+  it('labels failed tools as failed rather than completed successfully', () => {
+    render(<ToolGroup rpc={rpcMock} durationMs={9000} tools={[
+      { id: 'failed', name: 'terminal', input: { command: 'false' }, output: '{"error":"Command failed"}' },
+    ]} />);
+    expect(screen.getByRole('button', { name: /1 step · failed/i })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: /1 step · failed/i }));
+    expect(screen.getByRole('button', { name: /Ran · false/i }).closest('.hm-tool-group__row')).toHaveClass('hm-tool-group__row--error');
+  });
+
+  it('keeps mixed running and failed work running while marking the failed row', () => {
+    render(<ToolGroup rpc={rpcMock} streaming tools={[
+      { id: 'failed', name: 'terminal', input: { command: 'false' }, output: '{"error":"Command failed"}' },
+      { id: 'pending', name: 'read_file', input: { path: 'README.md' } },
+    ]} />);
+    expect(screen.getByRole('button', { name: /2 steps · running/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Ran · false/i }).closest('.hm-tool-group__row')).toHaveClass('hm-tool-group__row--error');
+  });
+
+  it('updates the failure label when a tool output changes in place', () => {
+    const tools = [{ id: 'tool', name: 'terminal', input: { command: 'false' }, output: 'done' }];
+    const { rerender } = render(<ToolGroup rpc={rpcMock} tools={tools} />);
+    expect(screen.getByRole('button', { name: /1 step · done/i })).toBeInTheDocument();
+    tools[0]!.output = '{"error":"Command failed"}';
+    rerender(<ToolGroup rpc={rpcMock} tools={tools} />);
+    expect(screen.getByRole('button', { name: /1 step · failed/i })).toBeInTheDocument();
+  });
+
   it('renders terminal row as "Ran · <command>" when done', () => {
     render(
       <ToolGroup

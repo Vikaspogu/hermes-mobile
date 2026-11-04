@@ -20,6 +20,21 @@
   --hm-card-bg: linear-gradient(180deg, rgba(24, 29, 40, 0.88) 0%, rgba(16, 20, 28, 0.92) 100%);
   --hm-card-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.04);
 
+  --hm-home-summary-bg: #103a35;
+  --hm-home-summary-text: #b5d9d0;
+  --hm-tint-emerald-solid: #123c32;
+  --hm-tint-amber-solid: #382b17;
+  --hm-tint-sky-solid: #19394e;
+  --hm-tint-coral-solid: #40232e;
+  --hm-tint-violet-solid: #302247;
+  --hm-tint-violet-border: #675183;
+  --hm-tint-violet-accent: #c4b5fd;
+  --hm-message-user-bg: #19486b;
+  --hm-message-user-border: #377ca4;
+  --hm-message-user-text: #eff9ff;
+  --hm-composer-bg: #12232e;
+  --hm-composer-text: #a8c3d4;
+
   /* ── Text ───────────────────────────────────────────────────────── */
   --hm-color-text:       #F8FAFC;
   --hm-color-text-2:     #E2E8F0;
@@ -207,6 +222,21 @@
 
   --hm-card-bg: linear-gradient(180deg, #ffffff 0%, #fbfcff 100%);
   --hm-card-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.9);
+
+  --hm-home-summary-bg: #dff5ec;
+  --hm-home-summary-text: #285b50;
+  --hm-tint-emerald-solid: #e3fbef;
+  --hm-tint-amber-solid: #fff3dc;
+  --hm-tint-sky-solid: #e7f4fd;
+  --hm-tint-coral-solid: #fdeaea;
+  --hm-tint-violet-solid: #eee7fa;
+  --hm-tint-violet-border: #c4b0df;
+  --hm-tint-violet-accent: #60408c;
+  --hm-message-user-bg: #dceffc;
+  --hm-message-user-border: #8ab6d5;
+  --hm-message-user-text: #173b55;
+  --hm-composer-bg: #eaf4fa;
+  --hm-composer-text: #456277;
 
   --hm-color-text:       #161a27;
   --hm-color-text-2:     #2b3346;
@@ -664,16 +694,12 @@ button.hm-qp-pill {
 .hm-qp-qa-btn--emerald .hm-qp-qa-btn__count {
   color: var(--hm-color-success);
 }
-.hm-qp-qa__btn--sky,
-.hm-qp-qa-btn--sky {
+.hm-qp-qa__btn--sky {
   background: var(--hm-grad-sky);
   border-color: var(--hm-tint-sky-border);
 }
 .hm-qp-qa__btn--sky svg,
-.hm-qp-qa__btn--sky .hm-qp-qa__sub,
-.hm-qp-qa-btn--sky svg,
-.hm-qp-qa-btn--sky .hm-qp-qa-btn__icon,
-.hm-qp-qa-btn--sky .hm-qp-qa-btn__count {
+.hm-qp-qa__btn--sky .hm-qp-qa__sub {
   color: var(--hm-color-info);
 }
 

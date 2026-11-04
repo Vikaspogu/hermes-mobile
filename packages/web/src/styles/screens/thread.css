@@ -68,6 +68,24 @@
   line-height: 1.6;
   color: var(--hm-color-text);
 }
+.hm-chat .hm-message__bubble {
+  background: var(--hm-message-user-bg);
+  border-color: var(--hm-message-user-border);
+  color: var(--hm-message-user-text);
+  box-shadow: none;
+}
+.hm-chat .hm-composer .hm-composer__pill {
+  background: var(--hm-composer-bg);
+  border-color: var(--hm-tint-sky-border);
+  border-radius: 16px;
+}
+.hm-chat .hm-composer textarea::placeholder,
+.hm-chat .hm-composer__model {
+  color: var(--hm-composer-text);
+}
+.hm-chat .hm-composer__action[aria-label='Open voice call'] {
+  color: var(--hm-tint-violet-accent);
+}
 
 /* Markdown body: links, tables, lists, code */
 .hm-message__text p { margin: 0 0 10px; }
@@ -142,11 +160,32 @@
 .hm-chat .hm-tool-group {
   background: var(--hm-card-bg);
   border: 1px solid var(--hm-color-border);
-  border-radius: 18px;
-  box-shadow: var(--hm-card-highlight);
+  border-radius: 14px;
+  box-shadow: none;
+}
+.hm-chat .hm-tool-group--done {
+  background: var(--hm-tint-emerald-solid);
+  border-color: var(--hm-tint-emerald-border);
+}
+.hm-chat .hm-tool-group--done .hm-tool-group__header {
+  color: var(--hm-color-success-strong);
+}
+.hm-chat .hm-tool-group--failed {
+  background: var(--hm-tint-coral-solid);
+  border-color: var(--hm-tint-rose-border);
+}
+.hm-chat .hm-tool-group--failed .hm-tool-group__header,
+.hm-chat .hm-tool-group__row--error .hm-tool-group__row-icon {
+  color: var(--hm-color-danger-strong);
+}
+.hm-chat .hm-tool-group__row--done .hm-tool-group__row-icon {
+  color: var(--hm-color-success-strong);
+}
+.hm-chat .hm-tool-group__header {
+  min-height: var(--hm-tap-min);
 }
 .hm-chat .hm-tool-group--running {
-  background: var(--hm-tint-amber-surface);
+  background: var(--hm-tint-amber-solid);
   border-color: var(--hm-tint-amber-border);
 }
 .hm-chat .hm-tool-group--running .hm-tool-group__header-icon {
@@ -166,14 +205,32 @@
 
 /* Inline approval — Amber (low risk) / Coral Rose (high risk) semantic active tint */
 .hm-approval-inline {
-  background: var(--hm-tint-amber-surface);
+  --hm-approval-accent: var(--hm-color-warning-strong);
+  background: var(--hm-tint-amber-solid);
   border: 1px solid var(--hm-tint-amber-border);
   border-radius: 16px;
-  box-shadow: var(--hm-card-highlight);
+  box-shadow: none;
 }
 .hm-approval-inline--high {
-  background: var(--hm-tint-rose-surface);
+  --hm-approval-accent: var(--hm-color-danger-strong);
+  background: var(--hm-tint-coral-solid);
   border-color: var(--hm-tint-rose-border);
+}
+.hm-approval-inline .hm-approval-inline__header {
+  background: transparent;
+}
+.hm-approval-inline .hm-approval-inline__title,
+.hm-approval-inline .hm-approval-inline__icon {
+  color: var(--hm-approval-accent);
+}
+.hm-approval-inline .hm-approval-inline__label {
+  color: var(--hm-color-text-2);
+}
+.hm-approval-inline .hm-approval-inline__approve {
+  background: var(--hm-approval-accent);
+}
+.hm-approval-inline .hm-approval-inline__actions button {
+  min-height: var(--hm-tap-min);
 }
 
 /* Live status & assistant header → Sky Cyan squircle badge + animated telemetry dots */
@@ -182,9 +239,9 @@
   width: 20px;
   height: 20px;
   border-radius: 6px;
-  background: var(--hm-tint-sky-badge);
-  border: 1px solid var(--hm-tint-sky-border);
-  color: var(--hm-tint-sky-accent);
+  background: var(--hm-tint-emerald-solid);
+  border: 1px solid var(--hm-tint-emerald-border);
+  color: var(--hm-color-success-strong);
   font-family: var(--hm-font-mono);
   font-size: 10.5px;
   font-weight: 700;
@@ -233,15 +290,15 @@
 
 /* Approval dock — Amber (low risk) / Coral Rose (high risk) semantic glass dock */
 .hm-approval-dock {
-  background: var(--hm-tint-amber-surface);
+  background: var(--hm-tint-amber-solid);
   border-top: 1px solid var(--hm-tint-amber-border);
-  box-shadow: var(--hm-card-highlight);
+  box-shadow: none;
 }
 .hm-approval-dock--high {
-  background: var(--hm-tint-rose-surface);
+  background: var(--hm-tint-coral-solid);
   border-top-color: var(--hm-tint-rose-border);
 }
-.hm-approval-dock__title-text--high { color: var(--hm-tint-rose-accent); }
+.hm-approval-dock__title-text--high { color: var(--hm-color-danger-strong); }
 .hm-approval-dock--high .hm-approval-dock__row > .hm-btn--danger-outline {
   flex: none;
   width: 110px;

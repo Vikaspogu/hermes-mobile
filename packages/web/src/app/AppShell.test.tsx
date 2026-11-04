@@ -57,6 +57,32 @@ const restMock = {
 } as unknown as import('@hermes-pwa/core').RestClient;
 
 describe('AppShell', () => {
+  it.each([
+    { label: 'source session', attribution: { sourceSessionId: 'blocked', sessionId: 'queue-key' } },
+    { label: 'session fallback', attribution: { sessionId: 'blocked' } },
+    { label: 'lineage root', attribution: { sourceSessionId: 'root', sessionId: 'queue-key' } },
+  ])('marks only the chat matched by a pending approval as waiting ($label)', async ({ attribution }) => {
+    vi.mocked(restMock.profileSessions).mockResolvedValue([
+      { id: 'blocked', lineageRootId: 'root', title: 'Maintenance', isActive: true, updatedAt: Date.now(), messageCount: 1, profile: undefined },
+      { id: 'queue-key', title: 'Other chat', updatedAt: Date.now(), messageCount: 1, profile: undefined },
+    ]);
+    render(<AppShell connectionState="connected" rpc={rpcMock} rest={restMock} />);
+    await screen.findByText('Maintenance');
+    act(() => useActivityStore.setState({ items: [{
+      id: 'approval', kind: 'approval', status: 'needs_you', title: 'Restart',
+      ...attribution, createdAt: Date.now(),
+    }] }));
+    const blocked = screen.getByText('Maintenance').closest('button')!;
+    expect(within(blocked).getByText('Waiting on approval')).toBeInTheDocument();
+    expect(within(blocked).queryByText('● live')).not.toBeInTheDocument();
+    expect(within(screen.getByText('Other chat').closest('button')!).queryByText('Waiting on approval')).not.toBeInTheDocument();
+    act(() => useActivityStore.setState({ items: [{
+      id: 'unscoped', kind: 'approval', status: 'needs_you', title: 'Unscoped', createdAt: Date.now(),
+    }] }));
+    expect(within(blocked).queryByText('Waiting on approval')).not.toBeInTheDocument();
+    expect(within(blocked).getByText('● live')).toBeInTheDocument();
+  });
+
   beforeEach(() => {
     localStorage.clear();
     useConnectionStore.setState({ state: 'connected', error: undefined } as ReturnType<typeof useConnectionStore.getState>);
