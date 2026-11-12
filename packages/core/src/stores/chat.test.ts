@@ -729,6 +729,133 @@ describe('useChatStore', () => {
     expect(useChatStore.getState().streaming).toBe(true);
   });
 
+  it('loadHistory drops a local assistant copy when REST already holds the turn answer', async () => {
+    // Regression: the streamed copy can differ from the persisted row by more
+    // than outer whitespace (e.g. inner formatting), so text matching fails and
+    // the reply rendered twice.
+    useChatStore.setState({
+      sessionId: 'live-1',
+      storedSessionId: 'stored-1',
+      messages: [
+        { id: 'u-1', role: 'user', text: 'first question', createdAt: undefined },
+        { id: 'a-1', role: 'assistant', text: 'first answer', createdAt: undefined },
+        { id: 'u-2', role: 'user', text: 'second question', createdAt: undefined },
+        { id: 'a-2-local', role: 'assistant', text: 'second  answer', createdAt: undefined },
+      ],
+    });
+    vi.mocked(restMock.sessionMessages).mockResolvedValue({
+      messages: [
+        { id: 'db-1', role: 'user', text: 'first question' },
+        { id: 'db-2', role: 'assistant', text: 'first answer' },
+        { id: 'db-3', role: 'user', text: 'second question' },
+        { id: 'db-4', role: 'assistant', text: 'second answer' },
+      ],
+    });
+
+    await useChatStore.getState().loadHistory(restMock, 'live-1');
+
+    expect(useChatStore.getState().messages.map((m) => `${m.role}:${m.text}`)).toEqual([
+      'user:first question',
+      'assistant:first answer',
+      'user:second question',
+      'assistant:second answer',
+    ]);
+  });
+
+  it('loadHistory keeps a local assistant with unresolved tool calls even when REST has an answer', async () => {
+    useChatStore.setState({
+      sessionId: 'live-1',
+      storedSessionId: 'stored-1',
+      messages: [
+        { id: 'u-1', role: 'user', text: 'Run date', createdAt: undefined },
+        {
+          id: 'a-local',
+          role: 'assistant',
+          text: 'Running it now.',
+          createdAt: undefined,
+          toolCalls: [{ id: 'tool-local', name: 'terminal', input: { command: 'date' } }],
+        },
+      ],
+    });
+    vi.mocked(restMock.sessionMessages).mockResolvedValue({
+      messages: [
+        { id: 'db-1', role: 'user', text: 'Run date' },
+        { id: 'db-2', role: 'assistant', text: 'Running it  now.' },
+      ],
+    });
+
+    await useChatStore.getState().loadHistory(restMock, 'live-1');
+
+    const messages = useChatStore.getState().messages;
+    // The local copy stays even though it near-duplicates the REST answer: it
+    // carries the unresolved tool call (approval UI), which must not be dropped.
+    expect(messages.map((m) => `${m.role}:${m.text}`)).toEqual(['user:Run date', 'assistant:Running it  now.', 'assistant:Running it now.']);
+    expect(messages[2]?.toolCalls).toEqual([{ id: 'tool-local', name: 'terminal', input: { command: 'date' } }]);
+  });
+
+  it('loadHistory keeps the local reply when a repeated prompt is answered only once in REST', async () => {
+    // The same prompt sent twice: the guard must bind to the latest turn, not the
+    // first identical user message, or the earlier answer would justify dropping
+    // the new reply.
+    useChatStore.setState({
+      sessionId: 'live-1',
+      storedSessionId: 'stored-1',
+      messages: [
+        { id: 'u-1', role: 'user', text: 'Status?', createdAt: undefined },
+        { id: 'a-1', role: 'assistant', text: 'first answer', createdAt: undefined },
+        { id: 'u-2', role: 'user', text: 'Status?', createdAt: undefined },
+        { id: 'a-2-local', role: 'assistant', text: 'second answer', createdAt: undefined },
+      ],
+    });
+    vi.mocked(restMock.sessionMessages).mockResolvedValue({
+      messages: [
+        { id: 'db-1', role: 'user', text: 'Status?' },
+        { id: 'db-2', role: 'assistant', text: 'first answer' },
+        { id: 'db-3', role: 'user', text: 'Status?' },
+      ],
+    });
+
+    await useChatStore.getState().loadHistory(restMock, 'live-1');
+
+    expect(useChatStore.getState().messages.map((m) => `${m.role}:${m.text}`)).toEqual([
+      'user:Status?',
+      'assistant:first answer',
+      'user:Status?',
+      'assistant:second answer',
+    ]);
+  });
+
+  it('loadHistory keeps the local reply when a lagging REST snapshot lacks the repeated prompt entirely', async () => {
+    // The repeated user message has not reached REST yet: the only matching
+    // history user belongs to the earlier turn, whose answer must not justify
+    // dropping the new reply.
+    useChatStore.setState({
+      sessionId: 'live-1',
+      storedSessionId: 'stored-1',
+      messages: [
+        { id: 'u-1', role: 'user', text: 'Status?', createdAt: undefined },
+        { id: 'a-1', role: 'assistant', text: 'first answer', createdAt: undefined },
+        { id: 'u-2', role: 'user', text: 'Status?', createdAt: undefined },
+        { id: 'a-2-local', role: 'assistant', text: 'second answer', createdAt: undefined },
+      ],
+    });
+    vi.mocked(restMock.sessionMessages).mockResolvedValue({
+      messages: [
+        { id: 'db-1', role: 'user', text: 'Status?' },
+        { id: 'db-2', role: 'assistant', text: 'first answer' },
+      ],
+    });
+
+    await useChatStore.getState().loadHistory(restMock, 'live-1');
+
+    expect(useChatStore.getState().messages.map((m) => `${m.role}:${m.text}`)).toEqual([
+      'user:Status?',
+      'assistant:first answer',
+      'user:Status?',
+      'assistant:second answer',
+    ]);
+  });
+
   it('loadHistory dedupes optimistic user but keeps following assistant placeholder', async () => {
     useChatStore.setState({
       sessionId: 'live-1',

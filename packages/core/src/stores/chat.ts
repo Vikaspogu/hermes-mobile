@@ -499,7 +499,27 @@ function hasCompletedHistoryAssistantForLocalTurn(history: Message[], local: Mes
     if (!localMessage) continue;
     if (localMessage.role !== 'user') continue;
     const userKey = messageFingerprint(localMessage);
-    const historyUserIndex = history.findIndex((historyMessage) => messageFingerprint(historyMessage) === userKey);
+    // Bind by occurrence: count which repetition of this prompt the local turn
+    // is, then find the same repetition in history. First/last matching alone
+    // breaks when a prompt is repeated verbatim — an earlier turn's answer would
+    // satisfy this guard for the new reply, and a lagging REST snapshot that
+    // lacks the repeated prompt entirely must not match the older turn either.
+    let occurrence = 0;
+    for (let k = 0; k <= localIndex; k += 1) {
+      const localMatch = local[k];
+      if (localMatch && localMatch.role === 'user' && messageFingerprint(localMatch) === userKey) occurrence += 1;
+    }
+    let historyUserIndex = -1;
+    for (let j = 0; j < history.length; j += 1) {
+      const historyMessage = history[j];
+      if (historyMessage && messageFingerprint(historyMessage) === userKey) {
+        occurrence -= 1;
+        if (occurrence === 0) {
+          historyUserIndex = j;
+          break;
+        }
+      }
+    }
     if (historyUserIndex < 0) return false;
     for (let j = historyUserIndex + 1; j < history.length; j += 1) {
       const historyMessage = history[j];
@@ -513,9 +533,15 @@ function hasCompletedHistoryAssistantForLocalTurn(history: Message[], local: Mes
 }
 
 function shouldDropLocalTailMessage(history: Message[], local: Message[], localIndex: number, message: Message): boolean {
+  if (message.role !== 'assistant') return false;
+  if (!hasCompletedHistoryAssistantForLocalTurn(history, local, localIndex)) return false;
   // A backgrounded PWA can keep the realtime tool-call placeholder after REST already has the final answer.
-  // Drop only that same-turn placeholder; keep pending approval/tool rows when REST has no completed answer yet.
-  return isEmptyAssistantPlaceholder(message) && hasCompletedHistoryAssistantForLocalTurn(history, local, localIndex);
+  if (isEmptyAssistantPlaceholder(message)) return true;
+  // REST persists an assistant row only when its turn completes, so a non-empty
+  // local copy that failed text matching is the same answer with stream-only
+  // formatting — keeping it renders the reply twice. Keep it only while it
+  // carries unresolved tool calls (pending approval UI).
+  return !(message.toolCalls ?? []).some((tool) => tool.output === undefined);
 }
 
 function mergeHistoryWithLocal(history: Message[], local: Message[]): { messages: Message[]; preservedLocalTail: Message[] } {
