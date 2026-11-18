@@ -41,6 +41,8 @@ export function SlideToApprove({ onConfirm, disabled = false, label = 'Slide to 
 
   function onPointerDown(event: React.PointerEvent<HTMLDivElement>) {
     if (disabled) return;
+    confirmedRef.current = false;
+    setPosition(0);
     // jsdom has no pointer capture and synthetic pointers have no active id;
     // both throw, so guard. Real browsers need it so the drag keeps tracking
     // when the pointer leaves the knob. No preventDefault here — it would

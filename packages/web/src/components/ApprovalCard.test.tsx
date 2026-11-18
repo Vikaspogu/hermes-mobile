@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { ApprovalCard } from './ApprovalCard';
 
 const baseItem = {
@@ -74,5 +74,14 @@ describe('ApprovalCard', () => {
     expect(screen.getByText('Thread context unavailable')).toBeInTheDocument();
     expect(screen.queryByRole('link')).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Reject' })).toBeInTheDocument();
+  });
+  it('re-enables Reject after a failed response', async () => {
+    const onRespond = vi.fn().mockRejectedValue(new Error('offline'));
+    render(<ApprovalCard item={baseItem} onRespond={onRespond} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Reject' }));
+    expect(screen.getByRole('button', { name: 'Reject' })).toBeDisabled();
+
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Reject' })).toBeEnabled());
   });
 });

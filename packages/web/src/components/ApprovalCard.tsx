@@ -7,7 +7,7 @@ type ApprovalChoice = 'once' | 'session' | 'always' | 'deny';
 
 interface ApprovalCardProps {
   item: Approval;
-  onRespond(id: string, choice: ApprovalChoice): void;
+  onRespond(id: string, choice: ApprovalChoice): Promise<void> | void;
 }
 
 /** "2m ago" — matches the M4 inbox meta line. */
@@ -26,11 +26,15 @@ export function ApprovalCard({ item, onRespond }: ApprovalCardProps) {
   const busy = submitting !== null;
   const high = item.highImpact;
 
-  function respond(choice: ApprovalChoice) {
+  async function respond(choice: ApprovalChoice) {
     if (busy) return;
     haptic('confirm');
     setSubmitting(choice);
-    onRespond(item.id, choice);
+    try {
+      await onRespond(item.id, choice);
+    } catch {
+      setSubmitting(null);
+    }
   }
 
   const meta = [item.session, timeAgo(item.createdAt)].filter(Boolean).join(' · ');
@@ -73,7 +77,7 @@ export function ApprovalCard({ item, onRespond }: ApprovalCardProps) {
                 type="button"
                 className="hm-btn hm-btn--danger-outline"
                 disabled={busy}
-                onClick={() => respond('deny')}
+                onClick={() => void respond('deny')}
                 aria-label="Reject"
               >
                 {submitting === 'deny' ? 'Rejecting…' : 'Reject'}
@@ -87,7 +91,7 @@ export function ApprovalCard({ item, onRespond }: ApprovalCardProps) {
             type="button"
             className="hm-btn hm-btn--danger-outline"
             disabled={busy}
-            onClick={() => respond('deny')}
+            onClick={() => void respond('deny')}
             aria-label="Reject"
           >
             {submitting === 'deny' ? 'Rejecting…' : 'Reject'}
@@ -96,7 +100,7 @@ export function ApprovalCard({ item, onRespond }: ApprovalCardProps) {
             type="button"
             className="hm-btn hm-btn--primary"
             disabled={busy}
-            onClick={() => respond('once')}
+            onClick={() => void respond('once')}
             aria-label="Approve once"
           >
             {submitting === 'once' ? 'Approving…' : 'Approve once'}

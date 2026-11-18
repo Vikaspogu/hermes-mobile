@@ -74,6 +74,19 @@ describe('SlideToApprove', () => {
     expect(onConfirm).not.toHaveBeenCalled();
     expect(knob).toHaveAttribute('aria-valuenow', '0');
   });
+  it('resets keyboard progress when a pointer gesture starts', () => {
+    const onConfirm = vi.fn();
+    render(<SlideToApprove onConfirm={onConfirm} />);
+    const knob = screen.getByRole('slider', { name: 'Slide to approve' });
+
+    fireEvent.keyDown(knob, { key: 'End' });
+    fireEvent.pointerDown(knob, { pointerId: 1, clientX: 24 });
+    fireEvent.pointerUp(knob, { pointerId: 1, clientX: 24 });
+
+    expect(onConfirm).not.toHaveBeenCalled();
+    expect(knob).toHaveAttribute('aria-valuenow', '0');
+  });
+
   it('does not confirm when disabled', () => {
     const onConfirm = vi.fn();
     render(<SlideToApprove onConfirm={onConfirm} disabled />);

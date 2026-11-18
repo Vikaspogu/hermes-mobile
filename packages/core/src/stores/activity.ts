@@ -33,36 +33,24 @@ function removeById(items: ActionItem[], id: string): ActionItem[] {
   return items.filter((i) => i.id !== id);
 }
 
-const EQUIVALENT_APPROVAL_WINDOW_MS = 2 * 60_000;
-
-function toMillis(value: number | undefined): number | undefined {
-  if (typeof value !== 'number' || !Number.isFinite(value)) return undefined;
-  // Backend pending records use epoch seconds; UI-created realtime cards use ms.
-  return value > 1_000_000_000_000 ? value : value > 1_000_000_000 ? value * 1000 : value;
-}
-
 function approvalIds(item: ActionItem): string[] {
   return [item.sessionId, item.sourceSessionId].filter((value): value is string => Boolean(value));
 }
 
 function sameApproval(a: ActionItem, b: ActionItem): boolean {
   if (a.kind !== 'approval' || b.kind !== 'approval') return false;
-  if (a.rpcRequestId !== undefined && b.rpcRequestId !== undefined && a.rpcRequestId !== b.rpcRequestId) return false;
+  if (
+    a.rpcRequestId !== undefined &&
+    b.rpcRequestId !== undefined &&
+    a.rpcRequestId !== b.rpcRequestId
+  )
+    return false;
   if (!a.summary || !b.summary || a.summary !== b.summary) return false;
 
-  // The same backend approval can reach the UI twice:
-  // - realtime WS event, sometimes keyed by the live UI session id;
-  // - REST recovery record, keyed by the gateway approval session_key.
-  // Prefer exact/source id overlap when available, but tolerate a short timing
-  // window so an already-open PWA can collapse old-bundle realtime cards whose
-  // id shape differs from the REST recovery record.
+  // Realtime and REST records dedupe only when session/source identity overlaps.
   const aIds = approvalIds(a);
   const bIds = approvalIds(b);
-  if (aIds.some((id) => bIds.includes(id))) return true;
-
-  const aTime = toMillis(a.createdAt);
-  const bTime = toMillis(b.createdAt);
-  return Boolean(aTime !== undefined && bTime !== undefined && Math.abs(aTime - bTime) <= EQUIVALENT_APPROVAL_WINDOW_MS);
+  return aIds.some((id) => bIds.includes(id));
 }
 
 const REALTIME_APPROVAL_REFRESH_GRACE_MS = 5_000;
@@ -75,12 +63,21 @@ function mergeIncomingItems(existing: ActionItem[], incoming: ActionItem[]): Act
   const matchedExistingIds = new Set<string>();
   const mergedIncoming = incoming.map((item) => {
     const match = existing.find(
-      (current) => !matchedExistingIds.has(current.id) && (current.id === item.id || sameApproval(item, current)),
+      (current) =>
+        !matchedExistingIds.has(current.id) &&
+        (current.id === item.id || sameApproval(item, current)),
     );
     if (match) matchedExistingIds.add(match.id);
     const rpcRequestId = item.rpcRequestId ?? match?.rpcRequestId;
-    if (match && rpcRequestId !== undefined) {
-      const sourceSessionId = item.sourceSessionId ?? match.sourceSessionId;
+    if (match) {
+      const identityMatch =
+        item.id === match.id || approvalIds(item).some((id) => approvalIds(match).includes(id));
+      const sourceSessionId =
+        item.sourceSessionId ?? (identityMatch ? match.sourceSessionId : undefined);
+      // Legacy REST responses use the gateway queue key as sessionId. Keep that
+      // response identifier; copy live navigation only for an identity match.
+      if (rpcRequestId === undefined)
+        return { ...item, ...(sourceSessionId ? { sourceSessionId } : {}) };
       return {
         ...item,
         id: item.rpcRequestId !== undefined ? item.id : match.id,
@@ -116,8 +113,10 @@ function upsertActivityItem(existing: ActionItem[], item: ActionItem): ActionIte
     match && item.rpcRequestId !== undefined
       ? {
           ...item,
-          ...(item.sessionId ?? match.sessionId ? { sessionId: item.sessionId ?? match.sessionId } : {}),
-          ...(item.sourceSessionId ?? match.sourceSessionId ?? match.sessionId
+          ...((item.sessionId ?? match.sessionId)
+            ? { sessionId: item.sessionId ?? match.sessionId }
+            : {}),
+          ...((item.sourceSessionId ?? match.sourceSessionId ?? match.sessionId)
             ? { sourceSessionId: item.sourceSessionId ?? match.sourceSessionId ?? match.sessionId }
             : {}),
         }
@@ -127,12 +126,15 @@ function upsertActivityItem(existing: ActionItem[], item: ActionItem): ActionIte
             id: match.id,
             rpcRequestId: match.rpcRequestId,
             ...(match.sessionId ? { sessionId: match.sessionId } : {}),
-            ...(item.sessionId ?? match.sourceSessionId
+            ...((item.sessionId ?? match.sourceSessionId)
               ? { sourceSessionId: item.sessionId ?? match.sourceSessionId }
               : {}),
           }
         : item;
-  return [merged, ...existing.filter((current) => current.id !== item.id && !sameApproval(item, current))];
+  return [
+    merged,
+    ...existing.filter((current) => current.id !== item.id && !sameApproval(item, current)),
+  ];
 }
 
 function isStaleApprovalError(err: unknown): boolean {
@@ -154,17 +156,25 @@ export const useActivityStore = create<ActivityStore>((set, get) => ({
         loading: false,
       }));
     } catch (err) {
-      set({ loading: false, error: err instanceof Error ? err.message : 'Failed to load pending actions.' });
+      set({
+        loading: false,
+        error: err instanceof Error ? err.message : 'Failed to load pending actions.',
+      });
     }
   },
 
   async respondApproval(rpc, id, decision, sessionId, choiceOverride) {
-    if (approvalResponsesInFlight.has(id)) return;
+    if (approvalResponsesInFlight.has(id))
+      throw new Error('Approval response already in progress.');
     approvalResponsesInFlight.add(id);
     try {
       const item = get().items.find((i) => i.id === id);
       const choice = choiceOverride ?? (decision === 'approve' ? 'once' : 'deny');
-      if (item?.kind === 'approval' && item.rpcRequestId !== undefined && typeof rpc.respond === 'function') {
+      if (
+        item?.kind === 'approval' &&
+        item.rpcRequestId !== undefined &&
+        typeof rpc.respond === 'function'
+      ) {
         rpc.respond(item.rpcRequestId, { choice });
       } else {
         const resolvedSessionId = sessionId ?? item?.sessionId;
@@ -196,7 +206,11 @@ export const useActivityStore = create<ActivityStore>((set, get) => ({
     clarifyResponsesInFlight.add(id);
     try {
       const item = get().items.find((i) => i.id === id);
-      if (item?.kind === 'clarify' && item.rpcRequestId !== undefined && typeof rpc.respond === 'function') {
+      if (
+        item?.kind === 'clarify' &&
+        item.rpcRequestId !== undefined &&
+        typeof rpc.respond === 'function'
+      ) {
         const rpcKey = String(item.rpcRequestId);
         const remainingSiblings = get().items.filter(
           (i) =>

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { haptic } from '../pwa/haptics';
 import { Icon } from './Icon';
 import type { Approval, RpcClient } from '@hermes-pwa/core';
@@ -27,6 +27,11 @@ export function ApprovalDock({ rpc, approval, sessionTitle, cwd, fallbackSession
   const respondApproval = useActivityStore((s) => s.respondApproval);
   const [submitting, setSubmitting] = useState<ApprovalChoice | null>(null);
   const [moreOpen, setMoreOpen] = useState(false);
+
+  useEffect(() => {
+    setSubmitting(null);
+    setMoreOpen(false);
+  }, [approval.id]);
   const busy = submitting !== null;
   const high = approval.highImpact;
   const meta = [approval.session ?? sessionTitle, cwd ? shortenHome(cwd) : undefined]
@@ -80,7 +85,7 @@ export function ApprovalDock({ rpc, approval, sessionTitle, cwd, fallbackSession
           Reject
         </button>
         {high ? (
-          <SlideToApprove disabled={busy} onConfirm={() => void respond('once')} />
+          <SlideToApprove key={approval.id} disabled={busy} onConfirm={() => void respond('once')} />
         ) : (
           <>
             <button

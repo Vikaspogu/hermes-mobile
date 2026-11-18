@@ -196,7 +196,7 @@ export function ApprovalsScreen({ rpc, rest }: ApprovalsScreenProps) {
                 key={item.id}
                 item={item}
                 onRespond={(id, choice) =>
-                  void respondApproval(rpc, id, choice === 'deny' ? 'reject' : 'approve', item.sessionId, choice)
+                  respondApproval(rpc, id, choice === 'deny' ? 'reject' : 'approve', item.sessionId, choice)
                 }
               />
             ) : null,

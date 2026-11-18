@@ -162,7 +162,7 @@
 .hm-voice__call { min-height: 52px; padding: 0 26px; color: var(--hm-color-on-primary); background: var(--hm-color-primary); border-radius: 18px; font-weight: 750; }
 
 /* More: Android-style two-column destination grid. */
-.hm-more-screen { display: grid; gap: 14px; padding: 22px 18px 110px; }
+.hm-more-screen { flex: 1; min-height: 0; display: grid; gap: 14px; padding: 22px 18px 110px; overflow-y: auto; }
 .hm-more__header h1 { margin: 0; font: 700 28px/1.2 var(--hm-font-display); letter-spacing: -.6px; }
 .hm-more__header p { margin: 5px 0 8px; color: var(--hm-color-text-2); font-size: 13px; }
 .hm-more-list.hm-qp-grid-2 { gap: 10px; }
@@ -239,7 +239,9 @@
 @media (min-width: 720px) {
   .hm-app-shell { padding-left: 88px; }
   .hm-main { max-width: 680px; margin: 0 auto; }
-  .hm-tabbar { left: 0; right: auto; top: 0; bottom: 0; width: 88px; transform: none; border-radius: 0 24px 24px 0; flex-direction: column; justify-content: flex-start; gap: 12px; padding: 104px 8px 24px; }
+  .hm-tabbar { left: 0; right: auto; top: 0; bottom: 0; width: 88px; margin: 0; transform: none; border-radius: 0 24px 24px 0; flex-direction: column; justify-content: flex-start; gap: 12px; padding: 104px 8px 24px; }
+  .hm-tabbar:not(.hm-tabbar--chat) { display: flex; }
+  .hm-more-screen { padding-bottom: 24px; }
   .hm-tab { flex: none; flex-direction: column; width: 72px; min-height: 64px; padding: 8px 4px; }
   .hm-home-fab { left: 16px; right: auto; top: 20px; bottom: auto; }
   .hm-screen, .hm-inbox, .hm-chat { max-width: 680px; margin-left: auto; margin-right: auto; }

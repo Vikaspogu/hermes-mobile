@@ -1318,10 +1318,12 @@ export const useChatStore = create<ChatStore>((set, get) => ({
     } catch (err) {
       if (isSameChatState(get(), anchor)) {
         set({
-          sessionId: undefined,
-          storedSessionId,
-          streaming: false,
-          lastSubmittedSessionId: undefined,
+          sessionId: beforeOpen.sessionId,
+          storedSessionId: beforeOpen.storedSessionId,
+          messages: beforeOpen.messages,
+          streaming: beforeOpen.streaming,
+          lastSubmittedSessionId: beforeOpen.lastSubmittedSessionId,
+          cacheProfile: beforeOpen.cacheProfile,
           error: userFacingChatError(err, 'Failed to open session.'),
         });
         persistActiveSession(get());

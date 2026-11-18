@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { haptic } from '../pwa/haptics';
 import type { RpcClient, Approval, ToolCall } from '@hermes-pwa/core';
 import { useActivityStore, useChatStore } from '@hermes-pwa/core';
@@ -52,7 +52,6 @@ export function ApprovalInline({ rpc, toolName, tool }: ApprovalInlineProps) {
   const effectiveToolName = tool?.name ?? toolName;
   const toolScoped = typeof effectiveToolName === 'string';
 
-  if (toolScoped && !APPROVAL_TOOLS.has(effectiveToolName)) return null;
 
   const activeSessionIds = new Set([activeSessionId, storedSessionId].filter((value): value is string => Boolean(value)));
   const candidates = items.filter((item): item is Approval => {
@@ -80,6 +79,11 @@ export function ApprovalInline({ rpc, toolName, tool }: ApprovalInlineProps) {
     pending = candidates[0];
   }
 
+  useEffect(() => {
+    setSubmitting(null);
+  }, [pending?.id]);
+
+  if (toolScoped && !APPROVAL_TOOLS.has(effectiveToolName)) return null;
   if (!pending) return null;
 
   // Claimed inline: the dock hides for this approval (see approvalClaimedByToolRow).
@@ -128,7 +132,7 @@ export function ApprovalInline({ rpc, toolName, tool }: ApprovalInlineProps) {
         <div className="hm-approval-inline__actions">
           {approval.highImpact ? (
             <>
-              <SlideToApprove onConfirm={() => void respond('once')} disabled={busy} />
+              <SlideToApprove key={approval.id} onConfirm={() => void respond('once')} disabled={busy} />
               <button
                 type="button"
                 className="hm-approval-inline__deny"
