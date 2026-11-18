@@ -25,13 +25,13 @@ function shortenHome(path: string): string {
 
 export function ApprovalDock({ rpc, approval, sessionTitle, cwd, fallbackSessionId, onResolved }: ApprovalDockProps) {
   const respondApproval = useActivityStore((s) => s.respondApproval);
-  const [submitting, setSubmitting] = useState<ApprovalChoice | null>(null);
+  const [submissions, setSubmissions] = useState<Record<string, ApprovalChoice>>({});
   const [moreOpen, setMoreOpen] = useState(false);
 
   useEffect(() => {
-    setSubmitting(null);
     setMoreOpen(false);
   }, [approval.id]);
+  const submitting = submissions[approval.id] ?? null;
   const busy = submitting !== null;
   const high = approval.highImpact;
   const meta = [approval.session ?? sessionTitle, cwd ? shortenHome(cwd) : undefined]
@@ -47,7 +47,7 @@ export function ApprovalDock({ rpc, approval, sessionTitle, cwd, fallbackSession
       if (!ok) return;
     }
     haptic('confirm');
-    setSubmitting(choice);
+    setSubmissions((current) => ({ ...current, [approval.id]: choice }));
     setMoreOpen(false);
     try {
       await respondApproval(
@@ -59,7 +59,13 @@ export function ApprovalDock({ rpc, approval, sessionTitle, cwd, fallbackSession
       );
       onResolved?.(approval, choice === 'deny' ? 'reject' : 'approve');
     } catch {
-      setSubmitting(null);
+      // The activity store surfaces the failure.
+    } finally {
+      setSubmissions((current) => {
+        const next = { ...current };
+        delete next[approval.id];
+        return next;
+      });
     }
   }
 

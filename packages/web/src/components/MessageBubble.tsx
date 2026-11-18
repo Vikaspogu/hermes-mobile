@@ -24,13 +24,18 @@ function MessageMeta({ message }: { message: Message }) {
   const resetTimer = useRef<number>();
   useEffect(() => () => window.clearTimeout(resetTimer.current), []);
   const timestamp = message.createdAt;
-  const date = typeof timestamp === 'number' && Number.isFinite(timestamp)
-    ? new Date(timestamp < 1_000_000_000_000 ? timestamp * 1000 : timestamp)
-    : undefined;
+  const date =
+    typeof timestamp === 'number' && Number.isFinite(timestamp)
+      ? new Date(timestamp < 1_000_000_000_000 ? timestamp * 1000 : timestamp)
+      : undefined;
   const validDate = date && Number.isFinite(date.getTime()) ? date : undefined;
   return (
     <div className="hm-message__meta">
-      {validDate && <time dateTime={validDate.toISOString()}>{validDate.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}</time>}
+      {validDate && (
+        <time dateTime={validDate.toISOString()}>
+          {validDate.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}
+        </time>
+      )}
       <button
         type="button"
         className="hm-message__copy"
@@ -49,7 +54,9 @@ function MessageMeta({ message }: { message: Message }) {
       >
         <Icon name={copyState === 'copied' ? 'check' : 'copy'} size={14} />
       </button>
-      {copyState === 'failed' && <span role="status">Could not copy. Select the message text to copy it.</span>}
+      {copyState === 'failed' && (
+        <span role="status">Could not copy. Select the message text to copy it.</span>
+      )}
     </div>
   );
 }
@@ -61,12 +68,17 @@ function UserMessage({ message }: { message: Message }) {
   return (
     <div className="hm-message hm-message--user">
       <div className="hm-message__bubble">
-      <p className={long && !expanded ? 'hm-message__clamp' : undefined}>{text}</p>
-      {long && (
-        <button type="button" className="hm-message__more" aria-expanded={expanded} onClick={() => setExpanded((v) => !v)}>
-          {expanded ? 'Show less' : 'Show more'}
-        </button>
-      )}
+        <p className={long && !expanded ? 'hm-message__clamp' : undefined}>{text}</p>
+        {long && (
+          <button
+            type="button"
+            className="hm-message__more"
+            aria-expanded={expanded}
+            onClick={() => setExpanded((v) => !v)}
+          >
+            {expanded ? 'Show less' : 'Show more'}
+          </button>
+        )}
       </div>
       <MessageMeta message={message} />
     </div>
@@ -74,12 +86,6 @@ function UserMessage({ message }: { message: Message }) {
 }
 
 const APPROVAL_TOOL_NAMES = new Set(['terminal', 'execute_code']);
-const APPROVAL_INLINE_TIME_WINDOW_MS = 5 * 60_000;
-
-function toMillis(value: number | undefined): number | undefined {
-  if (typeof value !== 'number' || !Number.isFinite(value)) return undefined;
-  return value > 1_000_000_000_000 ? value : value > 1_000_000_000 ? value * 1000 : value;
-}
 
 function firstApprovalLine(summary: string | undefined): string {
   return (
@@ -94,16 +100,6 @@ function approvalBelongsToActiveChat(approval: Approval, activeSessionIds: Set<s
   if (activeSessionIds.size === 0) return false;
   if (approval.sourceSessionId) return activeSessionIds.has(approval.sourceSessionId);
   return Boolean(approval.sessionId && activeSessionIds.has(approval.sessionId));
-}
-
-function approvalNearMessage(approval: Approval, message: Message): boolean {
-  const approvalTime = toMillis(approval.createdAt);
-  const messageTime = toMillis(message.createdAt);
-  return Boolean(
-    approvalTime !== undefined &&
-    messageTime !== undefined &&
-    Math.abs(approvalTime - messageTime) <= APPROVAL_INLINE_TIME_WINDOW_MS,
-  );
 }
 
 function recoveredApprovalTool(
@@ -126,10 +122,7 @@ function recoveredApprovalTool(
   const scoped = approvals.find((approval) =>
     approvalBelongsToActiveChat(approval, activeSessionIdSet),
   );
-  const timeScoped = approvals.find((approval) => approvalNearMessage(approval, message));
-  const singleApproval = approvals.length === 1 ? approvals[0] : undefined;
-  const fallback = singleApproval && !singleApproval.sourceSessionId ? singleApproval : undefined;
-  const approval = scoped ?? timeScoped ?? fallback;
+  const approval = scoped;
   const command = firstApprovalLine(approval?.summary);
   if (!approval || !command) return undefined;
   return {
@@ -182,7 +175,9 @@ function MessageBubbleView({
   const actionsOnly = hasActions && !message.text && !active;
 
   return (
-    <div className={`hm-message hm-message--assistant${active ? ' hm-message--tail' : ''}${actionsOnly ? ' hm-message--actions-only' : ''}`}>
+    <div
+      className={`hm-message hm-message--assistant${active ? ' hm-message--tail' : ''}${actionsOnly ? ' hm-message--actions-only' : ''}`}
+    >
       {!silent && (
         <div className="hm-message__header">
           <span className="hm-message__avatar">
@@ -238,7 +233,14 @@ function MessageBubbleView({
             </div>
           )}
 
-          {otherTools.length > 0 && <ToolGroup tools={otherTools} rpc={rpc} streaming={active} durationMs={turnDurationMs} />}
+          {otherTools.length > 0 && (
+            <ToolGroup
+              tools={otherTools}
+              rpc={rpc}
+              streaming={active}
+              durationMs={turnDurationMs}
+            />
+          )}
         </div>
       )}
 
@@ -246,7 +248,9 @@ function MessageBubbleView({
         <p className="hm-message__silent">Silent run — nothing to report</p>
       ) : message.text ? (
         <div className="hm-message__text">
-          <ReactMarkdown remarkPlugins={[remarkGfm]} components={MARKDOWN_COMPONENTS}>{message.text}</ReactMarkdown>
+          <ReactMarkdown remarkPlugins={[remarkGfm]} components={MARKDOWN_COMPONENTS}>
+            {message.text}
+          </ReactMarkdown>
           {showCaret && <span className="hm-message__caret" />}
         </div>
       ) : null}

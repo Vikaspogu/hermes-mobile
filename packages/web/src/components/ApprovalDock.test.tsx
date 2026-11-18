@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { useActivityStore, type Approval, type RpcClient } from '@hermes-pwa/core';
 import { ApprovalDock } from './ApprovalDock';
@@ -37,6 +37,33 @@ describe('ApprovalDock', () => {
     rerender(<ApprovalDock rpc={rpc} approval={{ ...approval, id: 'approval-b' }} />);
 
     expect(screen.getByRole('slider')).not.toHaveAttribute('aria-disabled');
+  });
+
+  it('does not let the previous approval clear the next approval pending state', async () => {
+    const resolvers = new Map<string, () => void>();
+    const respondApproval = vi.fn((_rpc: RpcClient, id: string) => new Promise<void>((resolve) => {
+      resolvers.set(id, resolve);
+    }));
+    useActivityStore.setState({ respondApproval });
+    const { rerender } = render(<ApprovalDock rpc={rpc} approval={approval} />);
+    fireEvent.keyDown(screen.getByRole('slider'), { key: 'End' });
+    fireEvent.keyDown(screen.getByRole('slider'), { key: 'ArrowRight' });
+    await waitFor(() => expect(resolvers.has('approval-a')).toBe(true));
+
+    rerender(<ApprovalDock rpc={rpc} approval={{ ...approval, id: 'approval-b' }} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Reject' }));
+    await waitFor(() => expect(resolvers.has('approval-b')).toBe(true));
+    expect(screen.getByRole('button', { name: 'Reject' })).toBeDisabled();
+    rerender(<ApprovalDock rpc={rpc} approval={approval} />);
+    expect(screen.getByRole('button', { name: 'Reject' })).toBeDisabled();
+    rerender(<ApprovalDock rpc={rpc} approval={{ ...approval, id: 'approval-b' }} />);
+    expect(screen.getByRole('button', { name: 'Reject' })).toBeDisabled();
+
+    await act(async () => { resolvers.get('approval-a')?.(); });
+    expect(screen.getByRole('button', { name: 'Reject' })).toBeDisabled();
+
+    await act(async () => { resolvers.get('approval-b')?.(); });
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Reject' })).toBeEnabled());
   });
 
   it('re-enables Reject after a failed response', async () => {

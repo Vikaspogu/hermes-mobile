@@ -4,50 +4,131 @@ import { MessageBubble } from './MessageBubble';
 import { areMessageBubblePropsEqual } from './MessageBubble.helpers';
 import { useActivityStore, useChatStore, type Approval, type RpcClient } from '@hermes-pwa/core';
 
-const rpcMock = { request: vi.fn(), onFrame: vi.fn(), events: new EventTarget() } as unknown as RpcClient;
+const rpcMock = {
+  request: vi.fn(),
+  onFrame: vi.fn(),
+  events: new EventTarget(),
+} as unknown as RpcClient;
 
 describe('MessageBubble', () => {
   beforeEach(() => {
     useActivityStore.setState({ items: [], loading: false, error: undefined });
-    useChatStore.setState({ sessionId: undefined, storedSessionId: undefined, messages: [], streaming: false, error: undefined });
+    useChatStore.setState({
+      sessionId: undefined,
+      storedSessionId: undefined,
+      messages: [],
+      streaming: false,
+      error: undefined,
+    });
   });
 
   it('memo comparator skips only unchanged message bubble props', () => {
-    const message = { id: 'memo-old', role: 'assistant' as const, text: 'Completed markdown', createdAt: undefined };
+    const message = {
+      id: 'memo-old',
+      role: 'assistant' as const,
+      text: 'Completed markdown',
+      createdAt: undefined,
+    };
     expect(
       areMessageBubblePropsEqual(
-        { rpc: rpcMock, message, isLast: false, streaming: true, liveStatus: '', liveFace: undefined },
-        { rpc: rpcMock, message, isLast: false, streaming: true, liveStatus: '', liveFace: undefined },
+        {
+          rpc: rpcMock,
+          message,
+          isLast: false,
+          streaming: true,
+          liveStatus: '',
+          liveFace: undefined,
+        },
+        {
+          rpc: rpcMock,
+          message,
+          isLast: false,
+          streaming: true,
+          liveStatus: '',
+          liveFace: undefined,
+        },
       ),
     ).toBe(true);
     expect(
       areMessageBubblePropsEqual(
-        { rpc: rpcMock, message, isLast: false, streaming: true, liveStatus: '', liveFace: undefined },
-        { rpc: rpcMock, message: { ...message, text: 'Changed' }, isLast: false, streaming: true, liveStatus: '', liveFace: undefined },
+        {
+          rpc: rpcMock,
+          message,
+          isLast: false,
+          streaming: true,
+          liveStatus: '',
+          liveFace: undefined,
+        },
+        {
+          rpc: rpcMock,
+          message: { ...message, text: 'Changed' },
+          isLast: false,
+          streaming: true,
+          liveStatus: '',
+          liveFace: undefined,
+        },
       ),
     ).toBe(false);
     expect(
       areMessageBubblePropsEqual(
-        { rpc: rpcMock, message, isLast: true, streaming: true, liveStatus: 'Thinking', liveFace: undefined },
-        { rpc: rpcMock, message, isLast: true, streaming: true, liveStatus: 'Calling tool', liveFace: undefined },
+        {
+          rpc: rpcMock,
+          message,
+          isLast: true,
+          streaming: true,
+          liveStatus: 'Thinking',
+          liveFace: undefined,
+        },
+        {
+          rpc: rpcMock,
+          message,
+          isLast: true,
+          streaming: true,
+          liveStatus: 'Calling tool',
+          liveFace: undefined,
+        },
       ),
     ).toBe(false);
     expect(
       areMessageBubblePropsEqual(
-        { rpc: rpcMock, message, isLast: true, streaming: true, liveStatus: '', liveFace: undefined },
-        { rpc: rpcMock, message, isLast: false, streaming: true, liveStatus: '', liveFace: undefined },
+        {
+          rpc: rpcMock,
+          message,
+          isLast: true,
+          streaming: true,
+          liveStatus: '',
+          liveFace: undefined,
+        },
+        {
+          rpc: rpcMock,
+          message,
+          isLast: false,
+          streaming: true,
+          liveStatus: '',
+          liveFace: undefined,
+        },
       ),
     ).toBe(false);
   });
 
   it('renders user message', () => {
-    render(<MessageBubble rpc={rpcMock} message={{ id: '1', role: 'user', text: 'Hello', createdAt: undefined }} />);
+    render(
+      <MessageBubble
+        rpc={rpcMock}
+        message={{ id: '1', role: 'user', text: 'Hello', createdAt: undefined }}
+      />,
+    );
     expect(screen.getByText('Hello')).toBeInTheDocument();
   });
 
   it('clamps long user messages and expands via Show more', () => {
     const text = Array.from({ length: 8 }, (_, i) => `line ${i}`).join('\n');
-    const { container } = render(<MessageBubble rpc={rpcMock} message={{ id: 'long-1', role: 'user', text, createdAt: undefined }} />);
+    const { container } = render(
+      <MessageBubble
+        rpc={rpcMock}
+        message={{ id: 'long-1', role: 'user', text, createdAt: undefined }}
+      />,
+    );
     const paragraph = () => container.querySelector('.hm-message__bubble p');
     expect(paragraph()).toHaveClass('hm-message__clamp');
     fireEvent.click(screen.getByRole('button', { name: 'Show more' }));
@@ -62,8 +143,16 @@ describe('MessageBubble', () => {
     Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText } });
     try {
       const text = 'Full prompt '.repeat(80);
-      const { container } = render(<MessageBubble rpc={rpcMock} message={{ id: 'copy-user', role: 'user', text, createdAt: 1_700_000_000 }} />);
-      expect(container.querySelector('time')).toHaveAttribute('datetime', '2023-11-14T22:13:20.000Z');
+      const { container } = render(
+        <MessageBubble
+          rpc={rpcMock}
+          message={{ id: 'copy-user', role: 'user', text, createdAt: 1_700_000_000 }}
+        />,
+      );
+      expect(container.querySelector('time')).toHaveAttribute(
+        'datetime',
+        '2023-11-14T22:13:20.000Z',
+      );
       fireEvent.click(screen.getByRole('button', { name: 'Copy message' }));
       await screen.findByRole('button', { name: 'Message copied' });
       expect(writeText).toHaveBeenCalledWith(text);
@@ -77,7 +166,12 @@ describe('MessageBubble', () => {
     const original = Object.getOwnPropertyDescriptor(navigator, 'clipboard');
     Object.defineProperty(navigator, 'clipboard', { configurable: true, value: undefined });
     try {
-      render(<MessageBubble rpc={rpcMock} message={{ id: 'copy-error', role: 'assistant', text: 'Answer', createdAt: undefined }} />);
+      render(
+        <MessageBubble
+          rpc={rpcMock}
+          message={{ id: 'copy-error', role: 'assistant', text: 'Answer', createdAt: undefined }}
+        />,
+      );
       fireEvent.click(screen.getByRole('button', { name: 'Copy message' }));
       await waitFor(() => expect(screen.getByRole('status')).toHaveTextContent('Could not copy'));
       expect(screen.queryByRole('button', { name: 'Message copied' })).not.toBeInTheDocument();
@@ -88,8 +182,15 @@ describe('MessageBubble', () => {
   });
 
   it('keeps only the live assistant tail outside message containment', () => {
-    const message = { id: 'tail', role: 'assistant' as const, text: 'Streaming answer', createdAt: undefined };
-    const { container, rerender } = render(<MessageBubble rpc={rpcMock} message={message} streaming isLast />);
+    const message = {
+      id: 'tail',
+      role: 'assistant' as const,
+      text: 'Streaming answer',
+      createdAt: undefined,
+    };
+    const { container, rerender } = render(
+      <MessageBubble rpc={rpcMock} message={message} streaming isLast />,
+    );
     expect(container.querySelector('.hm-message')).toHaveClass('hm-message--tail');
     expect(screen.queryByRole('button', { name: 'Copy message' })).not.toBeInTheDocument();
     rerender(<MessageBubble rpc={rpcMock} message={message} streaming isLast={false} />);
@@ -98,7 +199,12 @@ describe('MessageBubble', () => {
   });
 
   it('renders assistant message with markdown', () => {
-    render(<MessageBubble rpc={rpcMock} message={{ id: '2', role: 'assistant', text: '# Title\n\nparagraph', createdAt: undefined }} />);
+    render(
+      <MessageBubble
+        rpc={rpcMock}
+        message={{ id: '2', role: 'assistant', text: '# Title\n\nparagraph', createdAt: undefined }}
+      />,
+    );
     expect(screen.getByText('Title')).toBeInTheDocument();
     expect(screen.getByText('paragraph')).toBeInTheDocument();
   });
@@ -107,7 +213,12 @@ describe('MessageBubble', () => {
     render(
       <MessageBubble
         rpc={rpcMock}
-        message={{ id: '2-link', role: 'assistant', text: '[Hermes](https://example.com)', createdAt: undefined }}
+        message={{
+          id: '2-link',
+          role: 'assistant',
+          text: '[Hermes](https://example.com)',
+          createdAt: undefined,
+        }}
       />,
     );
 
@@ -119,7 +230,13 @@ describe('MessageBubble', () => {
   });
 
   it('uses a compact activity indicator instead of streaming/done status text', () => {
-    render(<MessageBubble rpc={rpcMock} streaming message={{ id: '2b', role: 'assistant', text: '', createdAt: undefined }} />);
+    render(
+      <MessageBubble
+        rpc={rpcMock}
+        streaming
+        message={{ id: '2b', role: 'assistant', text: '', createdAt: undefined }}
+      />,
+    );
     expect(screen.getByLabelText('Assistant is active')).toBeInTheDocument();
     expect(screen.queryByText(/streaming|done/i)).not.toBeInTheDocument();
   });
@@ -142,7 +259,11 @@ describe('MessageBubble', () => {
   });
 
   it('keeps inline approval visible for a pending tool after restore clears streaming', () => {
-    useChatStore.setState({ sessionId: 'live-rebound', storedSessionId: 'stored-1', streaming: false });
+    useChatStore.setState({
+      sessionId: 'live-rebound',
+      storedSessionId: 'stored-1',
+      streaming: false,
+    });
     useActivityStore.setState({
       items: [
         {
@@ -169,7 +290,9 @@ describe('MessageBubble', () => {
           role: 'assistant',
           text: '',
           createdAt: undefined,
-          toolCalls: [{ id: 'tool-1', name: 'terminal', input: { command: 'rm -rf /tmp/example' } }],
+          toolCalls: [
+            { id: 'tool-1', name: 'terminal', input: { command: 'rm -rf /tmp/example' } },
+          ],
         }}
         pendingApprovals={useActivityStore.getState().items as Approval[]}
         activeSessionIds={['live-rebound', 'stored-1']}
@@ -229,7 +352,11 @@ describe('MessageBubble', () => {
   });
 
   it('reconstructs inline approval from the sole recovered pending approval when REST history has no tool calls', () => {
-    useChatStore.setState({ sessionId: 'live-push-open', storedSessionId: 'stored-push-open', streaming: false });
+    useChatStore.setState({
+      sessionId: 'live-push-open',
+      storedSessionId: 'stored-push-open',
+      streaming: false,
+    });
     useActivityStore.setState({
       items: [
         {
@@ -268,8 +395,43 @@ describe('MessageBubble', () => {
     expect(screen.getAllByText(/rm -rf \/tmp\/from-push/).length).toBeGreaterThan(0);
   });
 
+  it.each([{ sourceSessionId: 'other-chat' }, { sourceSessionId: undefined }])(
+    'does not recover an inline approval from another session (%#)',
+    ({ sourceSessionId }) => {
+      const now = Date.now();
+      const approval = {
+        id: 'approval:other',
+        kind: 'approval',
+        status: 'needs_you',
+        title: 'Approval required',
+        highImpact: true,
+        sessionId: 'other-session',
+        sourceSessionId,
+        summary: 'rm -rf /tmp/other',
+        createdAt: now,
+      } as Approval;
+
+      render(
+        <MessageBubble
+          rpc={rpcMock}
+          isLast
+          message={{ id: 'approval-current', role: 'assistant', text: 'Waiting.', createdAt: now }}
+          pendingApprovals={[approval]}
+          activeSessionIds={['current-chat']}
+        />,
+      );
+
+      expect(screen.queryByText('Pending tool wants to run')).not.toBeInTheDocument();
+      expect(screen.queryByText(/rm -rf \/tmp\/other/)).not.toBeInTheDocument();
+    },
+  );
+
   it('does not reconstruct inline approval when multiple recovered approvals are ambiguous', () => {
-    useChatStore.setState({ sessionId: 'live-push-open', storedSessionId: 'stored-push-open', streaming: false });
+    useChatStore.setState({
+      sessionId: 'live-push-open',
+      storedSessionId: 'stored-push-open',
+      streaming: false,
+    });
     useActivityStore.setState({
       items: [
         {
@@ -357,7 +519,9 @@ describe('MessageBubble', () => {
               id: 'todo-1',
               name: 'todo',
               output: JSON.stringify({
-                todos: [{ id: 'a', content: 'Report the approval test result', status: 'in_progress' }],
+                todos: [
+                  { id: 'a', content: 'Report the approval test result', status: 'in_progress' },
+                ],
               }),
             },
           ],
@@ -382,12 +546,16 @@ describe('MessageBubble', () => {
             {
               id: 'todo-old',
               name: 'todo',
-              output: JSON.stringify({ todos: [{ id: 'old', content: 'Old state', status: 'in_progress' }] }),
+              output: JSON.stringify({
+                todos: [{ id: 'old', content: 'Old state', status: 'in_progress' }],
+              }),
             },
             {
               id: 'todo-new',
               name: 'todo',
-              output: JSON.stringify({ todos: [{ id: 'new', content: 'Current state', status: 'completed' }] }),
+              output: JSON.stringify({
+                todos: [{ id: 'new', content: 'Current state', status: 'completed' }],
+              }),
             },
           ],
         }}
@@ -431,10 +599,14 @@ describe('MessageBubble', () => {
     expect(container.querySelector('.hm-live-status__face')).toHaveTextContent('(¬‿¬)');
     expect(container.querySelector('.hm-live-status__text')).toHaveTextContent('computing');
     expect(container.querySelector('.hm-live-status__dots')).toBeInTheDocument();
-    const liveParts = Array.from(container.querySelector('.hm-live-status')?.children ?? []).map((node) =>
-      (node as HTMLElement).className,
+    const liveParts = Array.from(container.querySelector('.hm-live-status')?.children ?? []).map(
+      (node) => (node as HTMLElement).className,
     );
-    expect(liveParts).toEqual(['hm-live-status__face', 'hm-live-status__text', 'hm-live-status__dots']);
+    expect(liveParts).toEqual([
+      'hm-live-status__face',
+      'hm-live-status__text',
+      'hm-live-status__dots',
+    ]);
     expect(container.querySelectorAll('.hm-live-status__dots span')).toHaveLength(3);
     expect(container.querySelector('.hm-message__avatar svg')).toBeInTheDocument();
     expect(screen.getByText('I.V.A.N.')).toBeInTheDocument();
