@@ -19,14 +19,16 @@ describe('SlideToApprove', () => {
   afterEach(() => {
     restoreClientWidth();
   });
-
-  it('confirms via keyboard End', () => {
+  it('requires a second keyboard action after End', () => {
     const onConfirm = vi.fn();
     render(<SlideToApprove onConfirm={onConfirm} />);
-    fireEvent.keyDown(screen.getByRole('slider', { name: 'Slide to approve' }), { key: 'End' });
+    const knob = screen.getByRole('slider', { name: 'Slide to approve' });
+    fireEvent.keyDown(knob, { key: 'End' });
+    expect(onConfirm).not.toHaveBeenCalled();
+    expect(knob).toHaveAttribute('aria-valuenow', '90');
+    fireEvent.keyDown(knob, { key: 'ArrowRight' });
     expect(onConfirm).toHaveBeenCalledTimes(1);
   });
-
   it('confirms when arrow keys reach the end of the track', () => {
     const onConfirm = vi.fn();
     render(<SlideToApprove onConfirm={onConfirm} />);
@@ -55,6 +57,34 @@ describe('SlideToApprove', () => {
     fireEvent.pointerMove(knob, { pointerId: 2, clientX: 276 });
     fireEvent.pointerUp(knob, { pointerId: 2, clientX: 276 });
     expect(onConfirm).toHaveBeenCalledTimes(1);
+  });
+
+
+  it('does not confirm when a full drag is canceled', () => {
+    const onConfirm = vi.fn();
+    const { container } = render(<SlideToApprove onConfirm={onConfirm} />);
+    const knob = screen.getByRole('slider', { name: 'Slide to approve' });
+    const track = container.querySelector('.hm-slide-track') as HTMLElement;
+    track.getBoundingClientRect = () => ({ left: 0 }) as DOMRect;
+
+    fireEvent.pointerDown(knob, { pointerId: 1, clientX: 24 });
+    fireEvent.pointerMove(knob, { pointerId: 1, clientX: 276 });
+    fireEvent.pointerCancel(knob, { pointerId: 1, clientX: 276 });
+
+    expect(onConfirm).not.toHaveBeenCalled();
+    expect(knob).toHaveAttribute('aria-valuenow', '0');
+  });
+  it('resets keyboard progress when a pointer gesture starts', () => {
+    const onConfirm = vi.fn();
+    render(<SlideToApprove onConfirm={onConfirm} />);
+    const knob = screen.getByRole('slider', { name: 'Slide to approve' });
+
+    fireEvent.keyDown(knob, { key: 'End' });
+    fireEvent.pointerDown(knob, { pointerId: 1, clientX: 24 });
+    fireEvent.pointerUp(knob, { pointerId: 1, clientX: 24 });
+
+    expect(onConfirm).not.toHaveBeenCalled();
+    expect(knob).toHaveAttribute('aria-valuenow', '0');
   });
 
   it('does not confirm when disabled', () => {

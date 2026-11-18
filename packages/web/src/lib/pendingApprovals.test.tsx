@@ -2,7 +2,7 @@ import { act, render } from '@testing-library/react';
 import { describe, expect, it, beforeEach } from 'vitest';
 import { useShallow } from 'zustand/react/shallow';
 import { useActivityStore, type Approval, type Clarify } from '@hermes-pwa/core';
-import { pendingApprovalsForMessage, selectPendingApprovals } from './pendingApprovals';
+import { pendingApprovalsForMessage, selectDockApproval, selectPendingApprovals } from './pendingApprovals';
 
 describe('pending approval selectors', () => {
   beforeEach(() => {
@@ -66,5 +66,17 @@ describe('pending approval selectors', () => {
 
     expect(pendingApprovalsForMessage(approvals, 0, 2)).toBeUndefined();
     expect(pendingApprovalsForMessage(approvals, 1, 2)).toBe(approvals);
+  });
+
+  it('never exposes a high-risk approval without an explicit source thread in a chat dock', () => {
+    const highRisk = { id: 'high', kind: 'approval', status: 'needs_you', highImpact: true } as Approval;
+    const queueOnly = { ...highRisk, id: 'queue-only', sessionId: 'queue-key' } as Approval;
+    const attributed = { ...highRisk, id: 'attributed', sourceSessionId: 'thread-1', sessionId: 'queue-key' } as Approval;
+    const lowRisk = { id: 'low', kind: 'approval', status: 'needs_you', highImpact: false } as Approval;
+
+    expect(selectDockApproval([highRisk], ['other-session'])).toBeUndefined();
+    expect(selectDockApproval([queueOnly], ['queue-key'])).toBeUndefined();
+    expect(selectDockApproval([attributed], ['thread-1'])).toBe(attributed);
+    expect(selectDockApproval([lowRisk], ['other-session'])).toBe(lowRisk);
   });
 });

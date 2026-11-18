@@ -152,6 +152,7 @@ describe('MessageBubble', () => {
           title: 'Approval required',
           highImpact: true,
           sessionId: 'backend-approval-key',
+          sourceSessionId: 'stored-1',
           summary: 'rm -rf /tmp/example\nDangerous command approval required',
           createdAt: Date.now(),
         } as Approval,
@@ -181,6 +182,7 @@ describe('MessageBubble', () => {
   });
 
   it('re-renders a stable assistant bubble when a recovered approval prop arrives', () => {
+    useChatStore.setState({ sessionId: 'live-stable' });
     const message = {
       id: 'approval-msg-stable',
       role: 'assistant' as const,
@@ -194,6 +196,7 @@ describe('MessageBubble', () => {
       title: 'Approval required',
       highImpact: true,
       sessionId: 'gateway-late',
+      sourceSessionId: 'live-stable',
       summary: 'rm -rf /tmp/late',
       createdAt: Date.now(),
     } as Approval;
@@ -236,6 +239,7 @@ describe('MessageBubble', () => {
           title: 'Approval required',
           highImpact: true,
           sessionId: 'gateway-session-key',
+          sourceSessionId: 'stored-push-open',
           summary: 'rm -rf /tmp/from-push\nDangerous command approval required',
           createdAt: Date.now(),
         } as Approval,
@@ -432,7 +436,8 @@ describe('MessageBubble', () => {
     );
     expect(liveParts).toEqual(['hm-live-status__face', 'hm-live-status__text', 'hm-live-status__dots']);
     expect(container.querySelectorAll('.hm-live-status__dots span')).toHaveLength(3);
-    expect(container.querySelector('.hm-message__avatar img')).toHaveAttribute('src', './icons/icon-192.png');
+    expect(container.querySelector('.hm-message__avatar svg')).toBeInTheDocument();
+    expect(screen.getByText('I.V.A.N.')).toBeInTheDocument();
     expect(screen.queryByText('Hermes')).not.toBeInTheDocument();
   });
 });

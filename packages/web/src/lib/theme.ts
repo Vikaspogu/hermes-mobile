@@ -22,9 +22,8 @@ export function readTheme(): ThemeSetting {
 }
 
 export function applyTheme(theme: ThemeSetting) {
-  if (theme === 'system') {
-    delete document.documentElement.dataset.theme;
-  } else {
-    document.documentElement.dataset.theme = theme;
-  }
+  const resolved = theme === 'system'
+    ? (window.matchMedia?.('(prefers-color-scheme: dark)')?.matches ? 'dark' : 'light')
+    : theme;
+  document.documentElement.dataset.theme = resolved;
 }

@@ -183,11 +183,12 @@ function MessageBubbleView({
 
   return (
     <div className={`hm-message hm-message--assistant${active ? ' hm-message--tail' : ''}${actionsOnly ? ' hm-message--actions-only' : ''}`}>
-      {active && (
+      {!silent && (
         <div className="hm-message__header">
           <span className="hm-message__avatar">
-            <img src="./icons/icon-192.png" alt="" aria-hidden="true" />
+            <Icon name="sparkle" size={24} filled />
           </span>
+          <span className="hm-message__agent">I.V.A.N.</span>
           {showHeaderStatus ? (
             <span
               className="hm-live-status hm-live-status--inline"

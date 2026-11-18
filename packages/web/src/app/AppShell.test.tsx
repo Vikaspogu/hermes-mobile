@@ -149,34 +149,45 @@ describe('AppShell', () => {
     expect(initialMain).not.toHaveClass('hm-screen-enter-forward');
 
     fireEvent.click(screen.getByRole('button', { name: 'More' }));
-    expect(screen.getByRole('main')).toBe(initialMain);
-    fireEvent.click(within(screen.getByRole('dialog', { name: 'More' })).getByRole('button', { name: /Settings/ }));
+    expect(screen.getByRole('main')).not.toBe(initialMain);
+    await screen.findByRole('heading', { name: 'Control Cockpit' });
+    fireEvent.click(screen.getByRole('button', { name: /Settings/ }));
+    await screen.findByRole('heading', { name: 'Settings' });
     const forwardMain = screen.getByRole('main');
     expect(forwardMain).toHaveClass('hm-screen-enter-forward');
     expect(forwardMain).not.toBe(initialMain);
     await screen.findByRole('heading', { name: 'Settings' });
 
-    fireEvent.click(screen.getByRole('button', { name: 'Back to Chats' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Back to More' }));
     await waitFor(() => expect(screen.getByRole('main')).toHaveClass('hm-screen-enter-back'));
     const backMain = screen.getByRole('main');
     expect(backMain).not.toBe(forwardMain);
     expect(screen.getByRole('navigation', { name: 'Primary' })).toBe(tabs);
+    expect(screen.getByRole('button', { name: 'Back' })).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: 'Inbox' }));
     expect(screen.getByRole('main')).toHaveClass('hm-screen-enter-forward');
     expect(screen.getByRole('main')).not.toBe(backMain);
   });
 
-  it('keeps the current screen mounted when a back press dismisses the More sheet', async () => {
+  it('returns from the More screen on browser Back', async () => {
     window.localStorage.setItem('hermes-mobile-screen', 'settings');
     render(<AppShell connectionState="connected" rpc={rpcMock} rest={restMock} />);
     await screen.findByRole('heading', { name: 'Settings' });
     const main = screen.getByRole('main');
     fireEvent.click(screen.getByRole('button', { name: 'More' }));
+    await screen.findByRole('heading', { name: 'Control Cockpit' });
     fireEvent.popState(window);
-    await waitFor(() => expect(screen.getByRole('button', { name: 'More' })).toHaveAttribute('aria-expanded', 'false'));
-    expect(screen.getByRole('main')).toBe(main);
-    expect(main).not.toHaveClass('hm-screen-enter-back');
+    await screen.findByRole('heading', { name: 'Settings' });
+    expect(screen.getByRole('main')).not.toBe(main);
+    expect(screen.getByRole('main')).toHaveClass('hm-screen-enter-back');
+  });
+
+  it('opens session artifacts from the More screen', async () => {
+    render(<AppShell connectionState="connected" rpc={rpcMock} rest={restMock} />);
+    fireEvent.click(screen.getByRole('button', { name: 'More' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Session artifacts →' }));
+    expect(await screen.findByRole('heading', { name: 'Artifacts' })).toBeInTheDocument();
   });
 
 
@@ -186,8 +197,7 @@ describe('AppShell', () => {
     fireEvent.click(await screen.findByRole('button', { name: /Schedules/i }));
     fireEvent.click(await screen.findByRole('button', { name: 'More' }));
     fireEvent.click(await screen.findByRole('button', { name: /Settings/i }));
-    expect(window.history.state.hmNav).toBe(2);
-    await waitFor(() => expect(screen.queryByRole('dialog', { name: 'More' })).not.toBeInTheDocument());
+    expect(window.history.state.hmNav).toBe(4);
     (await import('../lib/backLayers')).clearBackLayers();
     const event = new Event('popstate') as PopStateEvent;
     Object.defineProperty(event, 'state', { value: { hmNav: 0 } });
@@ -348,49 +358,43 @@ describe('AppShell', () => {
     expect(within(nav).getByRole('button', { name: 'More' })).toBeInTheDocument();
   });
 
-  it('opens and closes the More sheet', async () => {
+  it('opens the More screen and returns with browser Back', async () => {
     render(<AppShell connectionState="connected" rpc={rpcMock} rest={restMock} />);
     fireEvent.click(screen.getByRole('button', { name: 'More' }));
-    const sheet = screen.getByRole('dialog', { name: 'More' });
-    expect(within(sheet).getByRole('button', { name: /Profiles/ })).toBeInTheDocument();
-    expect(within(sheet).getByRole('button', { name: /Agents/ })).toBeInTheDocument();
-    expect(within(sheet).getByRole('button', { name: /Settings/ })).toBeInTheDocument();
-    fireEvent.keyDown(document, { key: 'Escape' });
-    await waitFor(() =>
-      expect(screen.queryByRole('dialog', { name: 'More' })).not.toBeInTheDocument(),
-    );
+    expect(screen.getByRole('heading', { name: 'Control Cockpit' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Profiles/ })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Agents/ })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Settings/ })).toBeInTheDocument();
+    fireEvent.popState(window);
+    await screen.findByRole('heading', { name: 'Chats' });
   });
 
-  it('hides undecided administrative surfaces from the More sheet', () => {
+  it('shows the approved Skills module and hides Messaging', () => {
     render(<AppShell connectionState="connected" rpc={rpcMock} rest={restMock} />);
     fireEvent.click(screen.getByRole('button', { name: 'More' }));
-    const sheet = screen.getByRole('dialog', { name: 'More' });
-    expect(within(sheet).queryByRole('button', { name: 'Skills & Tools' })).not.toBeInTheDocument();
-    expect(within(sheet).queryByRole('button', { name: 'Messaging' })).not.toBeInTheDocument();
-    expect(within(sheet).queryByText('Telegram')).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Skills/ })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Messaging' })).not.toBeInTheDocument();
+    expect(screen.queryByText('Telegram')).not.toBeInTheDocument();
   });
 
-  it('does not restore hidden administrative screens from localStorage', () => {
+  it('restores Skills but not the hidden Messaging screen from localStorage', async () => {
     localStorage.setItem('hermes-mobile-screen', 'skills');
     render(<AppShell connectionState="connected" rpc={rpcMock} rest={restMock} />);
-    expect(screen.getByRole('heading', { name: 'Chats' })).toBeInTheDocument();
-    expect(restMock.skillsList).not.toHaveBeenCalled();
+    await screen.findByRole('heading', { name: 'Skills' });
+    await waitFor(() => expect(restMock.skillsList).toHaveBeenCalled());
 
     localStorage.clear();
     vi.clearAllMocks();
     localStorage.setItem('hermes-mobile-screen', 'messaging');
     render(<AppShell connectionState="connected" rpc={rpcMock} rest={restMock} />);
-    expect(screen.getAllByRole('heading', { name: 'Chats' })).toHaveLength(2);
+    await screen.findByRole('heading', { name: 'Chats' });
   });
 
-  it('shows Profiles first in the More sheet and opens it', async () => {
+  it('shows Agents first in More and opens Profiles', async () => {
     render(<AppShell connectionState="connected" rpc={rpcMock} rest={restMock} />);
     fireEvent.click(screen.getByRole('button', { name: 'More' }));
-    const sheet = screen.getByRole('dialog', { name: 'More' });
-    const firstRow = sheet.querySelector('.hm-more-row');
-    expect(firstRow).toHaveTextContent('Profiles');
-
-    fireEvent.click(within(sheet).getByRole('button', { name: /Profiles/ }));
+    expect(document.querySelector('.hm-more-row')).toHaveTextContent('Agents');
+    fireEvent.click(screen.getByRole('button', { name: /Profiles/ }));
     await waitFor(() => expect(screen.getByRole('heading', { name: 'Profiles' })).toBeInTheDocument());
   });
 
@@ -478,21 +482,24 @@ describe('AppShell', () => {
 
     render(<AppShell connectionState="connected" rpc={rpcMock} rest={restMock} />);
     fireEvent.click(screen.getByRole('button', { name: 'More' }));
-    const sheet = await screen.findByRole('dialog', { name: 'More' });
 
-    await waitFor(() => expect(within(sheet).getByText(/gpt-5.5/)).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText(/gpt-5.5/)).toBeInTheDocument());
 
-    fireEvent.click(within(sheet).getByRole('button', { name: /Profiles/ }));
+    fireEvent.click(screen.getByRole('button', { name: /Profiles/ }));
     await waitFor(() => expect(screen.getByRole('heading', { name: 'Profiles' })).toBeInTheDocument());
   });
 
-  it('opens system status from the More sheet', async () => {
+  it('opens Skills from More', async () => {
     render(<AppShell connectionState="connected" rpc={rpcMock} rest={restMock} />);
     fireEvent.click(screen.getByRole('button', { name: 'More' }));
-    const sheet = await screen.findByRole('dialog', { name: 'More' });
-    await waitFor(() => expect(within(sheet).getByRole('button', { name: /System/ })).toBeInTheDocument());
+    fireEvent.click(screen.getByRole('button', { name: /Skills/ }));
+    await waitFor(() => expect(screen.getByRole('heading', { name: 'Skills' })).toBeInTheDocument());
+  });
 
-    fireEvent.click(within(sheet).getByRole('button', { name: /System/ }));
+  it('opens System details from More', async () => {
+    render(<AppShell connectionState="connected" rpc={rpcMock} rest={restMock} />);
+    fireEvent.click(screen.getByRole('button', { name: 'More' }));
+    fireEvent.click(screen.getByRole('button', { name: 'System details →' }));
     await waitFor(() => expect(screen.getByRole('heading', { name: 'System' })).toBeInTheDocument());
   });
 
@@ -507,12 +514,16 @@ describe('AppShell', () => {
     } as unknown as import('@hermes-pwa/core').SystemStats);
     render(<AppShell connectionState="connected" rpc={rpcMock} rest={restMock} />);
     fireEvent.click(screen.getByRole('button', { name: 'More' }));
-    const sheet = await screen.findByRole('dialog', { name: 'More' });
-    await waitFor(() => expect(within(sheet).getByTestId('more-health')).toBeInTheDocument());
-    expect(within(sheet).getByText('Gateway running')).toBeInTheDocument();
-    expect(within(sheet).getByText('up 6h 12m')).toBeInTheDocument();
-    expect(within(sheet).getByText('CPU 18.0%')).toBeInTheDocument();
-    expect(within(sheet).getByText('RAM 2.1 GB / 8.0 GB')).toBeInTheDocument();
+    await waitFor(() => expect(screen.getByTestId('more-health')).toBeInTheDocument());
+    expect(screen.getByText('Gateway running')).toBeInTheDocument();
+    expect(screen.getByText('up 6h 12m')).toBeInTheDocument();
+    expect(screen.getByText('CPU')).toBeInTheDocument();
+    expect(screen.getByText('18.0%')).toBeInTheDocument();
+    expect(screen.getByText('RAM')).toBeInTheDocument();
+    expect(screen.getByText('26.2%')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Skills/ })).toHaveClass('hm-more-row--amber');
+    expect(screen.getByRole('button', { name: /Settings/ })).toHaveClass('hm-more-row--amber');
+    expect(screen.getByRole('button', { name: /Cron/ })).not.toHaveClass('hm-more-row--amber');
   });
 
   it('hides the status chip when connected and the gateway is healthy', async () => {
@@ -630,7 +641,8 @@ describe('AppShell', () => {
 
     // Redesign: the pending tool row claims the approval inline; the sticky
     // dock stays hidden to avoid a duplicate surface.
-    fireEvent.click(screen.getByRole('button', { name: 'Run' }));
+    fireEvent.keyDown(screen.getByRole('slider', { name: 'Slide to approve' }), { key: 'End' });
+    fireEvent.keyDown(screen.getByRole('slider', { name: 'Slide to approve' }), { key: 'ArrowRight' });
     await waitFor(() =>
       expect(rpcMock.request).toHaveBeenCalledWith('approval.respond', {
         choice: 'once',
@@ -854,7 +866,8 @@ describe('AppShell', () => {
     });
 
     await waitFor(() => expect(screen.getByText(/Inspect open PRs/)).toBeInTheDocument());
-    fireEvent.click(screen.getByRole('button', { name: 'Run' }));
+    fireEvent.keyDown(screen.getByRole('slider', { name: 'Slide to approve' }), { key: 'End' });
+    fireEvent.keyDown(screen.getByRole('slider', { name: 'Slide to approve' }), { key: 'ArrowRight' });
     await waitFor(() =>
       expect(rpcMock.respond).toHaveBeenCalledWith('srv-v8-1', { choice: 'once' }),
     );

@@ -43,12 +43,15 @@ describe('Composer', () => {
     expect(screen.getByRole('button', { name: /Send/i })).toBeInTheDocument();
   });
 
-  it('keeps both idle placeholder lines visible', () => {
+  it('starts with one input row and auto-grows with the content', () => {
     const placeholder = 'Ask Hermes anything\nAttach a file to get started';
     render(<Composer onSend={vi.fn()} onStop={vi.fn()} busy={false} placeholder={placeholder} />);
-    expect(screen.getByLabelText('Message input')).toHaveAttribute('rows', '2');
-    fireEvent.change(screen.getByLabelText('Message input'), { target: { value: 'hello' } });
     expect(screen.getByLabelText('Message input')).toHaveAttribute('rows', '1');
+    expect(screen.getByLabelText('Message input')).toHaveAccessibleDescription('Type / for commands.');
+    Object.defineProperty(screen.getByLabelText('Message input'), 'scrollHeight', { configurable: true, value: 96 });
+    fireEvent.change(screen.getByLabelText('Message input'), { target: { value: 'hello\nworld' } });
+    expect(screen.getByLabelText('Message input')).toHaveAttribute('rows', '1');
+    expect(screen.getByLabelText('Message input')).toHaveStyle({ height: '96px' });
   });
 
   it('calls onSend with trimmed text', () => {

@@ -6,15 +6,17 @@
    .hm-* class keeps working. emerald/sky both resolve to viridian tones. */
 :root {
   /* ── Fonts ──────────────────────────────────────────────────────── */
-  --hm-font-display: 'Bricolage Grotesque', 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  --hm-font-display: 'Bricolage Grotesque', system-ui, sans-serif;
   --hm-font-sans: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
   --hm-font-mono: 'JetBrains Mono', 'SF Mono', 'Cascadia Code', Consolas, monospace;
 
   /* ── Surface (M3 dark: surface / container-low / container) ────────── */
   --hm-color-bg:        #0D1513;
-  --hm-color-surface:   #151D1B;
-  --hm-color-surface-2: #19211F;
+  --hm-color-surface:   #19211F;
+  --hm-color-surface-container: #19211F;
+  --hm-color-surface-2: #151D1B;
   --hm-color-surface-high: #232C29;
+  --hm-color-surface-highest: #2E3734;
   --hm-color-border:    rgba(189, 201, 196, 0.12);
 
   /* Card composite: tonal container gradient + hairline + top highlight */
@@ -44,9 +46,12 @@
   --hm-color-text-subtle: #4E5B56;
 
   /* ── Primary = Botanical Viridian (interactive accent) ─────────────── */
-  --hm-color-primary:      #7ED7C4;
-  --hm-color-primary-tint: rgba(126, 215, 196, 0.14);
-  --hm-color-primary-text: #00382E;
+  --hm-color-primary:      #9AF4E0;
+  --hm-color-primary-tint: rgba(154, 244, 224, 0.14);
+  --hm-color-primary-text: #00382F;
+  --hm-color-on-primary: #00382F;
+  --hm-color-primary-container: #005144;
+  --hm-color-on-primary-container: #9AF4E0;
 
   /* ── Tertiary = Kinetic Persimmon (voice, new chat, risk accents) ──── */
   --hm-color-tertiary:      #FFB59C;
@@ -224,9 +229,11 @@
 :root[data-theme='light'] {
   --hm-color-bg:        #F4FBF7;
   --hm-color-surface:   #FFFFFF;
-  --hm-color-surface-2: #EEF5F1;
+  --hm-color-surface-container: #E8F0EC;
+  --hm-color-surface-2: #E8F0EC;
   --hm-color-surface-high: #E2EAE6;
-  --hm-color-border:    #E2EAE6;
+  --hm-color-surface-highest: #DCE4E0;
+  --hm-color-border:    #C3CEC8;
 
   --hm-card-bg: linear-gradient(180deg, #ffffff 0%, #F4FBF7 100%);
   --hm-card-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.9);
@@ -245,17 +252,19 @@
   --hm-message-user-text: #00201A;
   --hm-composer-bg: #E8F0EC;
   --hm-composer-text: #46645D;
-  --hm-color-text:       #151D1B;
-  --hm-color-text-2:     #2A3833;
+  --hm-color-text:       #1b1c1a;
+  --hm-color-text-2:     #555f5b;
   --hm-color-text-muted: #55635E;
-  --hm-color-text-faint: #6E7A75;
+  --hm-color-text-faint: #6d7772;
   --hm-color-text-secondary: #3E4945;
   --hm-color-text-subtle: #BDC9C4;
 
   --hm-color-primary:      #006B5B;
   --hm-color-primary-tint: rgba(0, 107, 91, 0.10);
   --hm-color-primary-text: #FFFFFF;
-
+  --hm-color-on-primary: #FFFFFF;
+  --hm-color-primary-container: #9AF4E0;
+  --hm-color-on-primary-container: #00201A;
   --hm-color-tertiary:      #A73912;
   --hm-color-tertiary-tint: rgba(167, 57, 18, 0.10);
   --hm-color-tertiary-text: #FFFFFF;

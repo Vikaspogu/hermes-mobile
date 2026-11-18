@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { ApprovalCard } from './ApprovalCard';
 
 const baseItem = {
@@ -46,13 +46,42 @@ describe('ApprovalCard', () => {
     expect(onRespond).toHaveBeenCalledWith('a-1', 'once');
   });
 
-  it('high risk: no approve/reject buttons, links to chat for review', () => {
+  it('high risk: never treats the approval queue ID as a chat thread', () => {
     const onRespond = vi.fn();
     render(
-      <ApprovalCard item={{ ...baseItem, highImpact: true, sessionId: 'sess-1' }} onRespond={onRespond} />,
+      <ApprovalCard item={{ ...baseItem, highImpact: true, sessionId: 'queue-key' }} onRespond={onRespond} />,
     );
-    expect(screen.queryByRole('button')).not.toBeInTheDocument();
-    const link = screen.getByRole('link', { name: /Open chat to review/i });
-    expect(link).toHaveAttribute('href', '#/chat?session=sess-1');
+    expect(screen.queryByRole('link')).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /approve/i })).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Reject' }));
+    expect(onRespond).toHaveBeenCalledWith('a-1', 'deny');
+  });
+  it('high risk: prefers the durable source thread over the approval queue ID', () => {
+    render(
+      <ApprovalCard
+        item={{ ...baseItem, highImpact: true, sessionId: 'queue-key', sourceSessionId: 'thread-1' }}
+        onRespond={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByRole('link', { name: /Open chat to review/i })).toHaveAttribute(
+      'href',
+      '#/chat?session=thread-1',
+    );
+  });
+  it('high risk: explains when the originating thread is unavailable', () => {
+    render(<ApprovalCard item={{ ...baseItem, highImpact: true }} onRespond={vi.fn()} />);
+    expect(screen.getByText('Thread context unavailable')).toBeInTheDocument();
+    expect(screen.queryByRole('link')).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Reject' })).toBeInTheDocument();
+  });
+  it('re-enables Reject after a failed response', async () => {
+    const onRespond = vi.fn().mockRejectedValue(new Error('offline'));
+    render(<ApprovalCard item={baseItem} onRespond={onRespond} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Reject' }));
+    expect(screen.getByRole('button', { name: 'Reject' })).toBeDisabled();
+
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Reject' })).toBeEnabled());
   });
 });

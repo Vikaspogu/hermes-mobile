@@ -1387,6 +1387,27 @@ describe('useChatStore', () => {
     expect(useChatStore.getState().streaming).toBe(false);
   });
 
+  it('resumeSessionIntoChat keeps the previous chat and transcript together when opening fails', async () => {
+    useChatStore.setState({
+      sessionId: 'live-old',
+      storedSessionId: 'stored-old',
+      messages: [{ id: 'old-message', role: 'assistant', text: 'previous transcript', createdAt: 0 }],
+      streaming: true,
+      lastSubmittedSessionId: 'live-old',
+      cacheProfile: 'default',
+    });
+    vi.mocked(restMock.sessionMessages).mockRejectedValue(new Error('offline'));
+
+    await expect(useChatStore.getState().resumeSessionIntoChat(restMock, rpcMock, 'stored-target', 'dev')).rejects.toThrow('offline');
+
+    expect(useChatStore.getState().sessionId).toBe('live-old');
+    expect(useChatStore.getState().storedSessionId).toBe('stored-old');
+    expect(useChatStore.getState().messages.map((m) => m.text)).toEqual(['previous transcript']);
+    expect(useChatStore.getState().streaming).toBe(true);
+    expect(useChatStore.getState().lastSubmittedSessionId).toBe('live-old');
+    expect(useChatStore.getState().cacheProfile).toBe('default');
+  });
+
   it('resumeSessionIntoChat opens durable history, binds runtime, and stays idle', async () => {
     useSessionsStore.setState({
       sessions: [{ id: 'stored-99', title: 'Local stored', updatedAt: 1, messageCount: 1, profile: 'dev' }],

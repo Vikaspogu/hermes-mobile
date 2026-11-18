@@ -66,9 +66,7 @@ describe('Chat', () => {
     expect(log).toHaveAttribute('aria-live', 'polite');
     expect(log).toHaveAttribute('aria-relevant', 'additions text');
     await waitFor(() => expect(log).toHaveAttribute('aria-busy', 'false'));
-    expect(screen.getByRole('textbox', { name: 'Message input' })).toHaveAttribute(
-      'placeholder', 'Message I.V.A.N…\n/ for commands · + to attach',
-    );
+    expect(screen.getByRole('textbox', { name: 'Message input' })).toHaveAttribute('placeholder', 'Message I.V.A.N…');
     expect(screen.getByRole('heading', { name: 'Good to see you.' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Morning briefing/ })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Explain this repo/ })).toBeInTheDocument();
@@ -129,7 +127,7 @@ describe('Chat', () => {
     core.useChatStore.setState({ sessionId: 'sess-1', error: 'Could not send. Try again.' });
     core.useActivityStore.setState({ items: [{
       id: 'approval-1', kind: 'approval', status: 'needs_you', title: 'Approval required',
-      summary: 'Restart the gateway', sessionId: 'sess-1', highImpact: true, createdAt: 1,
+      summary: 'Restart the gateway', sessionId: 'sess-1', sourceSessionId: 'sess-1', highImpact: true, createdAt: 1,
     } as core.Approval] });
     render(<Chat rpc={rpcMock} rest={restMock} />);
 
@@ -1075,7 +1073,7 @@ describe('Chat', () => {
           status: 'needs_you',
           title: 'Approval required',
           summary: 'hermes gateway restart',
-          sessionId: 'sess-1',
+          sessionId: 'sess-1', sourceSessionId: 'sess-1',
           highImpact: true,
           createdAt: 1,
         } as core.Approval,
@@ -1087,7 +1085,8 @@ describe('Chat', () => {
     render(<Chat rpc={rpcMock} rest={restMock} />);
 
     expect(screen.getByText('hermes gateway restart')).toBeInTheDocument();
-    fireEvent.click(screen.getByRole('button', { name: 'Run' }));
+    fireEvent.keyDown(screen.getByRole('slider', { name: 'Slide to approve' }), { key: 'End' });
+    fireEvent.keyDown(screen.getByRole('slider', { name: 'Slide to approve' }), { key: 'ArrowRight' });
 
     await waitFor(() => {
       expect(rpcMock.request).toHaveBeenCalledWith('approval.respond', {
@@ -1120,7 +1119,7 @@ describe('Chat', () => {
           title: 'Approval required',
           summary: 'dangerous command',
           sessionId: 'sess-1',
-          highImpact: true,
+          highImpact: false,
           createdAt: 1,
         } as core.Approval,
       ],
@@ -1148,7 +1147,7 @@ describe('Chat', () => {
           title: 'Approval required',
           summary: 'dangerous command again',
           sessionId: 'sess-1',
-          highImpact: true,
+          highImpact: false,
           createdAt: 2,
         } as core.Approval,
       ],

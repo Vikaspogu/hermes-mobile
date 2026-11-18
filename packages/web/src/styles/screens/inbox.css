@@ -18,15 +18,15 @@
 
 /* ── Approval card — semantic active tinting ────────────────────── */
 .hm-inbox-card {
-  background: var(--hm-tint-amber-surface);
-  border: 1px solid var(--hm-tint-amber-border);
-  border-radius: var(--hm-radius-card);
+  background: var(--hm-color-surface-2);
+  border: 1.5px solid var(--hm-color-border);
+  border-radius: 26px;
   box-shadow: var(--hm-card-highlight);
 }
 .hm-inbox-card--high {
-  background: var(--hm-tint-rose-surface);
-  border: 1px solid var(--hm-tint-rose-border);
-  border-left: 3px solid var(--hm-tint-rose-accent);
+  background: var(--hm-color-surface-high);
+  border: 1.5px solid var(--hm-color-danger);
+  border-radius: 28px;
 }
 .hm-inbox-card--clarify {
   background: var(--hm-tint-sky-surface);

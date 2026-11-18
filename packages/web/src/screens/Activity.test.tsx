@@ -123,6 +123,13 @@ describe('Activity', () => {
     } as unknown as RestClient;
     render(<Activity rpc={rpcMock} rest={rest} />);
     await waitFor(() => expect(screen.getByTestId('paperless-card')).toBeInTheDocument());
+    expect(screen.queryByText('No items match this filter.')).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'All 1' })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'High risk 0' }));
+    expect(screen.queryByTestId('paperless-card')).not.toBeInTheDocument();
+    expect(screen.getByText('No items match this filter.')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Low risk 1' }));
+    expect(screen.getByTestId('paperless-card')).toBeInTheDocument();
     expect(screen.queryByText("There's nothing in the inbox")).not.toBeInTheDocument();
     const [ready, retry] = screen.getAllByRole('checkbox');
     expect(retry).toBeDisabled();

@@ -497,6 +497,7 @@ export function Composer({
               e.target.value = '';
             }}
           />
+        <div className="hm-composer__input">
         <textarea
           ref={textareaRef}
           value={text}
@@ -512,8 +513,12 @@ export function Composer({
           onBlur={handleTextareaBlur}
           placeholder={placeholder}
           aria-label="Message input"
-          rows={text ? 1 : placeholder.split('\n').length}
+          rows={1}
+          aria-describedby="hm-composer-command-hint"
         />
+          <span className="hm-composer__slash" aria-hidden="true">/cmd</span>
+          <span id="hm-composer-command-hint" className="hm-sr-only">Type / for commands.</span>
+        </div>
 
         <div className="hm-composer__toolbar">
 

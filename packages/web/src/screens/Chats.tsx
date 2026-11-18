@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import {
   useActivityStore,
@@ -199,6 +199,11 @@ export function Chats({ rpc, rest, onNavigate, sidebar, onOpenVoice, onRetry }: 
           <Icon name="edit" size={18} /> New chat
         </button>}
         <>
+          {!sidebar && (
+            <div className="hm-o2-pagehead">
+              <div><h1>Chats</h1><p>{nonArchived.filter(isLive).length} active · {pendingApprovals} waiting</p></div>
+            </div>
+          )}
           <div className="hm-home-search">
             <Icon name="search" size={20} />
             <input
@@ -262,12 +267,12 @@ export function Chats({ rpc, rest, onNavigate, sidebar, onOpenVoice, onRetry }: 
             </div>
           )}
           {threads.map((group) => (
-            <Fragment key={group.key}>
+            <section className="hm-thread-group" key={group.key}>
               <div className="hm-group-label hm-qp-sec__head">
                 <span className="hm-qp-sec__kicker">{group.label}</span>
                 <span className="hm-qp-sec__meta">{group.items.length}</span>
               </div>
-              {group.items.map((s) => {
+              <div className="hm-thread-group__cards">{group.items.map((s) => {
                 const live = isLive(s);
                 const isCron = sessionSourceId(s) === 'cron';
                 const blocked = blockedSessionIds.has(s.id);
@@ -280,12 +285,12 @@ export function Chats({ rpc, rest, onNavigate, sidebar, onOpenVoice, onRetry }: 
                     data-testid="thread-row"
                   >
                     {isCron ? (
-                      <span className="hm-thread-row__cronicon" aria-hidden="true">
+                      <span className="hm-thread-row__avatar hm-thread-row__avatar--cron" aria-hidden="true">
                         <Icon name="cron" size={16} />
                       </span>
                     ) : (
                       <span
-                        className="hm-thread-row__icon"
+                        className={`hm-thread-row__avatar${blocked ? ' hm-thread-row__avatar--blocked' : live ? ' hm-thread-row__avatar--live' : ''}`}
                         aria-hidden="true"
                       >
                         <Icon name={blocked ? 'shield' : 'chat'} size={16} />
@@ -312,8 +317,8 @@ export function Chats({ rpc, rest, onNavigate, sidebar, onOpenVoice, onRetry }: 
                     </span>
                   </button>
                 );
-              })}
-            </Fragment>
+              })}</div>
+            </section>
           ))}
         </div>
       </div>

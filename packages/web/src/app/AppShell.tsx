@@ -8,10 +8,8 @@ import { Icon, type IconName } from '../components/Icon';
 import { BrandMark } from '../components/BrandMark';
 import { UpdateNotification } from '../components/UpdateNotification';
 import { LazyScreenErrorBoundary } from './LazyScreenErrorBoundary';
-import { HERMES_PWA_VERSION_LABEL } from './version';
-import { usePresence } from '../hooks/usePresence';
 import { getInitialScreen, persistScreen, screenFromLocationHash, sessionFromLocationHash } from '../lib/screenStorage';
-import { dismissTopBackLayer, registerBackLayer } from '../lib/backLayers';
+import { dismissTopBackLayer } from '../lib/backLayers';
 import { syncPushSubscription } from '../pwa/push';
 import '../styles/screens/more.css';
 import '../styles/screens/offline.css';
@@ -22,6 +20,7 @@ export type Screen =
   | 'chat'
   | 'sessions'
   | 'approvals'
+  | 'more'
   | 'kanban'
   | 'agents'
   | 'profiles'
@@ -49,6 +48,7 @@ const Agents = lazy(() => import('../screens/Agents').then((module) => ({ defaul
 const Profiles = lazy(() => import('../screens/Profiles').then((module) => ({ default: module.Profiles })));
 const Sessions = lazy(() => import('../screens/Sessions').then((module) => ({ default: module.Sessions })));
 const CommandCenter = lazy(() => import('../screens/CommandCenter').then((module) => ({ default: module.CommandCenter })));
+const Skills = lazy(() => import('../screens/Skills').then((module) => ({ default: module.Skills })));
 const Cron = lazy(() => import('../screens/Cron').then((module) => ({ default: module.Cron })));
 const Artifacts = lazy(() => import('../screens/Artifacts').then((module) => ({ default: module.Artifacts })));
 const Settings = lazy(() => import('../screens/Settings').then((module) => ({ default: module.Settings })));
@@ -86,7 +86,11 @@ function approvalFromEvent(event: RpcEvent): Approval {
     createdAt: Date.now(),
   };
   if (event.rpcRequestId !== undefined) item.rpcRequestId = event.rpcRequestId;
-  if (sessionId) item.sessionId = sessionId;
+  if (sessionId) {
+    item.sessionId = sessionId;
+    // Live WS events carry the originating chat id; recovered REST queue keys do not.
+    item.sourceSessionId = sessionId;
+  }
   if (typeof d.session === 'string') item.session = d.session;
   else if (sessionId) item.session = `Session ${sessionId.slice(0, 8)}`;
   const summary = [command, description].filter(Boolean).join('\n');
@@ -153,13 +157,6 @@ function clarifyItemsFromEvent(event: RpcEvent): Clarify[] {
   return [item];
 }
 
-const HIDDEN_ADMIN_SCREENS = new Set<Screen>([
-  // TODO: Skills/Tools is temporarily hidden from the PWA until we decide
-  // whether this administrative surface belongs in the mobile app.
-  // Keep the screen modules in the codebase, but block stale/internal navigation
-  // from opening them in the production shell for now.
-  'skills',
-]);
 
 const SCREEN_TITLES: Record<Screen, string> = {
   home: 'Chats',
@@ -167,6 +164,7 @@ const SCREEN_TITLES: Record<Screen, string> = {
   voice: 'Voice',
   sessions: 'Sessions',
   approvals: 'Inbox',
+  more: 'More',
   kanban: 'Work',  agents: 'Agents',
   profiles: 'Profiles',
   cron: 'Work',
@@ -218,7 +216,6 @@ export function AppShell({ connectionState, rpc, rest, onRetry, connectionError 
   const navStackRef = useRef(navStack);
   const [screenEntry, setScreenEntry] = useState<{ id: number; direction: 'forward' | 'back' | undefined }>({ id: 0, direction: undefined });
   const screen: Screen = navStack[navStack.length - 1] ?? 'home';
-  const [moreOpen, setMoreOpen] = useState(false);
   const [voiceOpen, setVoiceOpen] = useState(() => screenFromLocationHash() === 'voice');
   const [gatewayHealth, setGatewayHealth] = useState<GatewayHealth>('checking');
   const [updateCheck, setUpdateCheck] = useState<UpdateCheck | undefined>();
@@ -226,7 +223,6 @@ export function AppShell({ connectionState, rpc, rest, onRetry, connectionError 
     if (typeof localStorage === 'undefined') return null;
     return localStorage.getItem(UPDATE_DISMISSED_STORAGE_KEY);
   });
-  const moreSheet = usePresence(moreOpen, 220);
   const activeName = useProfilesStore((s) => s.activeName);
   const currentName = useProfilesStore((s) => s.currentName);
   const { load: loadProfiles } = useProfilesStore();
@@ -247,7 +243,6 @@ export function AppShell({ connectionState, rpc, rest, onRetry, connectionError 
     return false;
   });
   const screenTitle = screen === 'chat' && currentSession?.title ? currentSession.title : SCREEN_TITLES[screen];
-  const moreSheetRef = useRef<HTMLDivElement>(null);
   const voiceRef = useRef<HTMLDivElement>(null);
   const pendingRefreshInFlightRef = useRef(false);
   const chatRecoveryInFlightRef = useRef(false);
@@ -308,28 +303,6 @@ export function AppShell({ connectionState, rpc, rest, onRetry, connectionError 
     return () => window.removeEventListener('popstate', onPopState);
   }, []);
 
-  // The More sheet is the topmost back layer: Back closes it before navigating.
-  useEffect(() => {
-    if (!moreOpen) return undefined;
-    return registerBackLayer({ priority: 100, dismiss: () => setMoreOpen(false) });
-  }, [moreOpen]);
-
-  useEffect(() => {
-    if (!moreOpen) return;
-    void load(rest);
-  }, [moreOpen, load, rest]);
-
-  useEffect(() => {
-    if (!moreOpen) return;
-    function onKey(e: KeyboardEvent) {
-      if (e.key === 'Escape') {
-        e.preventDefault();
-        setMoreOpen(false);
-      }
-    }
-    document.addEventListener('keydown', onKey);
-    return () => document.removeEventListener('keydown', onKey);
-  }, [moreOpen]);
 
   useEffect(() => {
     if (!voiceOpen) return;
@@ -626,9 +599,6 @@ export function AppShell({ connectionState, rpc, rest, onRetry, connectionError 
 
 
   function navigate(s: Screen, replace = false) {
-    if (HIDDEN_ADMIN_SCREENS.has(s)) {
-      s = 'home';
-    }
     if (s !== navStackRef.current[navStackRef.current.length - 1]) {
       // Tab roots (Chats/Inbox) reset the stack so tabs never show a back button.
       const next = s === 'home' || s === 'approvals' ? [s] : [...navStackRef.current, s];
@@ -639,7 +609,6 @@ export function AppShell({ connectionState, rpc, rest, onRetry, connectionError 
       else window.history.pushState({ hmNav: next.length - 1 }, '');
     }
     persistScreen(s);
-    setMoreOpen(false);
   }
 
 
@@ -662,11 +631,13 @@ export function AppShell({ connectionState, rpc, rest, onRetry, connectionError 
     { key: 'more', label: 'More', icon: 'menu' },
   ];
 
+  const hasScreenHeader = screen === 'home' || screen === 'more' || screen === 'approvals';
+  const hasCustomHeader = hasScreenHeader && connectionState === 'connected' && gatewayHealth === 'running';
   return (
     <div className="hm-app-shell">
       {/* ── Header ───────────────────────────────────────────────── */}
-      <header className={`hm-header${navStack.length > 1 ? ' hm-header--sub' : ''}`} data-testid="app-header">
-        {navStack.length > 1 && screen !== 'chat' && (
+      <header className={`hm-header${navStack.length > 1 ? ' hm-header--sub' : ''}${hasCustomHeader ? ' hm-header--custom' : ''}`} data-testid="app-header">
+        {navStack.length > 1 && screen !== 'chat' && !hasCustomHeader && (
           <button
             type="button"
             className="hm-header__back"
@@ -676,7 +647,7 @@ export function AppShell({ connectionState, rpc, rest, onRetry, connectionError 
             <Icon name="back" size={20} />
           </button>
         )}
-        <h1 className="hm-header__title">{screenTitle}</h1>
+        <h1 className="hm-header__title" aria-hidden={hasScreenHeader}>{screenTitle}</h1>
         {(connectionState !== 'connected' || gatewayHealth !== 'running') && (
           <div className="hm-header__right">
             {screen !== 'chat' && screen !== 'home' && connectionState !== 'offline' && (
@@ -736,10 +707,12 @@ export function AppShell({ connectionState, rpc, rest, onRetry, connectionError 
             {screen === 'sessions'  && <Sessions key={activeName ?? 'default'} rpc={rpc} rest={rest} onSessionOpen={() => navigate('chat')} />}
             {screen === 'approvals' && <Activity key={activeName ?? 'default'} rpc={rpc} rest={rest} />}
             {screen === 'kanban'    && <Projects key={activeName ?? 'default'} rest={rest} onNavigate={(s) => navigate(s as Screen)} />}
+            {screen === 'skills'    && <Skills key={activeName ?? 'default'} rest={rest} />}
             {screen === 'agents'    && <Agents key={activeName ?? 'default'} rpc={rpc} />}
             {screen === 'profiles'  && <Profiles key={activeName ?? 'default'} rest={rest} />}
             {screen === 'command'   && <CommandCenter key={activeName ?? 'default'} rest={rest} />}
             {screen === 'home'      && <Chats key={activeName ?? 'default'} rpc={rpc} rest={rest} onNavigate={(s) => navigate(s as Screen)} onOpenVoice={() => startTransition(() => setVoiceOpen(true))} onRetry={onRetry} />}
+            {screen === 'more'      && <More rest={rest} onNavigate={(s) => navigate(s as Screen)} onBack={navStack.length > 1 ? () => window.history.back() : undefined} />}
             {screen === 'cron'      && <Cron key={activeName ?? 'default'} rest={rest} onNavigate={(s) => navigate(s as Screen)} />}
             {screen === 'artifacts' && <Artifacts key={activeName ?? 'default'} rest={rest} />}
             {screen === 'settings'  && (
@@ -764,14 +737,13 @@ export function AppShell({ connectionState, rpc, rest, onRetry, connectionError 
               <button
                 key="more"
                 type="button"
-                className={`hm-tab${moreOpen ? ' hm-tab--active' : ''}`}
-                onClick={() => setMoreOpen(true)}
+                className={`hm-tab${screen === 'more' ? ' hm-tab--active' : ''}`}
+                onClick={() => navigate('more')}
                 aria-label={tab.label}
-                aria-haspopup="dialog"
-                aria-expanded={moreOpen}
+                aria-current={screen === 'more' ? 'page' : undefined}
               >
                 <span className="hm-tab__icon">
-                  <Icon name={tab.icon} size={22} filled={moreOpen} />
+                  <Icon name={tab.icon} size={22} filled={screen === 'more'} />
                 </span>
                 <span className="hm-tab__label">{tab.label}</span>
               </button>
@@ -814,23 +786,6 @@ export function AppShell({ connectionState, rpc, rest, onRetry, connectionError 
         </button>
       )}
 
-      {/* ── More sheet ─────────────────────────────────────────────── */}
-      {(moreOpen || moreSheet.mounted) && (
-        <div
-          className="hm-more-sheet"
-          role="dialog"
-          aria-modal="true"
-          aria-label="More"
-          data-closing={moreSheet.leaving || undefined}
-        >
-          <button className="hm-more-sheet__overlay" onClick={() => setMoreOpen(false)} aria-hidden="true" tabIndex={-1} />
-          <div className="hm-more-sheet__panel" ref={moreSheetRef}>
-            <div className="hm-more-sheet__grabber" aria-hidden="true" />
-            <More rest={rest} onNavigate={(s) => navigate(s as Screen)} />
-            <div className="hm-more-version">{HERMES_PWA_VERSION_LABEL}</div>
-          </div>
-        </div>
-      )}
       {voiceOpen && (
         <div className="hm-voice-overlay" ref={voiceRef} role="dialog" aria-modal="true" aria-label="Voice call" tabIndex={-1}>
           <Voice key={activeName ?? 'default'} onClose={() => setVoiceOpen(false)} />
