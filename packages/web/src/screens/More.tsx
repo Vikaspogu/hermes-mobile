@@ -1,24 +1,23 @@
 import { useEffect, useState } from 'react';
+import { HERMES_PWA_VERSION_LABEL } from '../app/version';
 import {
-  useChatStore,
+
   useProfilesStore,
   useSpawnStore,
   type RestClient,
   type SystemStats,
 } from '@hermes-pwa/core';
-import { fmtGb, fmtPercent, fmtUptime } from '../lib/formatStats';
+import { fmtPercent, fmtUptime } from '../lib/formatStats';
 import { Icon, type IconName } from '../components/Icon';
 import '../styles/screens/more.css';
 
 interface MoreProps {
   rest: RestClient;
   onNavigate: (screen: string) => void;
+  onBack?: (() => void) | undefined;
 }
-
-export function More({ rest, onNavigate }: MoreProps) {
+export function More({ rest, onNavigate, onBack }: MoreProps) {
   const [stats, setStats] = useState<SystemStats | null>(null);
-  const [artifactCount, setArtifactCount] = useState<number | null>(null);
-  const sessionId = useChatStore((s) => s.sessionId);
   const activeName = useProfilesStore((s) => s.activeName);
   const profiles = useProfilesStore((s) => s.profiles);
   const activeSubagents = useSpawnStore(
@@ -38,50 +37,36 @@ export function More({ rest, onNavigate }: MoreProps) {
     };
   }, [rest]);
 
-  useEffect(() => {
-    if (!sessionId) return undefined;
-    let cancelled = false;
-    rest
-      .sessionArtifacts(sessionId)
-      .then((artifacts) => {
-        if (!cancelled) setArtifactCount(artifacts.length);
-      })
-      .catch(() => {});
-    return () => {
-      cancelled = true;
-    };
-  }, [rest, sessionId]);
 
   const activeProfile = profiles.find((p) => p.name === activeName);
   const profileSub = `active: ${activeProfile?.displayName ?? activeName ?? 'default'} · ${
     activeProfile?.model?.trim() || 'model not set'
   }`;
 
-  const rows: { key: string; icon: IconName; label: string; sub: string | undefined; onClick?: () => void }[] = [
-    { key: 'profiles', icon: 'profiles', label: 'Profiles', sub: profileSub },
-    {
-      key: 'agents',
-      icon: 'sparkle',
-      label: 'Agents',
-      sub: `${activeSubagents} active subagent${activeSubagents === 1 ? '' : 's'}`,
-    },
-    { key: 'cron', icon: 'cron', label: 'Schedules', sub: 'Recurring jobs' },
-    {
-      key: 'artifacts',
-      icon: 'archive',
-      label: 'Artifacts',
-      sub: artifactCount != null ? `${artifactCount} files this session` : undefined,
-    },
-    { key: 'command', icon: 'system', label: 'System', sub: 'gateway, backups, doctor' },
-    { key: 'settings', icon: 'settings', label: 'Settings', sub: 'connection, notifications' },
-    { key: 'reload', icon: 'refresh', label: 'Reload app', sub: 'fetch latest data and updates', onClick: () => window.location.reload() },
+  const rows: { key: string; icon: IconName; label: string; sub: string; badge?: string }[] = [
+    { key: 'agents', icon: 'sparkle', label: 'Agents', sub: `${activeSubagents} active subagents · spawn tree`, badge: `${activeSubagents} LIVE` },
+    { key: 'kanban', icon: 'kanban', label: 'Projects', sub: 'Kanban boards and project work', badge: 'BOARDS' },
+    { key: 'skills', icon: 'skills', label: 'Skills', sub: 'Installed capabilities and tools', badge: 'SKILLS' },
+    { key: 'cron', icon: 'cron', label: 'Cron', sub: 'Recurring jobs and schedules', badge: 'SCHEDULE' },
+    { key: 'profiles', icon: 'profiles', label: 'Profiles', sub: profileSub, badge: 'ACTIVE' },
+    { key: 'settings', icon: 'settings', label: 'Settings', sub: 'Model picker, connection and push', badge: 'MODEL' },
   ];
 
   return (
     <div className="hm-more-screen">
       <header className="hm-more__header">
-        <h1>More</h1>
-        <p>System, agents and settings</p>
+        {onBack && (
+          <button type="button" className="hm-iconbtn" aria-label="Back" onClick={onBack}>
+            <Icon name="back" size={20} />
+          </button>
+        )}
+        <div>
+          <h1>Control Cockpit</h1>
+          <p>hermes-pwa v{HERMES_PWA_VERSION_LABEL}</p>
+        </div>
+        <button type="button" className="hm-iconbtn hm-more__reload" aria-label="Reload App" onClick={() => window.location.reload()}>
+          <Icon name="refresh" size={22} />
+        </button>
       </header>
       {stats && (
         <section className="hm-qp-hero hm-more-health" data-testid="more-health">
@@ -90,49 +75,41 @@ export function More({ rest, onNavigate }: MoreProps) {
             <strong>Gateway running</strong>
             <span className="hm-more-health__up">up {fmtUptime(stats.uptimeSeconds)}</span>
           </div>
-          <div className="hm-more-health__metric">
-            <span>CPU {fmtPercent(stats.cpuPercent)}</span>
-            <div className="hm-metricbar">
-              <div className="hm-metricbar__fill" style={{ width: `${Math.min(100, stats.cpuPercent ?? 0)}%` }} />
+          {([
+            ['CPU', stats.cpuPercent],
+            ['RAM', stats.memoryPercent ?? (stats.memoryTotalMb ? ((stats.memoryUsedMb ?? 0) / stats.memoryTotalMb) * 100 : undefined)],
+            ['Disk', stats.diskPercent ?? (stats.diskTotalMb ? ((stats.diskUsedMb ?? 0) / stats.diskTotalMb) * 100 : undefined)],
+          ] as const).map(([label, percent]) => (
+            <div className="hm-more-health__metric" key={label}>
+              <div className="hm-more-health__metric-label"><span>{label}</span><span>{fmtPercent(percent)}</span></div>
+              <div className="hm-metricbar">
+                <div
+                  className={`hm-metricbar__fill${(percent ?? 0) > 85 ? ' hm-metricbar__fill--warn' : ''}`}
+                  style={{ width: `${Math.min(100, percent ?? 0)}%` }}
+                />
+              </div>
             </div>
-          </div>
-          <div className="hm-more-health__metric">
-            <span>
-              RAM {fmtGb(stats.memoryUsedMb)} / {fmtGb(stats.memoryTotalMb)}
-            </span>
-            <div className="hm-metricbar">
-              <div
-                className="hm-metricbar__fill"
-                style={{ width: `${Math.min(100, stats.memoryPercent ?? 0)}%` }}
-              />
-            </div>
-          </div>
-          <div className="hm-more-health__metric">
-            <span>
-              Disk {fmtGb(stats.diskUsedMb)} / {fmtGb(stats.diskTotalMb)}
-            </span>
-            <div className="hm-metricbar">
-              <div
-                className="hm-metricbar__fill hm-metricbar__fill--warn"
-                style={{ width: `${Math.min(100, stats.diskPercent ?? 0)}%` }}
-              />
-            </div>
-          </div>
+          ))}
         </section>
       )}
 
-      <div className="hm-group-label">Control center</div>
+      <div className="hm-more-health__links">
+        <button type="button" className="hm-more-health__link" onClick={() => onNavigate('command')}>System details →</button>
+        <button type="button" className="hm-more-health__link" onClick={() => onNavigate('artifacts')}>Session artifacts →</button>
+      </div>
+      <div className="hm-group-label"><span>Control modules</span><span>6 surfaces</span></div>
       <div className="hm-more-list hm-qp-grid-2">
         {rows.map((row) => (
           <button
             key={row.key}
             type="button"
-            className="hm-qp-tile hm-more-row"
-            onClick={row.onClick ?? (() => onNavigate(row.key))}
+            className={`hm-qp-tile hm-more-row${row.key === 'skills' || row.key === 'settings' ? ' hm-more-row--amber' : ''}`}
+            onClick={() => onNavigate(row.key)}
           >
             <span className="hm-qp-tile__icon hm-more-row__icon" aria-hidden="true">
               <Icon name={row.icon} size={22} />
             </span>
+            {row.badge && <span className="hm-more-row__badge">{row.badge}</span>}
             <span className="hm-more-row__text">
               <span className="hm-qp-tile__name hm-more-row__label">{row.label}</span>
               {row.sub && <span className="hm-qp-tile__state hm-more-row__sub">{row.sub}</span>}

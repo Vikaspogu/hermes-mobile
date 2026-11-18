@@ -151,7 +151,7 @@ describe('Settings (M14)', () => {
     fireEvent.click(screen.getByRole('button', { name: /Theme: Dark · Indigo/i }));
     fireEvent.click(await screen.findByRole('button', { name: 'Use System theme' }));
     await waitFor(() => expect(screen.getByRole('button', { name: /Theme: System/i })).toBeInTheDocument());
-    expect(document.documentElement.dataset.theme).toBeUndefined();
+    expect(document.documentElement.dataset.theme).toBe('light');
   });
 
   it('calls onLogout from the red Log out button', async () => {

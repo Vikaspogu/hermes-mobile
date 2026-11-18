@@ -73,21 +73,28 @@ export function SlideToApprove({ onConfirm, disabled = false, label = 'Slide to 
     }
   }
 
+  function onPointerCancel() {
+    setDragging(false);
+    setPosition(0);
+  }
+
   function onKeyDown(event: React.KeyboardEvent<HTMLDivElement>) {
     if (disabled) return;
     const max = maxPosition();
-    const percent = max > 0 ? (position / max) * 100 : 0;
+    const percent = max > 0 ? (position / max) * 100 : position;
     if (event.key === 'ArrowRight' || event.key === 'ArrowUp') {
       event.preventDefault();
       const next = Math.min(100, percent + KEY_STEP_PERCENT);
       if (next >= 100) confirm();
-      else setPosition((next / 100) * max);
+      else setPosition(max > 0 ? (next / 100) * max : next);
     } else if (event.key === 'ArrowLeft' || event.key === 'ArrowDown') {
       event.preventDefault();
-      setPosition((Math.max(0, percent - KEY_STEP_PERCENT) / 100) * max);
+      setPosition(max > 0 ? (Math.max(0, percent - KEY_STEP_PERCENT) / 100) * max : Math.max(0, percent - KEY_STEP_PERCENT));
     } else if (event.key === 'End') {
       event.preventDefault();
-      confirm();
+      // End moves to the last step; a separate arrow confirms so one keypress
+      // cannot authorize a high-impact action.
+      setPosition(max > 0 ? max * (1 - KEY_STEP_PERCENT / 100) : 100 - KEY_STEP_PERCENT);
     } else if (event.key === 'Home') {
       event.preventDefault();
       setPosition(0);
@@ -95,7 +102,7 @@ export function SlideToApprove({ onConfirm, disabled = false, label = 'Slide to 
   }
 
   const max = maxPosition();
-  const valueNow = max > 0 ? Math.round((position / max) * 100) : 0;
+  const valueNow = max > 0 ? Math.round((position / max) * 100) : Math.round(position);
 
   return (
     <div className="hm-slide-track" ref={trackRef}>
@@ -113,7 +120,7 @@ export function SlideToApprove({ onConfirm, disabled = false, label = 'Slide to 
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}
         onPointerUp={onPointerEnd}
-        onPointerCancel={onPointerEnd}
+        onPointerCancel={onPointerCancel}
         onKeyDown={onKeyDown}
       >
         →

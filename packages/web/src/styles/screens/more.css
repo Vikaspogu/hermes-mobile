@@ -112,3 +112,21 @@
 .hm-more-row__chev {
   display: none;
 }
+
+/* O2 module tiles */
+.hm-more__reload { width: 48px; height: 48px; background: var(--hm-color-surface); }
+.hm-screen .hm-more-row.hm-qp-tile { height: auto; min-height: 112px; padding: 14px; background: var(--hm-color-surface-container); border: 0; border-radius: 26px; }
+.hm-more-row.hm-qp-tile { display: grid; grid-template-columns: 1fr auto; align-content: space-between; gap: 14px 8px; }
+.hm-screen .hm-more-row .hm-more-row__sub { display: block; overflow: visible; margin-top: 4px; color: var(--hm-color-text-2); font-family: var(--hm-font-sans); font-size: 11px; line-height: 1.45; }
+.hm-more-row__badge { align-self: start; padding: 4px 8px; color: var(--hm-color-text-2); background: var(--hm-color-surface-high); border-radius: 999px; font: 700 10px/1.4 var(--hm-font-mono); white-space: nowrap; }
+.hm-more-row__text { grid-column: 1 / -1; }
+.hm-screen .hm-more-row .hm-more-row__icon { width: 42px; height: 42px; color: var(--hm-color-on-primary-container); background: var(--hm-color-primary-container); border: 0; border-radius: 15px; }
+.hm-screen .hm-more-row--amber .hm-more-row__icon { color: var(--hm-color-on-tertiary-container); background: var(--hm-color-tertiary-container); }
+.hm-more-row:first-child .hm-more-row__icon { clip-path: polygon(50% 0%,63% 5%,75% 3%,83% 14%,95% 19%,95% 32%,100% 45%,94% 58%,96% 71%,86% 81%,78% 94%,64% 94%,52% 100%,40% 94%,26% 96%,18% 84%,5% 77%,5% 63%,0% 50%,6% 37%,4% 24%,17% 16%,24% 4%,38% 6%); }
+.hm-more-screen .hm-more-health { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; padding: 16px; background: var(--hm-color-surface-high); border: 0; border-radius: 28px; }
+.hm-more-screen .hm-more-health__head { grid-column: 1 / -1; margin-bottom: 4px; }
+.hm-more-health__up { padding: 4px 10px; color: var(--hm-color-on-primary-container) !important; background: var(--hm-color-primary-container); border-radius: 999px; font: 700 11px/1.4 var(--hm-font-mono); }
+.hm-more-screen .hm-more-health__metric { min-width: 0; padding: 10px; background: var(--hm-color-surface-2); border-radius: 18px; color: var(--hm-color-text); font: 700 11px/1.4 var(--hm-font-mono); }
+.hm-more-health__metric-label { display: flex; justify-content: space-between; gap: 4px; margin-bottom: 6px; }
+.hm-more-health .hm-metricbar { height: 8px; background: var(--hm-color-surface-highest); }
+.hm-more-health .hm-metricbar__fill { height: 100%; }

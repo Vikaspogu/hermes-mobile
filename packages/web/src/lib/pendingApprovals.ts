@@ -35,6 +35,7 @@ export function approvalClaimedByToolRow(
   activeSessionIds: string[],
 ): boolean {
   const ids = new Set(activeSessionIds);
+  if (approval.highImpact && (!approval.sourceSessionId || !ids.has(approval.sourceSessionId))) return false;
   if (approval.sourceSessionId && !ids.has(approval.sourceSessionId)) return false;
   const pendingTool = messages
     .filter((message) => message.role === 'assistant')
@@ -54,6 +55,7 @@ export function approvalClaimedByToolRow(
 export function selectDockApproval(pendingApprovals: Approval[], activeSessionIds: string[]): Approval | undefined {
   const ids = new Set(activeSessionIds);
   return pendingApprovals.find((item) => {
+    if (item.highImpact) return Boolean(item.sourceSessionId && ids.has(item.sourceSessionId));
     if (item.sourceSessionId) return ids.has(item.sourceSessionId);
     if (item.sessionId) return ids.has(item.sessionId);
     return true;

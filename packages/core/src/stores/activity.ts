@@ -80,7 +80,7 @@ function mergeIncomingItems(existing: ActionItem[], incoming: ActionItem[]): Act
     if (match) matchedExistingIds.add(match.id);
     const rpcRequestId = item.rpcRequestId ?? match?.rpcRequestId;
     if (match && rpcRequestId !== undefined) {
-      const sourceSessionId = item.sessionId ?? match.sourceSessionId;
+      const sourceSessionId = item.sourceSessionId ?? match.sourceSessionId;
       return {
         ...item,
         id: item.rpcRequestId !== undefined ? item.id : match.id,

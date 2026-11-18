@@ -13,6 +13,12 @@ installVitePreloadErrorReload();
 // Apply the stored theme before first render, otherwise the app flashes the
 // system theme until the Settings screen mounts.
 applyTheme(readTheme());
+const systemTheme = window.matchMedia?.('(prefers-color-scheme: dark)');
+const onSystemThemeChange = () => {
+  if (readTheme() === 'system') applyTheme('system');
+};
+if (systemTheme?.addEventListener) systemTheme.addEventListener('change', onSystemThemeChange);
+else systemTheme?.addListener(onSystemThemeChange);
 void registerServiceWorker();
 
 const root = document.getElementById('root');

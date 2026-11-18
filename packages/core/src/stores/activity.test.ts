@@ -151,6 +151,7 @@ describe('useActivityStore', () => {
       status: 'needs_you',
       title: 'Approval required',
       sessionId: '14df21e2',
+      rpcRequestId: 'srv-realtime',
       sourceSessionId: '14df21e2',
       summary: 'rm -rf /tmp/example\nDangerous command approval required',
       createdAt: 1,
@@ -160,8 +161,9 @@ describe('useActivityStore', () => {
 
     const items = useActivityStore.getState().items;
     expect(items).toHaveLength(1);
-    expect(items[0]?.id).toBe('approval:rest-id');
-    expect(items[0]?.sessionId).toBe('20260622_120000_backend');
+    expect(items[0]?.id).toBe('approval:realtime-id');
+    expect(items[0]?.sessionId).toBe('14df21e2');
+    expect(items[0]?.sourceSessionId).toBe('14df21e2');
   });
 
   it('removes local stale approvals when pending refresh says none remain', async () => {
@@ -360,7 +362,7 @@ describe('useActivityStore', () => {
     expect(useActivityStore.getState().items).toHaveLength(0);
   });
 
-  it('preserves rpcRequestId and sessionId when REST load merges with a live server-request approval', async () => {
+  it('preserves rpc identity without inferring a thread from the recovered queue key', async () => {
     useActivityStore.setState({
       items: [
         {
@@ -398,7 +400,7 @@ describe('useActivityStore', () => {
       id: 'ap-live',
       rpcRequestId: 'srv-99',
       sessionId: 'live-sess-1',
-      sourceSessionId: 'stored-sess-1',
     });
+    expect(items[0]?.sourceSessionId).toBeUndefined();
   });
 });

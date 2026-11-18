@@ -34,6 +34,7 @@ export function ApprovalCard({ item, onRespond }: ApprovalCardProps) {
   }
 
   const meta = [item.session, timeAgo(item.createdAt)].filter(Boolean).join(' · ');
+  const threadId = item.sourceSessionId;
 
   return (
     <div
@@ -52,13 +53,34 @@ export function ApprovalCard({ item, onRespond }: ApprovalCardProps) {
       <div className="hm-inbox-card__meta">{meta}</div>
       {item.summary && <div className="hm-inbox-card__cmd">{item.summary}</div>}
       {high ? (
-        // M4: high-risk approvals are reviewed in chat, never approved blind from the inbox.
-        <a
-          className="hm-inbox-card__review"
-          href={item.sessionId ? `#/chat?session=${encodeURIComponent(item.sessionId)}` : '#/chat'}
-        >
-          Open chat to review →
-        </a>
+        // M4: high-risk approvals are reviewed in their originating chat,
+        // never approved blind from the inbox. A recovered queue-only item
+        // can still be rejected without guessing which thread opened it.
+        <>
+          {threadId ? (
+            <a
+              className="hm-inbox-card__review"
+              href={`#/chat?session=${encodeURIComponent(threadId)}`}
+            >
+              Open chat to review →
+            </a>
+          ) : (
+            <>
+              <span className="hm-inbox-card__review">
+                Thread context unavailable
+              </span>
+              <button
+                type="button"
+                className="hm-btn hm-btn--danger-outline"
+                disabled={busy}
+                onClick={() => respond('deny')}
+                aria-label="Reject"
+              >
+                {submitting === 'deny' ? 'Rejecting…' : 'Reject'}
+              </button>
+            </>
+          )}
+        </>
       ) : (
         <div className="hm-inbox-card__row">
           <button

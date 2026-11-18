@@ -755,7 +755,7 @@ export function Chat({ rpc, rest, onOpenVoice, onRetry, onBack }: ChatProps) {
           aria-expanded={detailsOpen}
           onClick={() => setDetailsOpen((v) => !v)}
         >
-          ⋯
+          <Icon name="moreVert" size={22} />
         </button>
         {detailsOpen && (
           <div className="hm-chat-details">
@@ -874,7 +874,7 @@ export function Chat({ rpc, rest, onOpenVoice, onRetry, onBack }: ChatProps) {
         busy={streaming}
         busySubmitLabel={busySubmitLabel}
         modelLabel={modelLabel}
-        placeholder={streaming ? busyPlaceholder : 'Message I.V.A.N…\n/ for commands · + to attach'}
+        placeholder={streaming ? busyPlaceholder : 'Message I.V.A.N…'}
         messages={messages}
         onOpenVoice={onOpenVoice}
         onUploadFile={handleUploadFile}

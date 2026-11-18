@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react';
 import { useActivityStore, useConnectionStore, usePaperlessStore } from '@hermes-pwa/core';
 import type { ActionItem, Approval, Clarify, RestClient, RpcClient } from '@hermes-pwa/core';
 import { ApprovalCard } from '../components/ApprovalCard';
-import { Icon } from '../components/Icon';
 import { ClarifyCard } from '../components/ClarifyCard';
 // ponytail: prototype.css's trailing @import of screens/*.css is dropped by Vite
 import '../styles/screens/inbox.css';
@@ -25,7 +24,7 @@ function hasActionablePaperless(
   return Boolean(pending && pending.candidates.length > 0);
 }
 /** Paperless PDF triage approval posted by the email-pdf-triage cron. */
-function PaperlessCard({ rest }: { rest: RestClient }) {
+function PaperlessCard({ rest, visible }: { rest: RestClient; visible: boolean }) {
   const { pending, busy, error, result, load, decide } = usePaperlessStore();
   const [picked, setPicked] = useState<number[]>([]);
 
@@ -33,6 +32,7 @@ function PaperlessCard({ rest }: { rest: RestClient }) {
     void load(rest);
   }, [rest, load]);
 
+  if (!visible) return null;
   // an empty candidate list is not actionable — hide the card entirely
   if (!hasActionablePaperless(pending)) return result ? <p className="hm-muted">{result}</p> : null;
   const toggle = (n: number) => setPicked((p) => (p.includes(n) ? p.filter((x) => x !== n) : [...p, n]));
@@ -83,6 +83,10 @@ function PaperlessCard({ rest }: { rest: RestClient }) {
   );
 }
 
+function isHighRisk(item: ActionItem): boolean {
+  return isApproval(item) && item.highImpact;
+}
+
 function isApproval(item: ActionItem): item is Approval {
   return item.kind === 'approval';
 }
@@ -127,10 +131,12 @@ export function ApprovalsScreen({ rpc, rest }: ApprovalsScreenProps) {
   const { items, loading, error, respondApproval, respondClarify } = useActivityStore();
   const paperlessPending = usePaperlessStore((s) => s.pending);
   const connection = useConnectionStore();
+  const [filter, setFilter] = useState<'all' | 'high' | 'low' | 'notices'>('all');
 
   if (connection.state === 'init' || connection.state === 'login' || connection.state === 'offline') {
     return (
       <div className="hm-empty-state">
+        <h1 className="hm-sr-only">Inbox</h1>
         <p>Connecting to Hermes…</p>
         <p className="hm-muted">{connection.error ?? 'Please wait.'}</p>
       </div>
@@ -141,21 +147,33 @@ export function ApprovalsScreen({ rpc, rest }: ApprovalsScreenProps) {
   const notices = items.filter((i) => !isApproval(i) && !isClarify(i));
   const hasPaperless = Boolean(rest && hasActionablePaperless(paperlessPending));
   const isEmpty = needsYou.length === 0 && notices.length === 0 && !hasPaperless;
+  const visibleNeedsYou = filter === 'notices' ? [] : needsYou.filter((item) => filter === 'all' || (filter === 'high' ? isHighRisk(item) : !isHighRisk(item)));
+  const visibleNotices = filter === 'all' || filter === 'notices' ? notices : [];
+  const paperlessVisible = filter === 'all' || filter === 'low';
+  const showPaperless = hasPaperless && paperlessVisible;
 
   return (
     <div className="hm-inbox hm-scroll">
       {error && <div className="hm-warning-banner hm-warning-banner--error">{error}</div>}
 
-      {!isEmpty && (
-        <section className="hm-inbox-summary" aria-label="Inbox summary">
-          <span className="hm-inbox-summary__icon" aria-hidden="true"><Icon name={needsYou.length > 0 ? 'shield' : 'check'} size={28} filled /></span>
-          <div className="hm-inbox-summary__body">
-            <h1>{needsYou.length > 0 ? 'Needs your action' : 'Inbox clear'}</h1>
-            <p>{needsYou.length} pending action{needsYou.length === 1 ? '' : 's'} · {notices.length} notice{notices.length === 1 ? '' : 's'}</p>
-          </div>
-          {needsYou.length > 0 && <span className="hm-inbox-summary__badge">{needsYou.length}</span>}
-        </section>
-      )}
+      <div className="hm-o2-pagehead">
+        <div>
+          <h1>Inbox</h1>
+          <p>Deliberate confirmation for high-impact tools</p>
+        </div>
+        {needsYou.length > 0 && <span className="hm-badge hm-badge--warn">{needsYou.length} needs you</span>}
+      </div>
+      <div className="hm-chips" role="group" aria-label="Filter inbox">
+        {([
+          ['all', `All ${needsYou.length + notices.length + Number(hasPaperless)}`],
+          ['high', `High risk ${needsYou.filter((item) => isHighRisk(item)).length}`],
+          ['low', `Low risk ${needsYou.filter((item) => !isHighRisk(item)).length + Number(hasPaperless)}`],
+          ['notices', `Notices ${notices.length}`],
+        ] as const).map(([value, label]) => (
+          <button key={value} type="button" className={`hm-chip${filter === value ? ' active' : ''}`} aria-pressed={filter === value} onClick={() => setFilter(value)}>{label}</button>
+        ))}
+      </div>
+
 
       {loading && isEmpty && (
         <div className="hm-inbox__loading" role="status" aria-label="Loading approvals">
@@ -165,12 +183,12 @@ export function ApprovalsScreen({ rpc, rest }: ApprovalsScreenProps) {
         </div>
       )}
 
-      {rest && <PaperlessCard rest={rest} />}
+      {rest && <PaperlessCard rest={rest} visible={paperlessVisible} />}
 
-      {needsYou.length > 0 && (
+      {visibleNeedsYou.length > 0 && (
         <section className="hm-inbox-group" aria-label="Needs you">
-          <div className="hm-group-label">Needs you · {needsYou.length}</div>
-          {needsYou.map((item) =>
+          <div className="hm-group-label">Needs you · {visibleNeedsYou.length}</div>
+          {visibleNeedsYou.map((item) =>
             isClarify(item) ? (
               <ClarifyCard key={item.id} item={item} onRespond={(id, answer) => void respondClarify(rpc, id, answer)} />
             ) : isApproval(item) ? (
@@ -186,18 +204,21 @@ export function ApprovalsScreen({ rpc, rest }: ApprovalsScreenProps) {
         </section>
       )}
 
-      {notices.length > 0 && (
+      {visibleNotices.length > 0 && (
         <section className="hm-inbox-group" aria-label="Notices">
           <div className="hm-group-label hm-qp-sec__head">
             <span className="hm-qp-sec__kicker">Notices</span>
-            <span className="hm-qp-sec__meta">{notices.length}</span>
+            <span className="hm-qp-sec__meta">{visibleNotices.length}</span>
           </div>
-          {notices.map((item) => (
+          {visibleNotices.map((item) => (
             <NoticeRow key={item.id} item={item} />
           ))}
         </section>
       )}
 
+      {!loading && !isEmpty && visibleNeedsYou.length === 0 && visibleNotices.length === 0 && !showPaperless && (
+        <div className="hm-empty-state"><p>No items match this filter.</p></div>
+      )}
       {!loading && isEmpty && (
         <div className="hm-empty-state">
           <div className="hm-empty-state__icon">

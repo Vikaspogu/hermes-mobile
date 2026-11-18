@@ -74,17 +74,9 @@
   color: var(--hm-message-user-text);
   box-shadow: none;
 }
-.hm-chat .hm-composer .hm-composer__pill {
-  background: var(--hm-composer-bg);
-  border-color: var(--hm-tint-sky-border);
-  border-radius: 16px;
-}
 .hm-chat .hm-composer textarea::placeholder,
 .hm-chat .hm-composer__model {
   color: var(--hm-composer-text);
-}
-.hm-chat .hm-composer__action[aria-label='Open voice call'] {
-  color: var(--hm-tint-violet-accent);
 }
 
 /* Markdown body: links, tables, lists, code */
@@ -206,15 +198,15 @@
 /* Inline approval — Amber (low risk) / Coral Rose (high risk) semantic active tint */
 .hm-approval-inline {
   --hm-approval-accent: var(--hm-color-warning-strong);
-  background: var(--hm-tint-amber-solid);
-  border: 1px solid var(--hm-tint-amber-border);
-  border-radius: 16px;
+  background: var(--hm-color-surface-2);
+  border: 1px solid var(--hm-color-border);
+  border-radius: 26px;
   box-shadow: none;
 }
 .hm-approval-inline--high {
   --hm-approval-accent: var(--hm-color-danger-strong);
-  background: var(--hm-tint-coral-solid);
-  border-color: var(--hm-tint-rose-border);
+  background: var(--hm-color-surface-high);
+  border-color: var(--hm-color-danger);
 }
 .hm-approval-inline .hm-approval-inline__header {
   background: transparent;
@@ -290,13 +282,13 @@
 
 /* Approval dock — Amber (low risk) / Coral Rose (high risk) semantic glass dock */
 .hm-approval-dock {
-  background: var(--hm-tint-amber-solid);
-  border-top: 1px solid var(--hm-tint-amber-border);
+  background: var(--hm-color-surface);
+  border-top: 1px solid var(--hm-color-border);
   box-shadow: none;
 }
 .hm-approval-dock--high {
-  background: var(--hm-tint-coral-solid);
-  border-top-color: var(--hm-tint-rose-border);
+  background: var(--hm-color-surface-high);
+  border-top-color: var(--hm-color-danger);
 }
 .hm-approval-dock__title-text--high { color: var(--hm-color-danger-strong); }
 .hm-approval-dock--high .hm-approval-dock__row > .hm-btn--danger-outline {

@@ -3,6 +3,7 @@ import { haptic } from '../pwa/haptics';
 import type { RpcClient, Approval, ToolCall } from '@hermes-pwa/core';
 import { useActivityStore, useChatStore } from '@hermes-pwa/core';
 import { Icon } from './Icon';
+import { SlideToApprove } from './SlideToApprove';
 import { firstStringField } from '../lib/toolView';
 // approvalClaimedByToolRow in lib/pendingApprovals decides dock-vs-inline ownership.
 
@@ -56,6 +57,7 @@ export function ApprovalInline({ rpc, toolName, tool }: ApprovalInlineProps) {
   const activeSessionIds = new Set([activeSessionId, storedSessionId].filter((value): value is string => Boolean(value)));
   const candidates = items.filter((item): item is Approval => {
     if (!isPendingApproval(item)) return false;
+    if (item.highImpact && (!item.sourceSessionId || !activeSessionIds.has(item.sourceSessionId))) return false;
     if (!toolScoped) return true;
 
     // For recovered approvals, `sessionId` is the backend approval queue key,
@@ -124,38 +126,54 @@ export function ApprovalInline({ rpc, toolName, tool }: ApprovalInlineProps) {
         <div className="hm-approval-inline__label">{toolScoped ? 'Pending tool wants to run' : `${approval.title} wants to run`}</div>
         {approval.summary && <div className="hm-approval-inline__cmd">{approval.summary}</div>}
         <div className="hm-approval-inline__actions">
-          <button
-            type="button"
-            className="hm-approval-inline__approve"
-            disabled={busy}
-            onClick={() => void respond('once')}
-          >
-            {submitting === 'once' ? 'Running…' : toolScoped ? 'Run' : 'Approve'}
-          </button>
-          <button
-            type="button"
-            className="hm-approval-inline__deny"
-            disabled={busy}
-            onClick={() => void respond('deny')}
-          >
-            {submitting === 'deny' ? 'Rejecting…' : toolScoped ? 'Reject' : 'Deny'}
-          </button>
-          <button
-            type="button"
-            className="hm-approval-inline__always"
-            disabled={busy}
-            onClick={() => void respond('session')}
-          >
-            {submitting === 'session' ? 'Allowing…' : 'Session'}
-          </button>
-          <button
-            type="button"
-            className="hm-approval-inline__always"
-            disabled={busy}
-            onClick={() => void respond('always')}
-          >
-            {submitting === 'always' ? 'Allowing…' : 'Always'}
-          </button>
+          {approval.highImpact ? (
+            <>
+              <SlideToApprove onConfirm={() => void respond('once')} disabled={busy} />
+              <button
+                type="button"
+                className="hm-approval-inline__deny"
+                disabled={busy}
+                onClick={() => void respond('deny')}
+              >
+                {submitting === 'deny' ? 'Rejecting…' : 'Reject'}
+              </button>
+            </>
+          ) : (
+            <>
+              <button
+                type="button"
+                className="hm-approval-inline__approve"
+                disabled={busy}
+                onClick={() => void respond('once')}
+              >
+                {submitting === 'once' ? 'Running…' : toolScoped ? 'Run' : 'Approve'}
+              </button>
+              <button
+                type="button"
+                className="hm-approval-inline__deny"
+                disabled={busy}
+                onClick={() => void respond('deny')}
+              >
+                {submitting === 'deny' ? 'Rejecting…' : toolScoped ? 'Reject' : 'Deny'}
+              </button>
+              <button
+                type="button"
+                className="hm-approval-inline__always"
+                disabled={busy}
+                onClick={() => void respond('session')}
+              >
+                {submitting === 'session' ? 'Allowing…' : 'Session'}
+              </button>
+              <button
+                type="button"
+                className="hm-approval-inline__always"
+                disabled={busy}
+                onClick={() => void respond('always')}
+              >
+                {submitting === 'always' ? 'Allowing…' : 'Always'}
+              </button>
+            </>
+          )}
         </div>
       </div>
     </div>

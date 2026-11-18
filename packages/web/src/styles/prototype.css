@@ -310,73 +310,6 @@ textarea {
   letter-spacing: 0.01em;
 }
 
-/* ── More sheet ─────────────────────────────────────────────────────── */
-.hm-more-sheet {
-  position: fixed;
-  inset: 0;
-  z-index: 60;
-}
-
-.hm-more-sheet__overlay {
-  position: absolute;
-  inset: 0;
-  border: 0;
-  background: rgba(15, 20, 40, 0.32);
-  backdrop-filter: blur(2px);
-  animation: hm-fadein 0.2s ease;
-  cursor: pointer;
-}
-
-.hm-more-sheet[data-closing] .hm-more-sheet__overlay {
-  animation: hm-fadeout 0.2s ease forwards;
-}
-
-.hm-more-sheet__panel {
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  box-sizing: border-box;
-  max-height: calc(100dvh - env(safe-area-inset-top, 0px) - 24px);
-  overflow-y: auto;
-  overscroll-behavior: contain;
-  background: var(--hm-glass-bg);
-  /* no backdrop-filter here: the panel sits over the already-dimmed overlay,
-     stacking two 20px blurs is a measurable cost on low-end phones */
-  border-top: 1px solid var(--hm-glass-border);
-  border-radius: 22px 22px 0 0;
-  padding: 8px 14px calc(14px + env(safe-area-inset-bottom, 0px));
-  box-shadow: var(--hm-elev-sheet);
-  animation: hm-sheet-in 0.26s cubic-bezier(0.2, 0.8, 0.2, 1);
-}
-
-.hm-more-sheet[data-closing] .hm-more-sheet__panel {
-  animation: hm-sheet-out 0.2s ease forwards;
-}
-
-@keyframes hm-sheet-in {
-  from { transform: translateY(100%); }
-  to { transform: translateY(0); }
-}
-
-@keyframes hm-sheet-out {
-  from { transform: translateY(0); }
-  to { transform: translateY(100%); }
-}
-
-.hm-more-sheet__grabber {
-  width: 36px;
-  height: 4px;
-  border-radius: 999px;
-  background: var(--hm-color-border);
-  margin: 2px auto 10px;
-}
-
-.hm-more-sheet__list {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px;
-}
 
 .hm-more-row {
   appearance: none;
@@ -492,14 +425,6 @@ textarea {
   max-width: 100%;
 }
 
-.hm-more-sheet__version {
-  font-family: var(--hm-font-mono);
-  text-align: center;
-  font-size: 11px;
-  font-variant-numeric: tabular-nums;
-  color: var(--hm-color-text-faint);
-  padding-top: 12px;
-}
 
 .hm-more-health {
   display: flex;
