@@ -631,6 +631,7 @@ export function AppShell({ connectionState, rpc, rest, onRetry, connectionError 
   const activeModel = activeProfile?.model?.trim() || 'Model not set';
   const activeProfileLabel = activeProfile?.displayName ?? activeName ?? 'default';
   const gatewayLabel = gatewayStatusLabel(connectionState, gatewayHealth);
+  const showHomeFab = screen === 'home' && connectionState !== 'offline';
   const showUpdateNotification = updateCheck?.updateAvailable === true && updateCheck.latest !== updateDismissedVersion;
 
   function dismissUpdateNotification() {
@@ -752,7 +753,7 @@ export function AppShell({ connectionState, rpc, rest, onRetry, connectionError 
       </main>
 
       {/* ── Bottom tab bar ─────────────────────────────────────────── */}
-      <nav className={`hm-tabbar${screen === 'chat' ? ' hm-tabbar--chat' : ''}`} aria-label="Primary">
+      <nav className={`hm-tabbar${screen === 'chat' ? ' hm-tabbar--chat' : ''}${showHomeFab ? ' hm-tabbar--with-fab' : ''}`} aria-label="Primary">
         {TABS.map((tab) => {
           if (tab.key === 'more') {
             return (
@@ -765,7 +766,9 @@ export function AppShell({ connectionState, rpc, rest, onRetry, connectionError 
                 aria-haspopup="dialog"
                 aria-expanded={moreOpen}
               >
-                <Icon name={tab.icon} size={22} />
+                <span className="hm-tab__icon">
+                  <Icon name={tab.icon} size={22} filled={moreOpen} />
+                </span>
                 <span className="hm-tab__label">{tab.label}</span>
               </button>
             );
@@ -781,7 +784,7 @@ export function AppShell({ connectionState, rpc, rest, onRetry, connectionError 
               aria-current={active ? 'page' : undefined}
             >
               <span className="hm-tab__icon">
-                <Icon name={tab.icon} size={22} />
+                <Icon name={tab.icon} size={22} filled={active} />
                 {tab.badge != null && tab.badge > 0 && <span className="hm-tab__badge">{tab.badge}</span>}
               </span>
               <span className="hm-tab__label">{tab.label}</span>
@@ -789,6 +792,22 @@ export function AppShell({ connectionState, rpc, rest, onRetry, connectionError 
           );
         })}
       </nav>
+
+      {/* M3 companion FAB: new chat, thumb-reach next to the nav capsule. */}
+      {showHomeFab && (
+        <button
+          type="button"
+          className="hm-home-fab"
+          aria-label="New chat"
+          onClick={() => {
+            useChatStore.getState().startNewSession(activeName);
+            navigate('chat');
+          }}
+        >
+          <Icon name="edit" size={20} />
+          <span>New</span>
+        </button>
+      )}
 
       {/* ── More sheet ─────────────────────────────────────────────── */}
       {(moreOpen || moreSheet.mounted) && (

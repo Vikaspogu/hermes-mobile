@@ -123,6 +123,24 @@ describe('AppShell', () => {
     render(<AppShell connectionState="connected" rpc={rpcMock} rest={restMock} />);
     expect(screen.getByRole('heading', { name: 'Chats' })).toBeInTheDocument();
   });
+  it('starts a new chat from the Home FAB and hides it in the thread', async () => {
+    const startNewSession = vi.spyOn(useChatStore.getState(), 'startNewSession').mockImplementation(() => {});
+    render(<AppShell connectionState="connected" rpc={rpcMock} rest={restMock} />);
+    fireEvent.click(screen.getByRole('button', { name: 'New chat' }));
+    expect(startNewSession).toHaveBeenCalledWith(undefined);
+    await screen.findByRole('button', { name: 'Back to Chats' });
+    expect(screen.queryByRole('button', { name: 'New chat' })).not.toBeInTheDocument();
+    startNewSession.mockRestore();
+  });
+
+  it('hides the Home FAB and its tabbar offset while offline', () => {
+    const { rerender } = render(<AppShell connectionState="offline" rpc={rpcMock} rest={restMock} />);
+    expect(screen.queryByRole('button', { name: 'New chat' })).not.toBeInTheDocument();
+    expect(screen.getByRole('navigation', { name: 'Primary' })).not.toHaveClass('hm-tabbar--with-fab');
+    rerender(<AppShell connectionState="reconnecting" rpc={rpcMock} rest={restMock} />);
+    expect(screen.getByRole('button', { name: 'New chat' })).toBeInTheDocument();
+    expect(screen.getByRole('navigation', { name: 'Primary' })).toHaveClass('hm-tabbar--with-fab');
+  });
 
   it('restarts forward and back transitions without remounting the tab bar', async () => {
     render(<AppShell connectionState="connected" rpc={rpcMock} rest={restMock} />);

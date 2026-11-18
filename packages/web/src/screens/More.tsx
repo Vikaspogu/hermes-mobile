@@ -7,6 +7,7 @@ import {
   type SystemStats,
 } from '@hermes-pwa/core';
 import { fmtGb, fmtPercent, fmtUptime } from '../lib/formatStats';
+import { Icon, type IconName } from '../components/Icon';
 import '../styles/screens/more.css';
 
 interface MoreProps {
@@ -56,23 +57,23 @@ export function More({ rest, onNavigate }: MoreProps) {
     activeProfile?.model?.trim() || 'model not set'
   }`;
 
-  const rows: { key: string; icon: string; label: string; sub: string | undefined; onClick?: () => void }[] = [
-    { key: 'profiles', icon: '👤', label: 'Profiles', sub: profileSub },
+  const rows: { key: string; icon: IconName; label: string; sub: string | undefined; onClick?: () => void }[] = [
+    { key: 'profiles', icon: 'profiles', label: 'Profiles', sub: profileSub },
     {
       key: 'agents',
-      icon: '✦',
+      icon: 'sparkle',
       label: 'Agents',
       sub: `${activeSubagents} active subagent${activeSubagents === 1 ? '' : 's'}`,
     },
     {
       key: 'artifacts',
-      icon: '🗂',
+      icon: 'archive',
       label: 'Artifacts',
       sub: artifactCount != null ? `${artifactCount} files this session` : undefined,
     },
-    { key: 'command', icon: '🖥', label: 'System', sub: 'gateway, backups, doctor' },
-    { key: 'settings', icon: '⚙', label: 'Settings', sub: 'connection, notifications' },
-    { key: 'reload', icon: '↻', label: 'Reload app', sub: 'fetch latest data and updates', onClick: () => window.location.reload() },
+    { key: 'command', icon: 'system', label: 'System', sub: 'gateway, backups, doctor' },
+    { key: 'settings', icon: 'settings', label: 'Settings', sub: 'connection, notifications' },
+    { key: 'reload', icon: 'refresh', label: 'Reload app', sub: 'fetch latest data and updates', onClick: () => window.location.reload() },
   ];
 
   return (
@@ -128,14 +129,14 @@ export function More({ rest, onNavigate }: MoreProps) {
             onClick={row.onClick ?? (() => onNavigate(row.key))}
           >
             <span className="hm-qp-tile__icon hm-more-row__icon" aria-hidden="true">
-              {row.icon}
+              <Icon name={row.icon} size={22} />
             </span>
             <span className="hm-more-row__text">
               <span className="hm-qp-tile__name hm-more-row__label">{row.label}</span>
               {row.sub && <span className="hm-qp-tile__state hm-more-row__sub">{row.sub}</span>}
             </span>
             <span className="hm-more-row__chev" aria-hidden="true">
-              ›
+              <Icon name="chevR" size={18} />
             </span>
           </button>
         ))}

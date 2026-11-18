@@ -1,13 +1,20 @@
 /* Self-hosted fonts — same-origin so they load behind DNS filters and offline
    (PWA). Paths go through the Vite bundler so the './' base works under any
-   mount path. Figtree + JetBrains Mono are variable fonts (OFL): one file
-   per family covers the whole weight range used by the design system. */
+   mount path. All three are variable fonts (OFL): one file per family covers
+   the whole weight range used by the design system. Latin subset only. */
 @font-face {
-  font-family: 'Figtree';
+  font-family: 'Plus Jakarta Sans';
   font-style: normal;
   font-weight: 400 800;
   font-display: swap;
-  src: url('../assets/fonts/figtree-var.ttf') format('truetype');
+  src: url('../assets/fonts/plus-jakarta-sans-var.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Bricolage Grotesque';
+  font-style: normal;
+  font-weight: 400 800;
+  font-display: swap;
+  src: url('../assets/fonts/bricolage-grotesque-var.woff2') format('woff2');
 }
 @font-face {
   font-family: 'JetBrains Mono';

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { haptic } from '../pwa/haptics';
+import { Icon } from './Icon';
 import type { Approval, RpcClient } from '@hermes-pwa/core';
 import { useActivityStore } from '@hermes-pwa/core';
 import { SlideToApprove } from './SlideToApprove';
@@ -61,7 +62,7 @@ export function ApprovalDock({ rpc, approval, sessionTitle, cwd, fallbackSession
     <div className={`hm-approval-dock${high ? ' hm-approval-dock--high' : ''}`}>
       <div className="hm-approval-dock__title">
         <span className={high ? 'hm-approval-dock__title-text hm-approval-dock__title-text--high' : 'hm-approval-dock__title-text'}>
-          🛡 {approval.title} · waiting for you
+          <Icon name="shield" size={16} /> {approval.title} · waiting for you
         </span>
         <span className={`hm-risk-tag ${high ? 'hm-risk-tag--high' : 'hm-risk-tag--low'}`}>
           {high ? 'HIGH RISK' : 'LOW RISK'}

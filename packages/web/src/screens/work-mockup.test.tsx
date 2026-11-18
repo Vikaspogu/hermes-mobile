@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { prioTone, matchesWorkFilter, workFilterCounts, workTaskMeta } from './Projects';
-import { to12h, relFuture, jobEmoji } from './Cron';
+import { to12h, relFuture, jobIcon } from './Cron';
 import type { CronJob, Task } from '@hermes-pwa/core';
 
 const task = (over: Partial<Task>): Task => ({ id: 't1', title: 'T', status: 'todo', ...over }) as Task;
@@ -68,12 +68,12 @@ describe('M6 schedule helpers', () => {
     vi.useRealTimers();
   });
 
-  it('picks mockup emoji by job keywords with a clock fallback', () => {
+  it('picks Material icons by job keywords with a clock fallback', () => {
     const job = (name: string): CronJob => ({ id: 'x', name }) as CronJob;
-    expect(jobEmoji(job('Nightly backup'))).toBe('🌙');
-    expect(jobEmoji(job('Security audit'))).toBe('🛡');
-    expect(jobEmoji(job('Health check'))).toBe('🩺');
-    expect(jobEmoji(job('Prune old logs'))).toBe('🧹');
-    expect(jobEmoji(job('Weekly report'))).toBe('⏰');
+    expect(jobIcon(job('Nightly backup'))).toBe('archive');
+    expect(jobIcon(job('Security audit'))).toBe('shield');
+    expect(jobIcon(job('Health check'))).toBe('system');
+    expect(jobIcon(job('Prune old logs'))).toBe('refresh');
+    expect(jobIcon(job('Weekly report'))).toBe('cron');
   });
 });
