@@ -57,7 +57,7 @@ describe('CommandCenter (M13 System)', () => {
     await waitFor(() => expect(screen.getByText('Security audit')).toBeInTheDocument());
     expect(screen.getByText('Doctor')).toBeInTheDocument();
     expect(screen.getAllByText('passed')).toHaveLength(2);
-    expect(screen.getByText('Backups')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Backups' })).toBeInTheDocument();
     expect(screen.getByText(/latest today/i)).toBeInTheDocument();
   });
 
@@ -75,7 +75,7 @@ describe('CommandCenter (M13 System)', () => {
   it('marks Backups as failed with fix when there are no backups', async () => {
     const rest = makeRest({ opsBackups: vi.fn().mockResolvedValue([]) });
     render(<CommandCenter rest={rest} />);
-    await waitFor(() => expect(screen.getByText(/no backups yet/i)).toBeInTheDocument());
+    await waitFor(() => expect(screen.getAllByText(/no backups yet/i)).toHaveLength(2));
     expect(screen.getByText('fix')).toBeInTheDocument();
   });
 

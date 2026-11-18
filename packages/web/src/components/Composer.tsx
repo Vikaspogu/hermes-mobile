@@ -474,7 +474,7 @@ export function Composer({
       )}
 
       <div className="hm-composer__pill">
-        {modelLabel && <span className="hm-composer__model">{modelLabel}</span>}
+
           <button
             type="button"
             className="hm-composer__action"
@@ -554,6 +554,7 @@ export function Composer({
           )}
         </div>
       </div>
+      {modelLabel && <div className="hm-composer__footer"><span>{modelLabel}</span><span>I.V.A.N. can make mistakes.</span></div>}
 
     </form>
   );

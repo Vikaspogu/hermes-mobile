@@ -13,6 +13,7 @@ import { useNativeViewportLock } from './useNativeViewportLock';
 import { BrandMark } from '../components/BrandMark';
 import './App.css';
 import '../styles/prototype.css';
+import '../styles/o2-parity.css';
 
 const isPreview = import.meta.env.DEV &&
   new URLSearchParams(window.location.search).has('preview');

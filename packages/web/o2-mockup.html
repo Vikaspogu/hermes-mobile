@@ -1,0 +1,2486 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>I.V.A.N. PWA — Material 3 Expressive Redesign (Council B · Gemini)</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&family=JetBrains+Mono:wght@400;500;600&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet" />
+  <style>
+    /* ==========================================================================
+       MATERIAL 3 EXPRESSIVE — SEED: #006B5B (Botanical Viridian)
+       Secondary: Warm Sage · Tertiary: #C84B20 (Kinetic Persimmon)
+       ========================================================================== */
+    :root,
+    :root[data-theme="light"] {
+      --md-sys-color-seed: #006B5B;
+
+      /* Primary — Botanical Viridian */
+      --md-sys-color-primary: #006B5B;
+      --md-sys-color-on-primary: #FFFFFF;
+      --md-sys-color-primary-container: #9AF4E0;
+      --md-sys-color-on-primary-container: #00201A;
+
+      /* Secondary — Euclidean Sage */
+      --md-sys-color-secondary: #46645D;
+      --md-sys-color-on-secondary: #FFFFFF;
+      --md-sys-color-secondary-container: #C9E9E0;
+      --md-sys-color-on-secondary-container: #02201B;
+
+      /* Tertiary — Kinetic Persimmon (Strong Expressive Accent) */
+      --md-sys-color-tertiary: #A73912;
+      --md-sys-color-on-tertiary: #FFFFFF;
+      --md-sys-color-tertiary-container: #FFDBD0;
+      --md-sys-color-on-tertiary-container: #390C00;
+
+      /* Surfaces — Tonal Jade-Tinted Neutrals */
+      --md-sys-color-surface: #F4FBF7;
+      --md-sys-color-surface-dim: #D5DCD8;
+      --md-sys-color-surface-container-lowest: #FFFFFF;
+      --md-sys-color-surface-container-low: #EEF5F1;
+      --md-sys-color-surface-container: #E8F0EC;
+      --md-sys-color-surface-container-high: #E2EAE6;
+      --md-sys-color-surface-container-highest: #DCE4E0;
+
+      /* On-Surface & Outlines (WCAG AA+ Verified) */
+      --md-sys-color-on-surface: #151D1B;
+      --md-sys-color-on-surface-variant: #3E4945;
+      --md-sys-color-outline: #6E7A75;
+      --md-sys-color-outline-variant: #BDC9C4;
+
+      /* Error & Status */
+      --md-sys-color-error: #BA1A1A;
+      --md-sys-color-on-error: #FFFFFF;
+      --md-sys-color-error-container: #FFDAD6;
+      --md-sys-color-on-error-container: #410002;
+
+      /* Canvas & Elevation */
+      --canvas-bg: #E5ECE8;
+      --canvas-dot: rgba(0, 107, 91, 0.10);
+      --frame-bezel: #18221F;
+      --frame-shadow: 0 26px 60px -12px rgba(12, 32, 27, 0.22), 0 4px 16px rgba(12, 32, 27, 0.08);
+      --toolbar-glass: rgba(232, 240, 236, 0.90);
+      --toolbar-shadow: 0 12px 32px rgba(0, 45, 37, 0.16), 0 2px 6px rgba(0, 45, 37, 0.08);
+
+      /* Fonts */
+      --font-display: 'Bricolage Grotesque', system-ui, -apple-system, sans-serif;
+      --font-sans: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+
+      /* Expressive Shape Tokens */
+      --radius-xs: 8px;     /* Inner seam of grouped cards */
+      --radius-sm: 12px;
+      --radius-md: 18px;    /* Morphed active squircle */
+      --radius-lg: 24px;
+      --radius-xl: 28px;    /* Outer cap of grouped cards */
+      --radius-full: 999px; /* Floating pills & chips */
+    }
+
+    :root[data-theme="dark"] {
+      /* Primary — Luminous Mint-Jade */
+      --md-sys-color-primary: #7ED7C4;
+      --md-sys-color-on-primary: #00382E;
+      --md-sys-color-primary-container: #005144;
+      --md-sys-color-on-primary-container: #9AF4E0;
+
+      /* Secondary — Muted Eucalyptus */
+      --md-sys-color-secondary: #ADCDC4;
+      --md-sys-color-on-secondary: #17352F;
+      --md-sys-color-secondary-container: #2E4C45;
+      --md-sys-color-on-secondary-container: #C9E9E0;
+
+      /* Tertiary — Solar Persimmon */
+      --md-sys-color-tertiary: #FFB59C;
+      --md-sys-color-on-tertiary: #5C1900;
+      --md-sys-color-tertiary-container: #822600;
+      --md-sys-color-on-tertiary-container: #FFDBD0;
+
+      /* Surfaces — Deep Obsidian-Jade Tonal Hierarchy */
+      --md-sys-color-surface: #0D1513;
+      --md-sys-color-surface-dim: #0D1513;
+      --md-sys-color-surface-container-lowest: #080F0E;
+      --md-sys-color-surface-container-low: #151D1B;
+      --md-sys-color-surface-container: #19211F;
+      --md-sys-color-surface-container-high: #232C29;
+      --md-sys-color-surface-container-highest: #2E3734;
+
+      /* On-Surface & Outlines */
+      --md-sys-color-on-surface: #DEE4E1;
+      --md-sys-color-on-surface-variant: #BDC9C4;
+      --md-sys-color-outline: #88938F;
+      --md-sys-color-outline-variant: #3E4945;
+
+      /* Error & Status */
+      --md-sys-color-error: #FFB4AB;
+      --md-sys-color-on-error: #690005;
+      --md-sys-color-error-container: #93000A;
+      --md-sys-color-on-error-container: #FFDAD6;
+
+      /* Canvas & Elevation */
+      --canvas-bg: #070C0B;
+      --canvas-dot: rgba(126, 215, 196, 0.08);
+      --frame-bezel: #222B28;
+      --frame-shadow: 0 28px 70px -10px rgba(0, 0, 0, 0.75), 0 0 0 1px rgba(126, 215, 196, 0.10);
+      --toolbar-glass: rgba(25, 33, 31, 0.92);
+      --toolbar-shadow: 0 14px 36px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(126, 215, 196, 0.12);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: var(--font-sans);
+      background-color: var(--canvas-bg);
+      background-image: radial-gradient(var(--canvas-dot) 1.5px, transparent 1.5px);
+      background-size: 24px 24px;
+      color: var(--md-sys-color-on-surface);
+      line-height: 1.45;
+      padding: 32px 24px 56px;
+      transition: background-color 220ms ease, color 220ms ease;
+    }
+
+    .material-symbols-rounded {
+      font-family: 'Material Symbols Rounded';
+      font-weight: normal;
+      font-style: normal;
+      font-size: 22px;
+      line-height: 1;
+      letter-spacing: normal;
+      text-transform: none;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      white-space: nowrap;
+      word-wrap: normal;
+      direction: ltr;
+      font-variation-settings: 'FILL' 0, 'wght' 500, 'GRAD' 0, 'opsz' 24;
+      user-select: none;
+    }
+
+    .material-symbols-rounded.filled {
+      font-variation-settings: 'FILL' 1, 'wght' 600, 'GRAD' 0, 'opsz' 24;
+    }
+
+    /* ==========================================================================
+       1. PRESENTATION HEADER & DESIGN SPEC
+       ========================================================================== */
+    .spec-header {
+      max-width: 1640px;
+      margin: 0 auto 36px;
+      background: var(--md-sys-color-surface-container-low);
+      border: 1px solid var(--md-sys-color-outline-variant);
+      border-radius: 32px;
+      padding: 28px 32px;
+      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.08);
+    }
+
+    .spec-header__top {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 20px;
+      margin-bottom: 24px;
+      padding-bottom: 20px;
+      border-bottom: 1px solid var(--md-sys-color-outline-variant);
+    }
+
+    .spec-badge-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 8px;
+      flex-wrap: wrap;
+    }
+
+    .spec-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 5px 12px;
+      border-radius: var(--radius-full);
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      background: var(--md-sys-color-primary-container);
+      color: var(--md-sys-color-on-primary-container);
+    }
+
+    .spec-pill--tertiary {
+      background: var(--md-sys-color-tertiary-container);
+      color: var(--md-sys-color-on-tertiary-container);
+    }
+
+    .spec-title {
+      font-family: var(--font-display);
+      font-size: clamp(26px, 3vw, 36px);
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      color: var(--md-sys-color-on-surface);
+      line-height: 1.1;
+    }
+
+    .spec-concept {
+      margin-top: 8px;
+      font-size: 15px;
+      color: var(--md-sys-color-on-surface-variant);
+      max-width: 880px;
+    }
+
+    /* Theme Toggle Button (48px min height) */
+    .theme-toggle {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      min-height: 48px;
+      padding: 8px 20px;
+      border-radius: var(--radius-full);
+      border: 1.5px solid var(--md-sys-color-primary);
+      background: var(--md-sys-color-primary-container);
+      color: var(--md-sys-color-on-primary-container);
+      font-family: var(--font-sans);
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: transform 160ms ease, border-radius 200ms ease, background 160ms ease;
+    }
+
+    .theme-toggle:hover {
+      border-radius: 16px;
+      transform: translateY(-1px);
+    }
+
+    .theme-toggle:active {
+      transform: scale(0.97);
+    }
+
+    /* Swatches Grid */
+    .swatches-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(128px, 1fr));
+      gap: 10px;
+      margin-bottom: 22px;
+    }
+
+    .swatch-card {
+      border-radius: 18px;
+      padding: 12px;
+      border: 1px solid var(--md-sys-color-outline-variant);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      min-height: 82px;
+      transition: transform 150ms ease;
+    }
+
+    .swatch-card:hover {
+      transform: translateY(-2px);
+    }
+
+    .swatch-role {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.01em;
+    }
+
+    .swatch-hex {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      font-weight: 500;
+      opacity: 0.92;
+      margin-top: 8px;
+    }
+
+    /* Spec Meta Chips (Fonts + Radii) */
+    .spec-meta-bar {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 14px;
+    }
+
+    .spec-meta-box {
+      background: var(--md-sys-color-surface-container);
+      border-radius: 20px;
+      padding: 14px 18px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .spec-meta-box__icon {
+      width: 44px;
+      height: 44px;
+      border-radius: 14px;
+      background: var(--md-sys-color-secondary-container);
+      color: var(--md-sys-color-on-secondary-container);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .spec-meta-box__label {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--md-sys-color-on-surface-variant);
+    }
+
+    .spec-meta-box__val {
+      font-size: 13.5px;
+      font-weight: 600;
+      color: var(--md-sys-color-on-surface);
+      margin-top: 2px;
+    }
+
+    /* ==========================================================================
+       2. FOUR PHONE FRAMES STAGE (~380x800, SIDE BY SIDE, WRAPPING)
+       ========================================================================== */
+    .phones-stage {
+      max-width: 1640px;
+      margin: 0 auto;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 28px;
+    }
+
+    .phone-column {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .phone-caption {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-family: var(--font-display);
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--md-sys-color-on-surface-variant);
+      letter-spacing: 0.01em;
+    }
+
+    .phone-caption__num {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 24px;
+      height: 24px;
+      border-radius: var(--radius-full);
+      background: var(--md-sys-color-primary);
+      color: var(--md-sys-color-on-primary);
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    .phone-frame {
+      width: 380px;
+      height: 800px;
+      background: var(--md-sys-color-surface);
+      border-radius: 48px;
+      border: 8px solid var(--frame-bezel);
+      box-shadow: var(--frame-shadow);
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      transition: background-color 220ms ease;
+    }
+
+    /* Android Status Bar */
+    .android-status-bar {
+      height: 36px;
+      padding: 6px 22px 0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--md-sys-color-on-surface);
+      flex-shrink: 0;
+      position: relative;
+      z-index: 5;
+    }
+
+    .android-camera-hole {
+      width: 11px;
+      height: 11px;
+      border-radius: 50%;
+      background: #050706;
+      position: absolute;
+      left: 50%;
+      top: 11px;
+      transform: translateX(-50%);
+      box-shadow: inset 0 0 2px rgba(255, 255, 255, 0.22);
+    }
+
+    .android-status-icons {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .android-status-icons .material-symbols-rounded {
+      font-size: 15px;
+    }
+
+    /* Screen Scroll Body */
+    .screen-body {
+      flex: 1;
+      overflow-y: auto;
+      padding: 8px 16px 104px;
+      scrollbar-width: none;
+    }
+    .screen-body::-webkit-scrollbar {
+      display: none;
+    }
+
+    /* Android Bottom Gesture Pill */
+    .android-gesture-bar {
+      position: absolute;
+      bottom: 7px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 108px;
+      height: 4px;
+      border-radius: var(--radius-full);
+      background: var(--md-sys-color-on-surface);
+      opacity: 0.32;
+      z-index: 30;
+      pointer-events: none;
+    }
+
+    /* ==========================================================================
+       M3 EXPRESSIVE SHARED COMPONENTS (SCALLOPED SHAPES, FLOATING NAV, TOP BARS)
+       ========================================================================== */
+    /* 12-lobe M3 Expressive Cookie / Scallop polygon */
+    .shape-cookie {
+      clip-path: polygon(
+        50% 0%, 63% 5%, 75% 3%, 83% 14%,
+        95% 19%, 95% 32%, 100% 45%, 94% 58%,
+        96% 71%, 85% 80%, 81% 92%, 68% 94%,
+        56% 100%, 43% 95%, 30% 97%, 21% 86%,
+        8% 82%, 8% 69%, 1% 56%, 7% 43%,
+        4% 30%, 15% 21%, 20% 9%, 34% 7%
+      );
+    }
+
+    /* Soft Clover / 4-Lobed Expressive Badge */
+    .shape-clover {
+      border-radius: 38% 62% 42% 58% / 58% 38% 62% 42%;
+    }
+
+    /* Top App Bar */
+    .m3-top-bar {
+      padding: 6px 16px 10px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      flex-shrink: 0;
+    }
+
+    .brand-cluster {
+      display: flex;
+      align-items: center;
+      gap: 11px;
+    }
+
+    .brand-avatar-cookie {
+      width: 44px;
+      height: 44px;
+      background: var(--md-sys-color-primary-container);
+      color: var(--md-sys-color-on-primary-container);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      position: relative;
+    }
+
+    .brand-title-wrap {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .brand-title {
+      font-family: var(--font-display);
+      font-size: 23px;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      line-height: 1.05;
+      color: var(--md-sys-color-on-surface);
+    }
+
+    .brand-sub {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 11.5px;
+      font-weight: 600;
+      color: var(--md-sys-color-on-surface-variant);
+      margin-top: 2px;
+    }
+
+    .live-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--md-sys-color-primary);
+      box-shadow: 0 0 0 3px var(--md-sys-color-primary-container);
+    }
+
+    /* 48x48 Minimum Touch Target Icon Button */
+    .m3-icon-btn {
+      width: 48px;
+      height: 48px;
+      border-radius: var(--radius-full);
+      border: none;
+      background: var(--md-sys-color-surface-container-high);
+      color: var(--md-sys-color-on-surface);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: border-radius 180ms ease, background 150ms ease, transform 120ms ease;
+      flex-shrink: 0;
+    }
+
+    .m3-icon-btn:hover {
+      border-radius: 16px;
+      background: var(--md-sys-color-secondary-container);
+      color: var(--md-sys-color-on-secondary-container);
+    }
+
+    .m3-icon-btn--tonal {
+      background: var(--md-sys-color-secondary-container);
+      color: var(--md-sys-color-on-secondary-container);
+    }
+
+    .m3-icon-btn--tertiary {
+      background: var(--md-sys-color-tertiary-container);
+      color: var(--md-sys-color-on-tertiary-container);
+    }
+
+    /* Expressive Floating Bottom NavigationBar (One-Handed Docked Capsule) */
+    .m3-floating-nav-wrap {
+      position: absolute;
+      left: 14px;
+      right: 14px;
+      bottom: 18px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      z-index: 25;
+      pointer-events: none;
+    }
+
+    .m3-floating-nav {
+      pointer-events: auto;
+      flex: 1;
+      height: 66px;
+      background: var(--toolbar-glass);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+      border-radius: var(--radius-full);
+      box-shadow: var(--toolbar-shadow);
+      padding: 6px;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 4px;
+    }
+
+    .m3-nav-item {
+      height: 54px;
+      border: none;
+      background: transparent;
+      border-radius: var(--radius-full);
+      color: var(--md-sys-color-on-surface-variant);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 2px;
+      font-family: var(--font-sans);
+      font-size: 11px;
+      font-weight: 700;
+      cursor: pointer;
+      position: relative;
+      transition: all 200ms cubic-bezier(0.2, 0, 0, 1);
+    }
+
+    /* Expressive shape morphing on active nav pill: squircle-pill hybrid */
+    .m3-nav-item--active {
+      background: var(--md-sys-color-primary-container);
+      color: var(--md-sys-color-on-primary-container);
+      border-radius: 22px;
+    }
+
+    .m3-nav-badge {
+      position: absolute;
+      top: 5px;
+      right: calc(50% - 22px);
+      min-width: 18px;
+      height: 18px;
+      padding: 0 5px;
+      border-radius: var(--radius-full);
+      background: var(--md-sys-color-tertiary);
+      color: var(--md-sys-color-on-tertiary);
+      font-size: 10px;
+      font-weight: 800;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* Expressive Scalloped / Squircle Companion FAB in Thumb Zone */
+    .m3-expressive-fab {
+      pointer-events: auto;
+      width: 64px;
+      height: 64px;
+      border: none;
+      border-radius: 22px;
+      background: var(--md-sys-color-tertiary);
+      color: var(--md-sys-color-on-tertiary);
+      box-shadow: 0 10px 24px rgba(167, 57, 18, 0.38);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 1px;
+      cursor: pointer;
+      flex-shrink: 0;
+      transition: border-radius 220ms ease, transform 160ms ease;
+    }
+
+    .m3-expressive-fab:hover {
+      border-radius: 32px;
+      transform: scale(1.04) rotate(-3deg);
+    }
+
+    .m3-expressive-fab__label {
+      font-size: 9.5px;
+      font-weight: 800;
+      letter-spacing: 0.03em;
+      text-transform: uppercase;
+    }
+
+    /* ==========================================================================
+       SCREEN A: CHATS HOME LIST
+       ========================================================================== */
+    .m3-search-bar {
+      height: 52px;
+      border-radius: var(--radius-full);
+      background: var(--md-sys-color-surface-container-high);
+      padding: 0 6px 0 16px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+
+    .m3-search-bar__text {
+      flex: 1;
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--md-sys-color-on-surface-variant);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    /* Filter Chips Row (48px touch height) */
+    .m3-filter-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 14px;
+    }
+
+    .m3-filter-chip {
+      min-height: 48px;
+      padding: 0 16px;
+      border-radius: var(--radius-full);
+      border: 1px solid var(--md-sys-color-outline-variant);
+      background: var(--md-sys-color-surface-container-low);
+      color: var(--md-sys-color-on-surface-variant);
+      font-family: var(--font-sans);
+      font-size: 13px;
+      font-weight: 700;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      cursor: pointer;
+      transition: border-radius 180ms ease, background 150ms ease;
+    }
+
+    .m3-filter-chip--selected {
+      border-radius: 16px;
+      border-color: transparent;
+      background: var(--md-sys-color-secondary-container);
+      color: var(--md-sys-color-on-secondary-container);
+    }
+
+    .m3-filter-chip__count {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      opacity: 0.85;
+    }
+
+    /* Expressive Urgent Approval Callout Pill */
+    .m3-urgent-banner {
+      min-height: 54px;
+      border-radius: 22px;
+      background: var(--md-sys-color-tertiary-container);
+      color: var(--md-sys-color-on-tertiary-container);
+      padding: 10px 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+
+    .m3-urgent-banner__left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+    }
+
+    .m3-urgent-banner__title {
+      font-size: 13px;
+      font-weight: 800;
+      line-height: 1.2;
+    }
+
+    .m3-urgent-banner__cmd {
+      font-family: var(--font-mono);
+      font-size: 11.5px;
+      opacity: 0.88;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .m3-section-kicker {
+      font-family: var(--font-display);
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--md-sys-color-on-surface-variant);
+      margin: 12px 6px 8px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    /* M3 Expressive Grouped Cards: Outer 28px, Inner Seam 8px */
+    .m3-card-group {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+      margin-bottom: 14px;
+    }
+
+    .m3-thread-card {
+      background: var(--md-sys-color-surface-container);
+      padding: 14px 15px;
+      border-radius: var(--radius-xs);
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      cursor: pointer;
+      transition: background 150ms ease, transform 120ms ease;
+    }
+
+    .m3-thread-card:first-child {
+      border-top-left-radius: var(--radius-xl);
+      border-top-right-radius: var(--radius-xl);
+    }
+
+    .m3-thread-card:last-child {
+      border-bottom-left-radius: var(--radius-xl);
+      border-bottom-right-radius: var(--radius-xl);
+    }
+
+    .m3-thread-card:only-child {
+      border-radius: var(--radius-xl);
+    }
+
+    .m3-thread-card--live {
+      background: var(--md-sys-color-surface-container-high);
+      box-shadow: inset 3px 0 0 var(--md-sys-color-primary);
+    }
+
+    .m3-thread-avatar {
+      width: 44px;
+      height: 44px;
+      border-radius: 16px;
+      background: var(--md-sys-color-surface-container-highest);
+      color: var(--md-sys-color-on-surface);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .m3-thread-avatar--live {
+      background: var(--md-sys-color-primary-container);
+      color: var(--md-sys-color-on-primary-container);
+    }
+
+    .m3-thread-avatar--blocked {
+      background: var(--md-sys-color-tertiary-container);
+      color: var(--md-sys-color-on-tertiary-container);
+    }
+
+    .m3-thread-content {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .m3-thread-top {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 3px;
+    }
+
+    .m3-thread-title {
+      font-size: 14.5px;
+      font-weight: 700;
+      color: var(--md-sys-color-on-surface);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .m3-thread-time {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--md-sys-color-on-surface-variant);
+      flex-shrink: 0;
+    }
+
+    .m3-thread-snippet {
+      font-size: 12.5px;
+      color: var(--md-sys-color-on-surface-variant);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      margin-bottom: 7px;
+    }
+
+    .m3-thread-tags {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+
+    .m3-mini-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 2px 8px;
+      border-radius: var(--radius-full);
+      font-family: var(--font-mono);
+      font-size: 10.5px;
+      font-weight: 600;
+      background: var(--md-sys-color-surface-container-highest);
+      color: var(--md-sys-color-on-surface-variant);
+    }
+
+    .m3-mini-pill--live {
+      background: var(--md-sys-color-primary-container);
+      color: var(--md-sys-color-on-primary-container);
+    }
+
+    .m3-mini-pill--warn {
+      background: var(--md-sys-color-tertiary-container);
+      color: var(--md-sys-color-on-tertiary-container);
+    }
+
+    /* ==========================================================================
+       SCREEN B: CHAT THREAD (STREAMING + TOOL CHIPS + COMPOSER WITH MIC)
+       ========================================================================== */
+    .chat-header-title {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .chat-header-title__main {
+      font-family: var(--font-display);
+      font-size: 16px;
+      font-weight: 800;
+      color: var(--md-sys-color-on-surface);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .chat-header-title__sub {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--md-sys-color-primary);
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    /* User Bubble: Expressive Asymmetric Radii */
+    .msg-user {
+      align-self: flex-end;
+      max-width: 88%;
+      margin-left: auto;
+      margin-bottom: 14px;
+      background: var(--md-sys-color-primary-container);
+      color: var(--md-sys-color-on-primary-container);
+      border-radius: 26px 26px 6px 26px;
+      padding: 13px 16px;
+    }
+
+    .msg-user__text {
+      font-size: 14px;
+      font-weight: 500;
+      line-height: 1.42;
+    }
+
+    .msg-user__meta {
+      margin-top: 6px;
+      font-family: var(--font-mono);
+      font-size: 10.5px;
+      opacity: 0.78;
+      text-align: right;
+    }
+
+    /* Collapsible Tool Group & Connected Tool Chips */
+    .tool-group {
+      margin-bottom: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+
+    .tool-group__header {
+      width: 100%;
+      min-height: 48px;
+      border: none;
+      background: var(--md-sys-color-secondary-container);
+      color: var(--md-sys-color-on-secondary-container);
+      border-radius: 24px 24px 8px 8px;
+      padding: 10px 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      cursor: pointer;
+      font-family: var(--font-sans);
+      text-align: left;
+    }
+
+    .tool-group--collapsed .tool-group__header {
+      border-radius: 24px;
+    }
+
+    .tool-group--collapsed .tool-chip-row {
+      display: none;
+    }
+
+    .tool-group__header-left {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+    }
+
+    .tool-group__title {
+      font-size: 13px;
+      font-weight: 800;
+    }
+
+    .tool-group__meta {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      opacity: 0.85;
+    }
+
+    .tool-chip-row {
+      background: var(--md-sys-color-surface-container-high);
+      padding: 10px 13px;
+      border-radius: 8px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .tool-chip-row:last-child {
+      border-radius: 8px 8px 24px 24px;
+    }
+
+    .tool-chip-main {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    .tool-chip-cmd {
+      font-family: var(--font-mono);
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--md-sys-color-on-surface);
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      min-width: 0;
+    }
+
+    .tool-chip-cmd span:last-child {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .tool-chip-output {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      line-height: 1.4;
+      background: var(--md-sys-color-surface-container-lowest);
+      color: var(--md-sys-color-on-surface-variant);
+      padding: 8px 10px;
+      border-radius: 12px;
+      border-left: 3px solid var(--md-sys-color-primary);
+      overflow-x: auto;
+    }
+
+    /* Streaming Assistant Message Card */
+    .msg-assistant {
+      background: var(--md-sys-color-surface-container);
+      border-radius: 8px 26px 26px 26px;
+      padding: 14px 15px;
+      margin-bottom: 12px;
+      border: 1px solid var(--md-sys-color-outline-variant);
+    }
+
+    .msg-assistant__head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 8px;
+    }
+
+    .msg-assistant__agent {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-family: var(--font-display);
+      font-size: 13.5px;
+      font-weight: 800;
+    }
+
+    .agent-mini-cookie {
+      width: 28px;
+      height: 28px;
+      background: var(--md-sys-color-tertiary);
+      color: var(--md-sys-color-on-tertiary);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .streaming-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 3px 9px;
+      border-radius: var(--radius-full);
+      background: var(--md-sys-color-primary-container);
+      color: var(--md-sys-color-on-primary-container);
+      font-family: var(--font-mono);
+      font-size: 10.5px;
+      font-weight: 700;
+    }
+
+    .msg-assistant__body {
+      font-size: 13.5px;
+      color: var(--md-sys-color-on-surface);
+      line-height: 1.5;
+    }
+
+    .msg-assistant__body code {
+      font-family: var(--font-mono);
+      font-size: 12px;
+      padding: 2px 6px;
+      border-radius: 6px;
+      background: var(--md-sys-color-surface-container-highest);
+    }
+
+    .streaming-cursor {
+      display: inline-block;
+      width: 8px;
+      height: 15px;
+      vertical-align: text-bottom;
+      background: var(--md-sys-color-tertiary);
+      border-radius: 3px;
+      margin-left: 4px;
+      animation: pulse-cursor 1s infinite ease-in-out;
+    }
+
+    @keyframes pulse-cursor {
+      0%, 100% { opacity: 1; transform: scaleY(1); }
+      50% { opacity: 0.3; transform: scaleY(0.75); }
+    }
+
+    /* Bottom Docked Expressive Composer (with Voice Mic + Send/Stop) */
+    .m3-composer-dock {
+      position: absolute;
+      left: 12px;
+      right: 12px;
+      bottom: 18px;
+      background: var(--toolbar-glass);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+      border-radius: 30px;
+      padding: 8px 10px;
+      box-shadow: var(--toolbar-shadow);
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      z-index: 25;
+    }
+
+    .m3-composer-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .m3-composer-input {
+      flex: 1;
+      min-height: 48px;
+      border-radius: 20px;
+      background: var(--md-sys-color-surface-container-highest);
+      padding: 0 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 13.5px;
+      color: var(--md-sys-color-on-surface-variant);
+    }
+
+    .m3-slash-pill {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 8px;
+      background: var(--md-sys-color-surface-container);
+      color: var(--md-sys-color-primary);
+    }
+
+    /* Voice Mic Button — Expressive Tertiary Squircle (48x48) */
+    .m3-mic-btn {
+      width: 48px;
+      height: 48px;
+      border-radius: 18px;
+      border: none;
+      background: var(--md-sys-color-tertiary);
+      color: var(--md-sys-color-on-tertiary);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      flex-shrink: 0;
+      box-shadow: 0 4px 12px rgba(167, 57, 18, 0.30);
+    }
+
+    .m3-send-btn {
+      width: 48px;
+      height: 48px;
+      border-radius: var(--radius-full);
+      border: none;
+      background: var(--md-sys-color-primary);
+      color: var(--md-sys-color-on-primary);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+
+    /* ==========================================================================
+       SCREEN C: INBOX WITH 3 APPROVAL CARDS & SLIDE-TO-APPROVE
+       ========================================================================== */
+    .inbox-hero {
+      background: var(--md-sys-color-surface-container-high);
+      border-radius: 28px;
+      padding: 14px 16px;
+      margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .inbox-hero__title {
+      font-family: var(--font-display);
+      font-size: 17px;
+      font-weight: 800;
+    }
+
+    .inbox-hero__sub {
+      font-size: 12px;
+      color: var(--md-sys-color-on-surface-variant);
+    }
+
+    .approval-card {
+      background: var(--md-sys-color-surface-container);
+      border-radius: 26px;
+      padding: 14px;
+      margin-bottom: 12px;
+      border: 1.5px solid var(--md-sys-color-outline-variant);
+    }
+
+    .approval-card--high {
+      border-color: var(--md-sys-color-error);
+      background: var(--md-sys-color-surface-container-high);
+    }
+
+    .approval-card__top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 6px;
+    }
+
+    .approval-card__title {
+      font-size: 14px;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .risk-badge {
+      padding: 4px 10px;
+      border-radius: var(--radius-full);
+      font-family: var(--font-mono);
+      font-size: 10.5px;
+      font-weight: 800;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+
+    .risk-badge--high {
+      background: var(--md-sys-color-error-container);
+      color: var(--md-sys-color-on-error-container);
+    }
+
+    .risk-badge--med {
+      background: var(--md-sys-color-tertiary-container);
+      color: var(--md-sys-color-on-tertiary-container);
+    }
+
+    .risk-badge--low {
+      background: var(--md-sys-color-secondary-container);
+      color: var(--md-sys-color-on-secondary-container);
+    }
+
+    .approval-card__meta {
+      font-size: 11.5px;
+      color: var(--md-sys-color-on-surface-variant);
+      margin-bottom: 8px;
+    }
+
+    .approval-card__cmd {
+      font-family: var(--font-mono);
+      font-size: 11.5px;
+      line-height: 1.4;
+      background: var(--md-sys-color-surface-container-lowest);
+      color: var(--md-sys-color-on-surface);
+      padding: 9px 11px;
+      border-radius: 14px;
+      margin-bottom: 10px;
+      word-break: break-all;
+      border: 1px solid var(--md-sys-color-outline-variant);
+    }
+
+    /* Slide-to-Approve Control (48px height, interactive click/slide) */
+    .slide-approve-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .slide-track {
+      flex: 1;
+      height: 48px;
+      border-radius: var(--radius-full);
+      background: var(--md-sys-color-surface-container-highest);
+      border: 1px solid var(--md-sys-color-outline-variant);
+      padding: 4px;
+      display: flex;
+      align-items: center;
+      position: relative;
+      cursor: pointer;
+      overflow: hidden;
+      user-select: none;
+    }
+
+    .slide-track--approved {
+      background: var(--md-sys-color-primary-container);
+      border-color: var(--md-sys-color-primary);
+    }
+
+    .slide-thumb {
+      width: 40px;
+      height: 40px;
+      border-radius: var(--radius-full);
+      background: var(--md-sys-color-tertiary);
+      color: var(--md-sys-color-on-tertiary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 2;
+      transition: transform 260ms cubic-bezier(0.2, 0, 0, 1), background 200ms ease;
+    }
+
+    .slide-track--approved .slide-thumb {
+      transform: translateX(176px);
+      background: var(--md-sys-color-primary);
+      color: var(--md-sys-color-on-primary);
+    }
+
+    .slide-label {
+      position: absolute;
+      left: 52px;
+      right: 14px;
+      text-align: center;
+      font-size: 12px;
+      font-weight: 800;
+      color: var(--md-sys-color-on-surface);
+      letter-spacing: 0.02em;
+    }
+
+    .approval-actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .m3-btn {
+      min-height: 48px;
+      border-radius: 16px;
+      border: none;
+      padding: 0 12px;
+      font-family: var(--font-sans);
+      font-size: 12.5px;
+      font-weight: 700;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      cursor: pointer;
+      transition: border-radius 160ms ease, transform 120ms ease;
+    }
+
+    .m3-btn:hover {
+      border-radius: 24px;
+    }
+
+    .m3-btn--deny {
+      background: var(--md-sys-color-error-container);
+      color: var(--md-sys-color-on-error-container);
+    }
+
+    .m3-btn--deny-icon {
+      width: 48px;
+      padding: 0;
+      flex-shrink: 0;
+      background: var(--md-sys-color-error-container);
+      color: var(--md-sys-color-on-error-container);
+    }
+
+    .m3-btn--approve {
+      background: var(--md-sys-color-primary);
+      color: var(--md-sys-color-on-primary);
+    }
+
+    /* ==========================================================================
+       SCREEN D: MORE SCREEN (GATEWAY TELEMETRY + 6 EXPRESSIVE TILES)
+       ========================================================================== */
+    .health-card {
+      background: var(--md-sys-color-surface-container-high);
+      border-radius: 28px;
+      padding: 16px;
+      margin-bottom: 16px;
+    }
+
+    .health-card__top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+    }
+
+    .health-card__status {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-family: var(--font-display);
+      font-size: 15px;
+      font-weight: 800;
+    }
+
+    .health-card__uptime {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      padding: 4px 10px;
+      border-radius: var(--radius-full);
+      background: var(--md-sys-color-primary-container);
+      color: var(--md-sys-color-on-primary-container);
+      font-weight: 700;
+    }
+
+    .health-metrics {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+    }
+
+    .metric-pill-box {
+      background: var(--md-sys-color-surface-container);
+      border-radius: 18px;
+      padding: 10px;
+    }
+
+    .metric-pill-box__label {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--md-sys-color-on-surface);
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 6px;
+    }
+
+    .metric-bar {
+      height: 8px;
+      border-radius: var(--radius-full);
+      background: var(--md-sys-color-surface-container-highest);
+      overflow: hidden;
+    }
+
+    .metric-bar__fill {
+      height: 100%;
+      border-radius: var(--radius-full);
+      background: var(--md-sys-color-primary);
+    }
+
+    .metric-bar__fill--warn {
+      background: var(--md-sys-color-tertiary);
+    }
+
+    /* 6 Modules Expressive Bento Grid (Agents, Projects, Skills, Cron, Profiles, Settings) */
+    .more-bento-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .more-tile {
+      min-height: 112px;
+      border: none;
+      text-align: left;
+      background: var(--md-sys-color-surface-container);
+      border-radius: 26px;
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      cursor: pointer;
+      font-family: var(--font-sans);
+      transition: transform 150ms ease, border-radius 200ms ease, background 150ms ease;
+    }
+
+    .more-tile:hover {
+      background: var(--md-sys-color-surface-container-high);
+      border-radius: 18px;
+      transform: translateY(-2px);
+    }
+
+    .more-tile--featured {
+      background: var(--md-sys-color-secondary-container);
+      color: var(--md-sys-color-on-secondary-container);
+    }
+
+    .more-tile__top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .more-tile__icon {
+      width: 42px;
+      height: 42px;
+      border-radius: 15px;
+      background: var(--md-sys-color-primary-container);
+      color: var(--md-sys-color-on-primary-container);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .more-tile__icon--tertiary {
+      background: var(--md-sys-color-tertiary-container);
+      color: var(--md-sys-color-on-tertiary-container);
+    }
+
+    .more-tile__badge {
+      font-family: var(--font-mono);
+      font-size: 10.5px;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: var(--radius-full);
+      background: var(--md-sys-color-surface-container-highest);
+      color: var(--md-sys-color-on-surface-variant);
+    }
+
+    .more-tile__name {
+      font-family: var(--font-display);
+      font-size: 16px;
+      font-weight: 800;
+      color: var(--md-sys-color-on-surface);
+      margin-top: 10px;
+    }
+
+    .more-tile__sub {
+      font-size: 11.5px;
+      color: var(--md-sys-color-on-surface-variant);
+      line-height: 1.3;
+      margin-top: 2px;
+    }
+
+    /* ==========================================================================
+       4. FOOTER: RATIONALE, ERGONOMICS & TRADE-OFFS
+       ========================================================================== */
+    .spec-footer {
+      max-width: 1640px;
+      margin: 40px auto 0;
+      background: var(--md-sys-color-surface-container-low);
+      border: 1px solid var(--md-sys-color-outline-variant);
+      border-radius: 32px;
+      padding: 26px 32px;
+    }
+
+    .spec-footer__title {
+      font-family: var(--font-display);
+      font-size: 18px;
+      font-weight: 800;
+      margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .spec-footer__list {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 14px 24px;
+      list-style: none;
+    }
+
+    .spec-footer__item {
+      background: var(--md-sys-color-surface-container);
+      border-radius: 20px;
+      padding: 14px 16px;
+      font-size: 13.5px;
+      color: var(--md-sys-color-on-surface-variant);
+    }
+
+    .spec-footer__item strong {
+      color: var(--md-sys-color-on-surface);
+      display: block;
+      margin-bottom: 4px;
+      font-size: 14px;
+    }
+  </style>
+<meta name="artifact-kind" content="html">
+<meta name="artifact-generated" content="1794964382514">
+<meta name="artifact-project" content="/home/agent/.t3/worktrees/hermes-mobile/t3-8418c567-cac43166f241d14d">
+</head>
+<body>
+
+  <!-- ========================================================================
+       1. HEADER: DIRECTION, CONCEPT, M3 PALETTE SWATCHES, FONTS, CORNER RADII
+       ======================================================================== -->
+  <header class="spec-header">
+    <div class="spec-header__top">
+      <div>
+        <div class="spec-badge-row">
+          <span class="spec-pill">
+            <span class="material-symbols-rounded filled" style="font-size:16px">palette</span>
+            Direction B · Material 3 Expressive
+          </span>
+          <span class="spec-pill spec-pill--tertiary">
+            <span class="material-symbols-rounded filled" style="font-size:16px">bolt</span>
+            Seed #006B5B · Botanical Viridian + Kinetic Persimmon
+          </span>
+        </div>
+        <h1 class="spec-title">I.V.A.N. Android Control Cockpit — Material 3 Expressive</h1>
+        <p class="spec-concept">
+          Bold, tactile Android 16 (M3 Expressive) language combining a Viridian &amp; Persimmon HCT tonal palette, mixed-radius connected card groups (28px outer / 8px inner seam), scalloped 12-lobe cookie avatars, and a thumb-zone floating capsule toolbar.
+        </p>
+      </div>
+      <button type="button" class="theme-toggle" id="themeToggle" aria-label="Switch Light and Dark Material You Theme">
+        <span class="material-symbols-rounded filled" id="themeIcon">light_mode</span>
+        <span id="themeLabel">Switch to Light Mode</span>
+      </button>
+    </div>
+
+    <!-- M3 Role Swatches -->
+    <div class="swatches-grid" aria-label="Material 3 Color Role Swatches">
+      <div class="swatch-card" style="background:var(--md-sys-color-primary); color:var(--md-sys-color-on-primary);">
+        <span class="swatch-role">primary</span>
+        <span class="swatch-hex" data-light="#006B5B" data-dark="#7ED7C4">#7ED7C4</span>
+      </div>
+      <div class="swatch-card" style="background:var(--md-sys-color-on-primary); color:var(--md-sys-color-primary);">
+        <span class="swatch-role">onPrimary</span>
+        <span class="swatch-hex" data-light="#FFFFFF" data-dark="#00382E">#00382E</span>
+      </div>
+      <div class="swatch-card" style="background:var(--md-sys-color-primary-container); color:var(--md-sys-color-on-primary-container);">
+        <span class="swatch-role">primaryContainer</span>
+        <span class="swatch-hex" data-light="#9AF4E0" data-dark="#005144">#005144</span>
+      </div>
+      <div class="swatch-card" style="background:var(--md-sys-color-secondary-container); color:var(--md-sys-color-on-secondary-container);">
+        <span class="swatch-role">secondaryContainer</span>
+        <span class="swatch-hex" data-light="#C9E9E0" data-dark="#2E4C45">#2E4C45</span>
+      </div>
+      <div class="swatch-card" style="background:var(--md-sys-color-tertiary); color:var(--md-sys-color-on-tertiary);">
+        <span class="swatch-role">tertiary</span>
+        <span class="swatch-hex" data-light="#A73912" data-dark="#FFB59C">#FFB59C</span>
+      </div>
+      <div class="swatch-card" style="background:var(--md-sys-color-surface); color:var(--md-sys-color-on-surface);">
+        <span class="swatch-role">surface</span>
+        <span class="swatch-hex" data-light="#F4FBF7" data-dark="#0D1513">#0D1513</span>
+      </div>
+      <div class="swatch-card" style="background:var(--md-sys-color-surface-container-low); color:var(--md-sys-color-on-surface);">
+        <span class="swatch-role">surfaceContainerLow</span>
+        <span class="swatch-hex" data-light="#EEF5F1" data-dark="#151D1B">#151D1B</span>
+      </div>
+      <div class="swatch-card" style="background:var(--md-sys-color-surface-container-high); color:var(--md-sys-color-on-surface);">
+        <span class="swatch-role">surfaceContainerHigh</span>
+        <span class="swatch-hex" data-light="#E2EAE6" data-dark="#232C29">#232C29</span>
+      </div>
+      <div class="swatch-card" style="background:var(--md-sys-color-on-surface-variant); color:var(--md-sys-color-surface);">
+        <span class="swatch-role">onSurfaceVariant</span>
+        <span class="swatch-hex" data-light="#3E4945" data-dark="#BDC9C4">#BDC9C4</span>
+      </div>
+      <div class="swatch-card" style="background:var(--md-sys-color-outline-variant); color:var(--md-sys-color-on-surface);">
+        <span class="swatch-role">outlineVariant</span>
+        <span class="swatch-hex" data-light="#BDC9C4" data-dark="#3E4945">#3E4945</span>
+      </div>
+      <div class="swatch-card" style="background:var(--md-sys-color-error); color:var(--md-sys-color-on-error);">
+        <span class="swatch-role">error</span>
+        <span class="swatch-hex" data-light="#BA1A1A" data-dark="#FFB4AB">#FFB4AB</span>
+      </div>
+    </div>
+
+    <!-- Typography & Shape System Meta -->
+    <div class="spec-meta-bar">
+      <div class="spec-meta-box">
+        <div class="spec-meta-box__icon">
+          <span class="material-symbols-rounded">match_case</span>
+        </div>
+        <div>
+          <div class="spec-meta-box__label">Emphasized Font Pairing</div>
+          <div class="spec-meta-box__val">Bricolage Grotesque (Display) · Plus Jakarta Sans (UI) · JetBrains Mono (CLI)</div>
+        </div>
+      </div>
+      <div class="spec-meta-box">
+        <div class="spec-meta-box__icon">
+          <span class="material-symbols-rounded">rounded_corner</span>
+        </div>
+        <div>
+          <div class="spec-meta-box__label">Expressive Corner Radii &amp; Morphing</div>
+          <div class="spec-meta-box__val">8px inner seam · 18px active squircle · 28px group cap · 999px floating capsule · 12-lobe cookie</div>
+        </div>
+      </div>
+      <div class="spec-meta-box">
+        <div class="spec-meta-box__icon">
+          <span class="material-symbols-rounded">touch_app</span>
+        </div>
+        <div>
+          <div class="spec-meta-box__label">Ergonomics &amp; Accessibility</div>
+          <div class="spec-meta-box__val">WCAG AA+ tonal contrast · ≥48×48px tap targets · Bottom docked thumb-zone controls</div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- ========================================================================
+       2. FOUR ANDROID PHONE FRAMES (380x800)
+       ======================================================================== -->
+  <main class="phones-stage">
+
+    <!-- ======================================================================
+         FRAME (a): CHATS HOME LIST
+         ====================================================================== -->
+    <section class="phone-column" aria-label="Screen A: Chats Home List">
+      <div class="phone-caption">
+        <span class="phone-caption__num">A</span>
+        <span>Chats Home · Connected Groups &amp; Floating Dock</span>
+      </div>
+
+      <div class="phone-frame">
+        <div class="android-status-bar">
+          <span>09:41</span>
+          <div class="android-camera-hole"></div>
+          <div class="android-status-icons">
+            <span class="material-symbols-rounded">signal_cellular_4_bar</span>
+            <span class="material-symbols-rounded">wifi</span>
+            <span class="material-symbols-rounded filled">battery_full</span>
+          </div>
+        </div>
+
+        <!-- Top App Bar -->
+        <div class="m3-top-bar">
+          <div class="brand-cluster">
+            <div class="brand-avatar-cookie shape-cookie" title="I.V.A.N. Expressive Badge">
+              <span class="material-symbols-rounded filled">bolt</span>
+            </div>
+            <div class="brand-title-wrap">
+              <span class="brand-title">I.V.A.N.</span>
+              <span class="brand-sub">
+                <span class="live-dot"></span>
+                hermes-agent · profile: default
+              </span>
+            </div>
+          </div>
+          <button type="button" class="m3-icon-btn m3-icon-btn--tonal" aria-label="Switch Profile">
+            <span class="material-symbols-rounded">switch_account</span>
+          </button>
+        </div>
+
+        <div class="screen-body">
+          <!-- Search Bar -->
+          <div class="m3-search-bar" role="search">
+            <span class="material-symbols-rounded" style="color:var(--md-sys-color-primary)">search</span>
+            <span class="m3-search-bar__text">Search 14 threads or /commands…</span>
+            <button type="button" class="m3-icon-btn" style="width:40px;height:40px;background:transparent" aria-label="Voice Search">
+              <span class="material-symbols-rounded">mic</span>
+            </button>
+          </div>
+
+          <!-- Expressive Filter Chips (48px height) -->
+          <div class="m3-filter-row" role="tablist">
+            <button type="button" class="m3-filter-chip m3-filter-chip--selected" role="tab" aria-selected="true">
+              <span class="material-symbols-rounded filled" style="font-size:18px">check</span>
+              Threads <span class="m3-filter-chip__count">11</span>
+            </button>
+            <button type="button" class="m3-filter-chip" role="tab" aria-selected="false">
+              <span class="material-symbols-rounded" style="font-size:18px">schedule</span>
+              Cron <span class="m3-filter-chip__count">3</span>
+            </button>
+            <button type="button" class="m3-filter-chip" role="tab" aria-selected="false">
+              All <span class="m3-filter-chip__count">14</span>
+            </button>
+          </div>
+
+          <!-- High-Priority Pending Approval Callout -->
+          <div class="m3-urgent-banner">
+            <div class="m3-urgent-banner__left">
+              <span class="material-symbols-rounded filled">gpp_maybe</span>
+              <div style="min-width:0">
+                <div class="m3-urgent-banner__title">3 approvals waiting in Inbox</div>
+                <div class="m3-urgent-banner__cmd">rm -rf ./build &amp; kubectl annotate</div>
+              </div>
+            </div>
+            <span class="material-symbols-rounded">arrow_forward</span>
+          </div>
+
+          <!-- TODAY Group (28px outer cap, 8px inner seams) -->
+          <div class="m3-section-kicker">
+            <span>Today</span>
+            <span>3 active</span>
+          </div>
+          <div class="m3-card-group">
+            <div class="m3-thread-card m3-thread-card--live">
+              <div class="m3-thread-avatar m3-thread-avatar--live shape-cookie">
+                <span class="material-symbols-rounded filled">progress_activity</span>
+              </div>
+              <div class="m3-thread-content">
+                <div class="m3-thread-top">
+                  <span class="m3-thread-title">home-ops: bump hermes-pwa rollout</span>
+                  <span class="m3-thread-time">09:39</span>
+                </div>
+                <div class="m3-thread-snippet">Streaming: verifying deployment/hermes-agent hashes in namespace ai…</div>
+                <div class="m3-thread-tags">
+                  <span class="m3-mini-pill m3-mini-pill--live">
+                    <span class="material-symbols-rounded filled" style="font-size:13px">terminal</span>
+                    kubectl get pods
+                  </span>
+                  <span class="m3-mini-pill">default</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="m3-thread-card">
+              <div class="m3-thread-avatar m3-thread-avatar--blocked">
+                <span class="material-symbols-rounded filled">shield_lock</span>
+              </div>
+              <div class="m3-thread-content">
+                <div class="m3-thread-top">
+                  <span class="m3-thread-title">Cleanup legacy build artifacts</span>
+                  <span class="m3-thread-time">09:14</span>
+                </div>
+                <div class="m3-thread-snippet">Paused on high-impact shell command approval</div>
+                <div class="m3-thread-tags">
+                  <span class="m3-mini-pill m3-mini-pill--warn">NEEDS APPROVAL</span>
+                  <span class="m3-mini-pill">rm -rf ./build</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="m3-thread-card">
+              <div class="m3-thread-avatar">
+                <span class="material-symbols-rounded">description</span>
+              </div>
+              <div class="m3-thread-content">
+                <div class="m3-thread-top">
+                  <span class="m3-thread-title">Paperless PDF invoice triage</span>
+                  <span class="m3-thread-time">08:00</span>
+                </div>
+                <div class="m3-thread-snippet">Found 2 ready invoices from Hetzner &amp; Fastmail</div>
+                <div class="m3-thread-tags">
+                  <span class="m3-mini-pill">cron</span>
+                  <span class="m3-mini-pill">2 candidates</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- YESTERDAY Group -->
+          <div class="m3-section-kicker">
+            <span>Yesterday</span>
+            <span>2 threads</span>
+          </div>
+          <div class="m3-card-group">
+            <div class="m3-thread-card">
+              <div class="m3-thread-avatar">
+                <span class="material-symbols-rounded">vpn_lock</span>
+              </div>
+              <div class="m3-thread-content">
+                <div class="m3-thread-top">
+                  <span class="m3-thread-title">Tailscale Serve TLS cert check</span>
+                  <span class="m3-thread-time">1d</span>
+                </div>
+                <div class="m3-thread-snippet">Verified tailnet MagicDNS endpoint on :9119</div>
+              </div>
+            </div>
+
+            <div class="m3-thread-card">
+              <div class="m3-thread-avatar">
+                <span class="material-symbols-rounded">graphic_eq</span>
+              </div>
+              <div class="m3-thread-content">
+                <div class="m3-thread-top">
+                  <span class="m3-thread-title">Voice session: K8s node pressure audit</span>
+                  <span class="m3-thread-time">1d</span>
+                </div>
+                <div class="m3-thread-snippet">Summary saved · 4m 18s voice conversation</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Floating Bottom NavigationBar + Expressive Companion FAB -->
+        <div class="m3-floating-nav-wrap">
+          <nav class="m3-floating-nav" aria-label="Primary Navigation">
+            <button type="button" class="m3-nav-item m3-nav-item--active">
+              <span class="material-symbols-rounded filled">forum</span>
+              <span>Chats</span>
+            </button>
+            <button type="button" class="m3-nav-item">
+              <span class="m3-nav-badge">3</span>
+              <span class="material-symbols-rounded">inbox</span>
+              <span>Inbox</span>
+            </button>
+            <button type="button" class="m3-nav-item">
+              <span class="material-symbols-rounded">dashboard_customize</span>
+              <span>More</span>
+            </button>
+          </nav>
+          <button type="button" class="m3-expressive-fab" aria-label="New Chat">
+            <span class="material-symbols-rounded filled" style="font-size:24px">edit_square</span>
+            <span class="m3-expressive-fab__label">New</span>
+          </button>
+        </div>
+
+        <div class="android-gesture-bar"></div>
+      </div>
+    </section>
+
+    <!-- ======================================================================
+         FRAME (b): CHAT THREAD (STREAMING, TOOL CHIPS, COMPOSER WITH MIC)
+         ====================================================================== -->
+    <section class="phone-column" aria-label="Screen B: Chat Thread">
+      <div class="phone-caption">
+        <span class="phone-caption__num">B</span>
+        <span>Chat Thread · Collapsible Tool Chips &amp; Voice Composer</span>
+      </div>
+
+      <div class="phone-frame">
+        <div class="android-status-bar">
+          <span>09:41</span>
+          <div class="android-camera-hole"></div>
+          <div class="android-status-icons">
+            <span class="material-symbols-rounded">signal_cellular_4_bar</span>
+            <span class="material-symbols-rounded">wifi</span>
+            <span class="material-symbols-rounded filled">battery_full</span>
+          </div>
+        </div>
+
+        <!-- Thread Top App Bar -->
+        <div class="m3-top-bar">
+          <button type="button" class="m3-icon-btn" aria-label="Back to Chats">
+            <span class="material-symbols-rounded">arrow_back</span>
+          </button>
+          <div class="chat-header-title">
+            <div class="chat-header-title__main">home-ops: bump hermes-pwa rollout</div>
+            <div class="chat-header-title__sub">
+              <span class="live-dot"></span>
+              default · claude-opus-4-7 · streaming
+            </div>
+          </div>
+          <button type="button" class="m3-icon-btn" aria-label="Thread Options">
+            <span class="material-symbols-rounded">more_vert</span>
+          </button>
+        </div>
+
+        <div class="screen-body" style="padding-bottom:136px">
+          <!-- User Message Bubble -->
+          <div class="msg-user">
+            <div class="msg-user__text">
+              Check the hermes-agent pod status in the <strong>ai</strong> namespace, refresh ArgoCD if needed, and verify the live asset hashes.
+            </div>
+            <div class="msg-user__meta">09:38 · You</div>
+          </div>
+
+          <!-- Collapsible ToolGroup (Interactive) -->
+          <div class="tool-group" id="demoToolGroup">
+            <button type="button" class="tool-group__header" id="toolGroupToggle" aria-expanded="true">
+              <div class="tool-group__header-left">
+                <span class="material-symbols-rounded filled" style="font-size:19px">build_circle</span>
+                <div>
+                  <div class="tool-group__title">Tool actions · 3 steps</div>
+                  <div class="tool-group__meta">2 done · 1 running (14s elapsed)</div>
+                </div>
+              </div>
+              <span class="material-symbols-rounded" id="toolGroupChevron">expand_less</span>
+            </button>
+
+            <!-- Tool Chip 1 -->
+            <div class="tool-chip-row">
+              <div class="tool-chip-main">
+                <div class="tool-chip-cmd">
+                  <span class="material-symbols-rounded filled" style="font-size:16px;color:var(--md-sys-color-primary)">check_circle</span>
+                  <span>terminal: kubectl get pods -n ai</span>
+                </div>
+                <span class="m3-mini-pill">1.2s</span>
+              </div>
+              <pre class="tool-chip-output">NAME                            READY   STATUS    AGE
+hermes-agent-6d8f9b7c4-x9k2p    1/1     Running   4m12s</pre>
+            </div>
+
+            <!-- Tool Chip 2 -->
+            <div class="tool-chip-row">
+              <div class="tool-chip-main">
+                <div class="tool-chip-cmd">
+                  <span class="material-symbols-rounded filled" style="font-size:16px;color:var(--md-sys-color-primary)">check_circle</span>
+                  <span>terminal: kubectl rollout status deploy/hermes-agent</span>
+                </div>
+                <span class="m3-mini-pill">0.8s</span>
+              </div>
+            </div>
+
+            <!-- Tool Chip 3 (Running) -->
+            <div class="tool-chip-row">
+              <div class="tool-chip-main">
+                <div class="tool-chip-cmd">
+                  <span class="material-symbols-rounded" style="font-size:16px;color:var(--md-sys-color-tertiary)">progress_activity</span>
+                  <span>terminal: kubectl exec deploy/hermes-agent -- cat index.html</span>
+                </div>
+                <span class="m3-mini-pill m3-mini-pill--warn">running</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Streaming Assistant Message -->
+          <div class="msg-assistant">
+            <div class="msg-assistant__head">
+              <div class="msg-assistant__agent">
+                <span class="agent-mini-cookie shape-cookie">
+                  <span class="material-symbols-rounded filled" style="font-size:15px">auto_awesome</span>
+                </span>
+                <span>Hermes</span>
+              </div>
+              <span class="streaming-pill">
+                <span class="material-symbols-rounded filled" style="font-size:13px">sensors</span>
+                STREAMING
+              </span>
+            </div>
+            <div class="msg-assistant__body">
+              <p style="margin-bottom:8px">
+                Pod <code>hermes-agent-6d8f9b7c4-x9k2p</code> is healthy (1/1 Ready) in the <code>ai</code> namespace.
+              </p>
+              <p>
+                I queued an ArgoCD refresh annotation in your Inbox and am now inspecting <code>/opt/data/plugins/hermes-pwa/dashboard/dist/mobile/index.html</code> to confirm the bundle hash matches <code>a94f21c</code><span class="streaming-cursor"></span>
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Bottom Docked Expressive Composer (with Attachment, /Command, Mic, Stop/Steer) -->
+        <div class="m3-composer-dock" role="region" aria-label="Message Composer">
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:0 6px;font-size:11px;font-weight:700;color:var(--md-sys-color-on-surface-variant)">
+            <span>Queue mode active · Tap mic for live voice</span>
+            <span style="font-family:var(--font-mono);color:var(--md-sys-color-tertiary)">1 approval pending →</span>
+          </div>
+          <div class="m3-composer-row">
+            <button type="button" class="m3-icon-btn" aria-label="Attach File or Photo">
+              <span class="material-symbols-rounded">add_circle</span>
+            </button>
+            <div class="m3-composer-input">
+              <span>Steer or queue follow-up…</span>
+              <span class="m3-slash-pill">/cmd</span>
+            </div>
+            <button type="button" class="m3-mic-btn" aria-label="Open Voice Mode">
+              <span class="material-symbols-rounded filled">mic</span>
+            </button>
+            <button type="button" class="m3-send-btn" aria-label="Send or Stop Turn">
+              <span class="material-symbols-rounded filled">arrow_upward</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="android-gesture-bar"></div>
+      </div>
+    </section>
+
+    <!-- ======================================================================
+         FRAME (c): INBOX WITH 3 APPROVAL CARDS & SLIDE-TO-APPROVE
+         ====================================================================== -->
+    <section class="phone-column" aria-label="Screen C: Inbox Approvals">
+      <div class="phone-caption">
+        <span class="phone-caption__num">C</span>
+        <span>Inbox · Risk-Tiered Cards &amp; Slide-to-Approve</span>
+      </div>
+
+      <div class="phone-frame">
+        <div class="android-status-bar">
+          <span>09:41</span>
+          <div class="android-camera-hole"></div>
+          <div class="android-status-icons">
+            <span class="material-symbols-rounded">signal_cellular_4_bar</span>
+            <span class="material-symbols-rounded">wifi</span>
+            <span class="material-symbols-rounded filled">battery_full</span>
+          </div>
+        </div>
+
+        <!-- Inbox Header -->
+        <div class="m3-top-bar">
+          <div>
+            <h2 class="brand-title">Inbox</h2>
+            <span class="brand-sub"> Deliberate confirmation for high-impact tools</span>
+          </div>
+          <span class="spec-pill spec-pill--tertiary">3 NEEDS YOU</span>
+        </div>
+
+        <div class="screen-body">
+          <!-- Card 1: HIGH RISK with Slide-to-Approve -->
+          <article class="approval-card approval-card--high">
+            <div class="approval-card__top">
+              <div class="approval-card__title">
+                <span class="material-symbols-rounded filled" style="color:var(--md-sys-color-error);font-size:20px">local_fire_department</span>
+                <span>Run shell command</span>
+              </div>
+              <span class="risk-badge risk-badge--high">HIGH RISK</span>
+            </div>
+            <div class="approval-card__meta">Cleanup legacy build artifacts · 2m ago · private</div>
+            <div class="approval-card__cmd">rm -rf ./build ./packages/web/.vite &amp;&amp; npm run build</div>
+
+            <div class="slide-approve-row">
+              <button type="button" class="m3-btn m3-btn--deny-icon" aria-label="Reject High Risk Command" title="Deny">
+                <span class="material-symbols-rounded filled">close</span>
+              </button>
+              <div class="slide-track" id="slideApproveDemo" role="button" tabindex="0" aria-label="Slide to approve destructive command">
+                <div class="slide-thumb shape-cookie">
+                  <span class="material-symbols-rounded filled" id="slideThumbIcon">double_arrow</span>
+                </div>
+                <span class="slide-label" id="slideLabelText">Slide to approve once →</span>
+              </div>
+            </div>
+          </article>
+
+          <!-- Card 2: CLUSTER MUTATION (Medium/High Risk) -->
+          <article class="approval-card">
+            <div class="approval-card__top">
+              <div class="approval-card__title">
+                <span class="material-symbols-rounded filled" style="color:var(--md-sys-color-tertiary);font-size:20px">dns</span>
+                <span>terminal: kubectl annotate</span>
+              </div>
+              <span class="risk-badge risk-badge--med">CLUSTER OPS</span>
+            </div>
+            <div class="approval-card__meta">home-ops: bump hermes-pwa rollout · 4m ago</div>
+            <div class="approval-card__cmd">kubectl -n argo-system annotate application hermes-agent argocd.argoproj.io/refresh=normal --overwrite</div>
+            <div class="approval-actions">
+              <button type="button" class="m3-btn m3-btn--deny">
+                <span class="material-symbols-rounded" style="font-size:18px">block</span>
+                Reject
+              </button>
+              <button type="button" class="m3-btn m3-btn--approve">
+                <span class="material-symbols-rounded filled" style="font-size:18px">check</span>
+                Approve once
+              </button>
+            </div>
+          </article>
+
+          <!-- Card 3: LOW RISK (Paperless Cron Import) -->
+          <article class="approval-card">
+            <div class="approval-card__top">
+              <div class="approval-card__title">
+                <span class="material-symbols-rounded filled" style="color:var(--md-sys-color-primary);font-size:20px">inventory_2</span>
+                <span>Paperless PDF import</span>
+              </div>
+              <span class="risk-badge risk-badge--low">LOW RISK</span>
+            </div>
+            <div class="approval-card__meta">email-pdf-triage cron · 18m ago · 2 candidates ready</div>
+            <div class="approval-card__cmd">[✓ #412] Hetzner_Cloud_2025_05.pdf (Ready)
+[✓ #413] Fastmail_Renewal_Receipt.pdf (Ready)</div>
+            <div class="approval-actions">
+              <button type="button" class="m3-btn m3-btn--deny">
+                <span class="material-symbols-rounded" style="font-size:18px">delete</span>
+                Skip
+              </button>
+              <button type="button" class="m3-btn m3-btn--approve">
+                <span class="material-symbols-rounded filled" style="font-size:18px">download_done</span>
+                Import (2)
+              </button>
+            </div>
+          </article>
+        </div>
+
+        <!-- Floating Bottom NavigationBar (Inbox Active) -->
+        <div class="m3-floating-nav-wrap">
+          <nav class="m3-floating-nav" aria-label="Primary Navigation">
+            <button type="button" class="m3-nav-item">
+              <span class="material-symbols-rounded">forum</span>
+              <span>Chats</span>
+            </button>
+            <button type="button" class="m3-nav-item m3-nav-item--active">
+              <span class="m3-nav-badge">3</span>
+              <span class="material-symbols-rounded filled">inbox</span>
+              <span>Inbox</span>
+            </button>
+            <button type="button" class="m3-nav-item">
+              <span class="material-symbols-rounded">dashboard_customize</span>
+              <span>More</span>
+            </button>
+          </nav>
+        </div>
+
+        <div class="android-gesture-bar"></div>
+      </div>
+    </section>
+
+    <!-- ======================================================================
+         FRAME (d): MORE SCREEN (AGENTS, PROJECTS, SKILLS, CRON, PROFILES, SETTINGS)
+         ====================================================================== -->
+    <section class="phone-column" aria-label="Screen D: More Control Modules">
+      <div class="phone-caption">
+        <span class="phone-caption__num">D</span>
+        <span>More · Gateway Telemetry &amp; 6 Expressive Modules</span>
+      </div>
+
+      <div class="phone-frame">
+        <div class="android-status-bar">
+          <span>09:41</span>
+          <div class="android-camera-hole"></div>
+          <div class="android-status-icons">
+            <span class="material-symbols-rounded">signal_cellular_4_bar</span>
+            <span class="material-symbols-rounded">wifi</span>
+            <span class="material-symbols-rounded filled">battery_full</span>
+          </div>
+        </div>
+
+        <!-- More Header -->
+        <div class="m3-top-bar">
+          <div>
+            <h2 class="brand-title">Control Cockpit</h2>
+            <span class="brand-sub">hermes-pwa v0.14.2 · Tailscale 100.94.12.8:9119</span>
+          </div>
+          <button type="button" class="m3-icon-btn" aria-label="Reload App">
+            <span class="material-symbols-rounded">refresh</span>
+          </button>
+        </div>
+
+        <div class="screen-body">
+          <!-- Gateway Telemetry Card -->
+          <section class="health-card" aria-label="Gateway System Health">
+            <div class="health-card__top">
+              <div class="health-card__status">
+                <span class="live-dot"></span>
+                <span>Gateway running</span>
+              </div>
+              <span class="health-card__uptime">up 14d 6h</span>
+            </div>
+            <div class="health-metrics">
+              <div class="metric-pill-box">
+                <div class="metric-pill-box__label">
+                  <span>CPU</span>
+                  <span>18%</span>
+                </div>
+                <div class="metric-bar">
+                  <div class="metric-bar__fill" style="width:18%"></div>
+                </div>
+              </div>
+              <div class="metric-pill-box">
+                <div class="metric-pill-box__label">
+                  <span>RAM</span>
+                  <span>6.4G</span>
+                </div>
+                <div class="metric-bar">
+                  <div class="metric-bar__fill" style="width:42%"></div>
+                </div>
+              </div>
+              <div class="metric-pill-box">
+                <div class="metric-pill-box__label">
+                  <span>DISK</span>
+                  <span>74%</span>
+                </div>
+                <div class="metric-bar">
+                  <div class="metric-bar__fill metric-bar__fill--warn" style="width:74%"></div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <div class="m3-section-kicker">
+            <span>Control Modules</span>
+            <span>6 surfaces</span>
+          </div>
+
+          <!-- 6 Required Control Modules: Agents, Projects, Skills, Cron, Profiles, Settings -->
+          <div class="more-bento-grid">
+            <button type="button" class="more-tile">
+              <div class="more-tile__top">
+                <span class="more-tile__icon shape-cookie">
+                  <span class="material-symbols-rounded filled">hub</span>
+                </span>
+                <span class="more-tile__badge">2 LIVE</span>
+              </div>
+              <div>
+                <div class="more-tile__name">Agents</div>
+                <div class="more-tile__sub">2 active subagents · spawn tree</div>
+              </div>
+            </button>
+
+            <button type="button" class="more-tile">
+              <div class="more-tile__top">
+                <span class="more-tile__icon">
+                  <span class="material-symbols-rounded filled">view_kanban</span>
+                </span>
+                <span class="more-tile__badge">4 WIP</span>
+              </div>
+              <div>
+                <div class="more-tile__name">Projects</div>
+                <div class="more-tile__sub">hermes-mobile &amp; home-ops kanban</div>
+              </div>
+            </button>
+
+            <button type="button" class="more-tile">
+              <div class="more-tile__top">
+                <span class="more-tile__icon more-tile__icon--tertiary">
+                  <span class="material-symbols-rounded filled">extension</span>
+                </span>
+                <span class="more-tile__badge">18</span>
+              </div>
+              <div>
+                <div class="more-tile__name">Skills</div>
+                <div class="more-tile__sub">babysit-pr, k8s-discovery, voice</div>
+              </div>
+            </button>
+
+            <button type="button" class="more-tile">
+              <div class="more-tile__top">
+                <span class="more-tile__icon">
+                  <span class="material-symbols-rounded filled">schedule</span>
+                </span>
+                <span class="more-tile__badge">NEXT 22M</span>
+              </div>
+              <div>
+                <div class="more-tile__name">Cron</div>
+                <div class="more-tile__sub">4 jobs · pdf-triage, backup-verify</div>
+              </div>
+            </button>
+
+            <button type="button" class="more-tile">
+              <div class="more-tile__top">
+                <span class="more-tile__icon">
+                  <span class="material-symbols-rounded filled">badge</span>
+                </span>
+                <span class="more-tile__badge">ACTIVE</span>
+              </div>
+              <div>
+                <div class="more-tile__name">Profiles</div>
+                <div class="more-tile__sub">default · ops-fast · research</div>
+              </div>
+            </button>
+
+            <button type="button" class="more-tile">
+              <div class="more-tile__top">
+                <span class="more-tile__icon more-tile__icon--tertiary">
+                  <span class="material-symbols-rounded filled">tune</span>
+                </span>
+                <span class="more-tile__badge">MODEL</span>
+              </div>
+              <div>
+                <div class="more-tile__name">Settings</div>
+                <div class="more-tile__sub">Model picker, connection &amp; push</div>
+              </div>
+            </button>
+          </div>
+        </div>
+
+        <!-- Floating Bottom NavigationBar (More Active) -->
+        <div class="m3-floating-nav-wrap">
+          <nav class="m3-floating-nav" aria-label="Primary Navigation">
+            <button type="button" class="m3-nav-item">
+              <span class="material-symbols-rounded">forum</span>
+              <span>Chats</span>
+            </button>
+            <button type="button" class="m3-nav-item">
+              <span class="m3-nav-badge">3</span>
+              <span class="material-symbols-rounded">inbox</span>
+              <span>Inbox</span>
+            </button>
+            <button type="button" class="m3-nav-item m3-nav-item--active">
+              <span class="material-symbols-rounded filled">dashboard_customize</span>
+              <span>More</span>
+            </button>
+          </nav>
+        </div>
+
+        <div class="android-gesture-bar"></div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ========================================================================
+       4. FOOTER: WHAT MAKES IT UNIQUE, ONE-HANDED ERGONOMICS & TRADE-OFFS
+       ======================================================================== -->
+  <footer class="spec-footer">
+    <h2 class="spec-footer__title">
+      <span class="material-symbols-rounded filled" style="color:var(--md-sys-color-primary)">verified</span>
+      Material 3 Expressive Architecture Notes
+    </h2>
+    <ul class="spec-footer__list">
+      <li class="spec-footer__item">
+        <strong>1. Expressive Shape Grammar &amp; Connected Lists</strong>
+        Uses Android 16 M3 Expressive mixed corner radii: 28px outer caps paired with 8px inner seams visually bind Today/Yesterday thread groups and multi-step tool call sequences into cohesive physical stacks, while 12-lobe scalloped cookie badges distinguish live AI entities.
+      </li>
+      <li class="spec-footer__item">
+        <strong>2. Viridian + Kinetic Persimmon Tonal Hierarchy</strong>
+        Avoids generic blue by pairing a calm Botanical Viridian seed (<code>#006B5B</code>) for steady operational surfaces with a high-energy Kinetic Persimmon tertiary accent (<code>#A73912</code> / <code>#FFB59C</code>) reserved strictly for voice capture, new-thread initiation, and risk callouts.
+      </li>
+      <li class="spec-footer__item">
+        <strong>3. One-Handed Thumb-Zone Ergonomics</strong>
+        Replaces edge-to-edge bottom chrome with a floating 66px capsule NavigationBar and companion squircle FAB anchored in the natural thumb arc. Every interactive control (filter chips, mic, slide-to-approve, deny/approve buttons) enforces a ≥48×48px touch target.
+      </li>
+      <li class="spec-footer__item">
+        <strong>4. Deliberate Friction for High-Impact Approvals</strong>
+        Low/medium-risk actions use 48px single-tap buttons, while destructive commands (<code>rm -rf ./build</code>) require a 48px tactile Slide-to-Approve gesture track next to an isolated Deny button—preventing accidental pocket or fat-finger execution.
+      </li>
+      <li class="spec-footer__item">
+        <strong>5. Trade-offs vs. Dense Utility</strong>
+        Expressive typography (Bricolage Grotesque headers), 28px group caps, and floating toolbars trade ~10% vertical row density for dramatically faster visual scanning, unmistakable Android native personality, and zero mis-taps during on-the-go cluster triage.
+      </li>
+    </ul>
+  </footer>
+
+  <!-- Tiny Optional Inline JS: Light/Dark Theme Switcher + Interactive Demo Widgets -->
+  <script>
+    (function () {
+      const root = document.documentElement;
+      const btn = document.getElementById('themeToggle');
+      const icon = document.getElementById('themeIcon');
+      const label = document.getElementById('themeLabel');
+      const hexNodes = document.querySelectorAll('.swatch-hex');
+
+      function applyTheme(theme) {
+        root.setAttribute('data-theme', theme);
+        const isDark = theme === 'dark';
+        icon.textContent = isDark ? 'light_mode' : 'dark_mode';
+        label.textContent = isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode';
+        hexNodes.forEach(function (node) {
+          node.textContent = node.getAttribute(isDark ? 'data-dark' : 'data-light');
+        });
+      }
+
+      btn.addEventListener('click', function () {
+        const next = root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+        applyTheme(next);
+      });
+
+      // Interactive collapsible tool group in Frame B
+      const toolToggle = document.getElementById('toolGroupToggle');
+      const toolGroup = document.getElementById('demoToolGroup');
+      const toolChevron = document.getElementById('toolGroupChevron');
+      if (toolToggle && toolGroup) {
+        toolToggle.addEventListener('click', function () {
+          const collapsed = toolGroup.classList.toggle('tool-group--collapsed');
+          toolToggle.setAttribute('aria-expanded', String(!collapsed));
+          toolChevron.textContent = collapsed ? 'expand_more' : 'expand_less';
+        });
+      }
+
+      // Interactive Slide-to-Approve toggle in Frame C
+      const slideTrack = document.getElementById('slideApproveDemo');
+      const slideLabel = document.getElementById('slideLabelText');
+      const slideIcon = document.getElementById('slideThumbIcon');
+      if (slideTrack) {
+        slideTrack.addEventListener('click', function () {
+          const approved = slideTrack.classList.toggle('slide-track--approved');
+          slideLabel.textContent = approved ? 'Approved once · Executing…' : 'Slide to approve once →';
+          slideIcon.textContent = approved ? 'check' : 'double_arrow';
+        });
+      }
+    })();
+  </script>
+
+<script>
+(function () {
+  var slug = "ivan-mockup-b-expressive";
+  var es = new EventSource("/events");
+  es.addEventListener("reload", function (e) {
+    try { if (e.data === slug || e.data === "*") location.reload(); } catch (_) {}
+  });
+})();
+</script></body>
+</html>

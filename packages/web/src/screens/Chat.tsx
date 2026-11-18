@@ -8,6 +8,7 @@ import {
   useActivityStore,
   useConfigStore,
   sessionSourceLabel,
+  connectionStateLabel,
   HermesHttpError,
   type Approval,
   type RpcClient,
@@ -41,6 +42,7 @@ interface ChatProps {
   rest: RestClient;
   onOpenVoice?: () => void;
   onRetry?: (() => void) | undefined;
+  onBack?: () => void;
 }
 
 type BusyInputMode = 'queue' | 'steer' | 'interrupt';
@@ -108,7 +110,7 @@ function isNonChatStatus(kind: string, payload: Record<string, unknown> | undefi
   return NON_CHAT_STATUS_TEXT.test(rawText);
 }
 
-export function Chat({ rpc, rest, onOpenVoice, onRetry }: ChatProps) {
+export function Chat({ rpc, rest, onOpenVoice, onRetry, onBack }: ChatProps) {
   const {
     messages,
     streaming,
@@ -597,7 +599,7 @@ export function Chat({ rpc, rest, onOpenVoice, onRetry }: ChatProps) {
   }, [sessionId, activeName]);
 
   const profileLabel = activeProfile?.displayName ?? activeName ?? 'default';
-  const modelLabel = activeProfile?.model ?? 'GPT-5.5';
+  const modelLabel = activeProfile?.model ?? 'default model';
   const headerTitle = currentSession?.title ?? 'Chat';
   const folderLabel = currentSession?.cwd?.split(/[/\\]/u).filter(Boolean).at(-1);
   const headerSessionId = storedSessionId ?? sessionId;
@@ -725,13 +727,26 @@ export function Chat({ rpc, rest, onOpenVoice, onRetry }: ChatProps) {
   return (
     <div className="hm-chat">
       <header className="hm-app-header hm-chat-header">
-        <button type="button" className="hm-iconbtn" aria-label="Back to chats" onClick={() => window.history.back()}>
+        <button type="button" className="hm-iconbtn" aria-label="Back to chats" onClick={() => (onBack ? onBack() : window.history.back())}>
           <Icon name="back" size={20} />
         </button>
-        <div className="hm-chat-header__text">
-          <div className="hm-app-header__title">{headerTitle}</div>
-          <div className="hm-app-header__sub">{headerSub}</div>
-        </div>
+        {!currentSession && (
+          <div className="hm-chat-brand">
+            <span className="hm-chat-brand__avatar" aria-hidden="true"><Icon name="sparkle" size={22} filled /></span>
+            <div>
+              <div className="hm-chat-brand__title">I.V.A.N.</div>
+              <div className="hm-chat-brand__sub"><span className="hm-dot" style={{ background: connection.state === 'connected' ? undefined : 'var(--hm-color-warning)' }} />{connectionStateLabel(connection.state)} · {profileLabel}</div>
+            </div>
+          </div>
+        )}
+        {currentSession && (
+          <>
+            <div className="hm-chat-header__text">
+              <div className="hm-app-header__title">{headerTitle}</div>
+              <div className="hm-app-header__sub">{headerSub}</div>
+            </div>
+          </>
+        )}
         <ConnectionBanner state={connection.state} error={connection.error} onRetry={onRetry} />
         <button
           type="button"
@@ -771,11 +786,6 @@ export function Chat({ rpc, rest, onOpenVoice, onRetry }: ChatProps) {
         className="hm-chat__messages hm-scroll"
         ref={listRef}
         onScroll={onScroll}
-        role="log"
-        aria-live="polite"
-        aria-relevant="additions text"
-        aria-busy={streaming || historyLoading}
-        aria-label="Conversation"
       >
         {autoRestarted && messages.length === 0 && (
           <p className="hm-chat__session-note" role="status">
@@ -783,6 +793,19 @@ export function Chat({ rpc, rest, onOpenVoice, onRetry }: ChatProps) {
           </p>
         )}
 
+        {connection.state === 'connected' && !historyLoading && messages.length === 0 && (
+          <section className="hm-chat-welcome" aria-label="Start a conversation">
+            <span className="hm-chat-welcome__orb" aria-hidden="true"><Icon name="sparkle" size={30} filled /></span>
+            <h1>Good to see you.</h1>
+            <p>What can I do for you?</p>
+            <div className="hm-chat-welcome__actions">
+              <button type="button" onClick={() => handleSend('Give me a morning briefing with my current tasks, notifications, and system status.')}><Icon name="sparkle" size={20} /><span><strong>Morning briefing</strong><small>Tasks, notifications and system status</small></span><Icon name="chevR" size={18} /></button>
+              <button type="button" onClick={() => handleSend('Explain this repository: its purpose, architecture, and important files.')}><Icon name="search" size={20} /><span><strong>Explain this repo</strong><small>Purpose, architecture and important files</small></span><Icon name="chevR" size={18} /></button>
+              <button type="button" onClick={() => handleSend('Help me plan a new feature. Ask me what I want to build, then propose an implementation plan.')}><Icon name="plus" size={20} /><span><strong>Plan a feature</strong><small>Turn an idea into an implementation plan</small></span><Icon name="chevR" size={18} /></button>
+              <button type="button" onClick={() => handleSend('Run a health check and summarize anything that needs my attention.')}><Icon name="settings" size={20} /><span><strong>Run a health check</strong><small>Find issues that need attention</small></span><Icon name="chevR" size={18} /></button>
+            </div>
+          </section>
+        )}
         {historyLoading && messages.length === 0 && (
           <div className="hm-chat__history-loading" role="status" aria-label="Loading conversation">
             <span className="hm-chat__history-skeleton" aria-hidden="true" />
@@ -790,6 +813,7 @@ export function Chat({ rpc, rest, onOpenVoice, onRetry }: ChatProps) {
             <span className="hm-chat__history-skeleton" aria-hidden="true" />
           </div>
         )}
+        <div className="hm-chat__log" role="log" aria-live="polite" aria-relevant="additions text" aria-busy={streaming || historyLoading} aria-label="Conversation">
         {feedItems.map((item) =>
           item.kind === 'strip' ? (
             <TurnWorkStrip
@@ -830,6 +854,7 @@ export function Chat({ rpc, rest, onOpenVoice, onRetry }: ChatProps) {
         ))}
 
         {error ? <div className="hm-warning-banner hm-warning-banner--error">{error}</div> : null}
+        </div>
       </div>
       {dockApproval && (
         <ApprovalDock
@@ -849,7 +874,7 @@ export function Chat({ rpc, rest, onOpenVoice, onRetry }: ChatProps) {
         busy={streaming}
         busySubmitLabel={busySubmitLabel}
         modelLabel={modelLabel}
-        placeholder={streaming ? busyPlaceholder : 'Ask the repo agent, or run a command…\nUse / for commands, + to attach'}
+        placeholder={streaming ? busyPlaceholder : 'Message I.V.A.N…\n/ for commands · + to attach'}
         messages={messages}
         onOpenVoice={onOpenVoice}
         onUploadFile={handleUploadFile}

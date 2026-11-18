@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useActivityStore, useConnectionStore, usePaperlessStore } from '@hermes-pwa/core';
 import type { ActionItem, Approval, Clarify, RestClient, RpcClient } from '@hermes-pwa/core';
 import { ApprovalCard } from '../components/ApprovalCard';
+import { Icon } from '../components/Icon';
 import { ClarifyCard } from '../components/ClarifyCard';
 // ponytail: prototype.css's trailing @import of screens/*.css is dropped by Vite
 import '../styles/screens/inbox.css';
@@ -146,37 +147,13 @@ export function ApprovalsScreen({ rpc, rest }: ApprovalsScreenProps) {
       {error && <div className="hm-warning-banner hm-warning-banner--error">{error}</div>}
 
       {!isEmpty && (
-        <section className="hm-qp-hero" aria-label="Inbox summary">
-          <div className="hm-qp-hero__top">
-            <div>
-              <div className="hm-qp-hero__title">Inbox</div>
-              <div className="hm-qp-hero__telemetry">
-                {needsYou.length} PENDING · {notices.length} NOTICES
-              </div>
-            </div>
-            <span className="hm-qp-presence">
-              {needsYou.length > 0 ? 'ACTION REQUIRED' : 'CLEAR'}
-            </span>
+        <section className="hm-inbox-summary" aria-label="Inbox summary">
+          <span className="hm-inbox-summary__icon" aria-hidden="true"><Icon name={needsYou.length > 0 ? 'shield' : 'check'} size={28} filled /></span>
+          <div className="hm-inbox-summary__body">
+            <h1>{needsYou.length > 0 ? 'Needs your action' : 'Inbox clear'}</h1>
+            <p>{needsYou.length} pending action{needsYou.length === 1 ? '' : 's'} · {notices.length} notice{notices.length === 1 ? '' : 's'}</p>
           </div>
-          <div className="hm-qp-pills">
-            {needsYou.length > 0 ? (
-              <span className="hm-qp-pill hm-qp-pill--rose">
-                <span className="hm-qp-pill__dot" aria-hidden="true" />
-                {needsYou.length} NEEDS YOU
-              </span>
-            ) : (
-              <span className="hm-qp-pill hm-qp-pill--emerald">
-                <span className="hm-qp-pill__dot" aria-hidden="true" />
-                QUEUE CLEAR
-              </span>
-            )}
-            {notices.length > 0 && (
-              <span className="hm-qp-pill hm-qp-pill--sky">
-                <span className="hm-qp-pill__dot" aria-hidden="true" />
-                {notices.length} TELEMETRY
-              </span>
-            )}
-          </div>
+          {needsYou.length > 0 && <span className="hm-inbox-summary__badge">{needsYou.length}</span>}
         </section>
       )}
 
@@ -191,11 +168,8 @@ export function ApprovalsScreen({ rpc, rest }: ApprovalsScreenProps) {
       {rest && <PaperlessCard rest={rest} />}
 
       {needsYou.length > 0 && (
-        <>
-          <div className="hm-group-label hm-qp-sec__head">
-            <span className="hm-qp-sec__kicker">Needs you · {needsYou.length}</span>
-            <span className="hm-qp-sec__meta">QUEUE</span>
-          </div>
+        <section className="hm-inbox-group" aria-label="Needs you">
+          <div className="hm-group-label">Needs you · {needsYou.length}</div>
           {needsYou.map((item) =>
             isClarify(item) ? (
               <ClarifyCard key={item.id} item={item} onRespond={(id, answer) => void respondClarify(rpc, id, answer)} />
@@ -209,11 +183,11 @@ export function ApprovalsScreen({ rpc, rest }: ApprovalsScreenProps) {
               />
             ) : null,
           )}
-        </>
+        </section>
       )}
 
       {notices.length > 0 && (
-        <>
+        <section className="hm-inbox-group" aria-label="Notices">
           <div className="hm-group-label hm-qp-sec__head">
             <span className="hm-qp-sec__kicker">Notices</span>
             <span className="hm-qp-sec__meta">{notices.length}</span>
@@ -221,7 +195,7 @@ export function ApprovalsScreen({ rpc, rest }: ApprovalsScreenProps) {
           {notices.map((item) => (
             <NoticeRow key={item.id} item={item} />
           ))}
-        </>
+        </section>
       )}
 
       {!loading && isEmpty && (

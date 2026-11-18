@@ -55,17 +55,30 @@ describe('Chat', () => {
     restMock = makeRestMock();
   });
 
-  it('shows only the composer when an empty conversation finishes loading', async () => {
+  it('shows the O2 welcome actions when an empty conversation finishes loading', async () => {
     render(<Chat rpc={rpcMock} rest={restMock} />);
+    vi.mocked(rpcMock.request).mockImplementation(async (method: string) => {
+      if (method === 'session.create') return { session_id: 's-1', stored_session_id: 'stored-1' };
+      if (method === 'session.most_recent') return {};
+      return { status: 'streaming' };
+    });
     const log = screen.getByRole('log', { name: /conversation/i });
     expect(log).toHaveAttribute('aria-live', 'polite');
     expect(log).toHaveAttribute('aria-relevant', 'additions text');
     await waitFor(() => expect(log).toHaveAttribute('aria-busy', 'false'));
-    expect(log).toBeEmptyDOMElement();
     expect(screen.getByRole('textbox', { name: 'Message input' })).toHaveAttribute(
-      'placeholder', 'Ask the repo agent, or run a command…\nUse / for commands, + to attach',
+      'placeholder', 'Message I.V.A.N…\n/ for commands · + to attach',
     );
-    expect(screen.queryByText(/Start a conversation/i)).not.toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Good to see you.' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Morning briefing/ })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Explain this repo/ })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Plan a feature/ })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Run a health check/ })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: /Morning briefing/ }));
+    await waitFor(() => expect(rpcMock.request).toHaveBeenCalledWith('prompt.submit', {
+      session_id: 's-1',
+      text: 'Give me a morning briefing with my current tasks, notifications, and system status.',
+    }, { timeoutMs: 90_000 }));
   });
 
   it('shows loading feedback while restoring history instead of treating it as an empty chat', async () => {

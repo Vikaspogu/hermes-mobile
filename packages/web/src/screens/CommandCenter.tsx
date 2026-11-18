@@ -14,6 +14,7 @@ interface SystemScreenProps {
 }
 
 interface SystemStats {
+  version: string | undefined;
   cpuPercent: number | undefined;
   memoryMb: number | undefined;
   memoryTotalMb: number | undefined;
@@ -77,6 +78,7 @@ function fmtDate(ts: number | undefined): string {
 
 function parseStats(raw: DomainSystemStats): SystemStats {
   return {
+    version: raw.version,
     cpuPercent: raw.cpuPercent,
     memoryMb: raw.memoryUsedMb,
     memoryTotalMb: raw.memoryTotalMb,
@@ -324,75 +326,33 @@ export function CommandCenter({ rest }: SystemScreenProps) {
     <div className="hm-command hm-system hm-scroll">
       {error && <div className="hm-warning-banner hm-warning-banner--error">{error}</div>}
 
-      <div className="hm-qp-hero hm-card hm-system__gateway" data-testid="gateway-card">
-        <div className="hm-qp-hero__top">
-          <div>
-            <div className="hm-qp-hero__title hm-system__gateway-title">
-              <span className="hm-system__gateway-name">
-                <span className="hm-dot" aria-hidden="true" />
-                Gateway running
-              </span>
-            </div>
-            <div className="hm-qp-hero__telemetry hm-system__gateway-uptime">
-              up {fmtUptime(stats?.uptimeSeconds)}
-            </div>
-          </div>
-          <span className="hm-qp-presence hm-qp-presence--emerald">
-            <span className="hm-qp-pill__dot" aria-hidden="true" />
-            ONLINE
+      <section className="hm-sys__hero" data-testid="gateway-card">
+        <div className="hm-sys__hero-top">
+          <span className="hm-sys__version">{stats?.version ?? 'Hermes Agent'}</span>
+          <span className={`hm-sys__chip ${failedCount > 0 ? 'hm-sys__chip--warn' : 'hm-sys__chip--ok'}`}>
+            <span className="hm-sys__chip-dot" aria-hidden="true" />{failedCount > 0 ? `${failedCount} issue${failedCount === 1 ? '' : 's'}` : 'Connected'}
           </span>
         </div>
-
-        <div className="hm-qp-pills">
-          {failedCount > 0 ? (
-            <span className="hm-qp-pill hm-qp-pill--rose">
-              <span className="hm-qp-pill__dot" aria-hidden="true" />
-              {failedCount} ISSUE{failedCount === 1 ? '' : 'S'}
-            </span>
-          ) : (
-            <span className="hm-qp-pill hm-qp-pill--emerald">
-              <span className="hm-qp-pill__dot" aria-hidden="true" />
-              ALL CHECKS OK
-            </span>
-          )}
-          <span className="hm-qp-pill hm-qp-pill--sky">
-            <span className="hm-qp-pill__dot" aria-hidden="true" />
-            {backups.length} BACKUP{backups.length === 1 ? '' : 'S'}
-          </span>
-          {opsRunning && (
-            <span className="hm-qp-pill hm-qp-pill--amber">
-              <span className="hm-qp-pill__dot" aria-hidden="true" />
-              ACTIVE OP
-            </span>
-          )}
+        <div className="hm-sys__telemetry">HERMES AGENT · GATEWAY TELEMETRY</div>
+        <h1 className="hm-sys__hero-host">hermes-agent</h1>
+        <div className="hm-sys__hero-grid">
+          <div className="hm-sys__hero-stat"><span className="hm-sys__hero-stat-k">Status</span><span className="hm-sys__hero-stat-v hm-sys__hero-stat-v--ok"><span className="hm-sys__chip-dot" />Online<span className="hm-sr-only">Gateway running</span></span><span className="hm-sys__hero-stat-sub">up {fmtUptime(stats?.uptimeSeconds)}</span></div>
+          <div className="hm-sys__hero-stat"><span className="hm-sys__hero-stat-k">Health</span><span className={`hm-sys__hero-stat-v ${failedCount > 0 ? 'hm-sys__hero-stat-v--warn' : 'hm-sys__hero-stat-v--ok'}`}>{failedCount > 0 ? `${failedCount} warn` : `${passedCount} OK`}</span><span className="hm-sys__hero-stat-sub">{passedCount}/{checks.length} checks passed</span></div>
+          <div className="hm-sys__hero-stat"><span className="hm-sys__hero-stat-k">Disk</span><span className="hm-sys__hero-stat-v">{stats?.diskPercent != null ? `${Math.round(stats.diskPercent)}%` : '—'}</span><span className="hm-sys__hero-stat-sub">{stats?.diskUsedMb != null ? `${fmtGbShort(stats.diskUsedMb)} used` : 'No disk data'}</span></div>
+          <div className="hm-sys__hero-stat"><span className="hm-sys__hero-stat-k">Backups</span><span className="hm-sys__hero-stat-v">{backups.length}</span><span className="hm-sys__hero-stat-sub">{latestBackup ? fmtDate(latestBackup.createdAt) : 'No backups yet'}</span></div>
         </div>
-
         <div className="hm-system__gateway-actions">
-          <button
-            type="button"
-            className="hm-btn hm-btn--ghost"
-            disabled={opsRunning === 'gateway-restart'}
-            onClick={() => void runGatewayAction('restart')}
-          >
+          <button type="button" className="hm-btn hm-btn--ghost" disabled={opsRunning === 'gateway-restart'} onClick={() => void runGatewayAction('restart')}>
             {opsRunning === 'gateway-restart' ? 'Restarting…' : 'Restart…'}
           </button>
-          <button
-            type="button"
-            className="hm-btn hm-btn--danger-outline"
-            disabled={opsRunning === 'gateway-stop'}
-            onClick={() => void runGatewayAction('stop')}
-          >
+          <button type="button" className="hm-btn hm-btn--danger-outline" disabled={opsRunning === 'gateway-stop'} onClick={() => void runGatewayAction('stop')}>
             {opsRunning === 'gateway-stop' ? 'Stopping…' : 'Stop…'}
           </button>
         </div>
-      </div>
-
+      </section>
       {(stats?.cpuPercent != null || stats?.memoryMb != null || stats?.diskUsedMb != null) && (
-        <section className="hm-qp-section">
-          <div className="hm-qp-section__head">
-            <span className="hm-qp-kicker">TELEMETRY &amp; RESOURCES</span>
-            <span className="hm-qp-meta-badge">LIVE</span>
-          </div>
+        <section className="hm-sys__resources">
+          <div className="hm-group-label">Resources</div>
           <div className="hm-card hm-system__metrics">
             {stats!.cpuPercent != null && (
               <div className="hm-system__metric">
@@ -429,11 +389,8 @@ export function CommandCenter({ rest }: SystemScreenProps) {
         </section>
       )}
 
-      <section className="hm-qp-section">
-        <div className="hm-qp-section__head">
-          <span className="hm-qp-kicker hm-group-label">Health checks</span>
-          <span className="hm-qp-meta-badge">{passedCount}/{checks.length} PASSED</span>
-        </div>
+      <section className="hm-sys__checks">
+        <div className="hm-group-label">Health checks <span className="hm-sys__checks-count">{passedCount}/{checks.length} passed</span></div>
         <div className="hm-system__checks-grid">
           {checks.map((check) => (
             <button
