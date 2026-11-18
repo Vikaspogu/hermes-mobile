@@ -65,6 +65,7 @@ export function More({ rest, onNavigate }: MoreProps) {
       label: 'Agents',
       sub: `${activeSubagents} active subagent${activeSubagents === 1 ? '' : 's'}`,
     },
+    { key: 'cron', icon: 'cron', label: 'Schedules', sub: 'Recurring jobs' },
     {
       key: 'artifacts',
       icon: 'archive',
@@ -78,6 +79,10 @@ export function More({ rest, onNavigate }: MoreProps) {
 
   return (
     <div className="hm-more-screen">
+      <header className="hm-more__header">
+        <h1>More</h1>
+        <p>System, agents and settings</p>
+      </header>
       {stats && (
         <section className="hm-qp-hero hm-more-health" data-testid="more-health">
           <div className="hm-more-health__head">
@@ -116,10 +121,7 @@ export function More({ rest, onNavigate }: MoreProps) {
         </section>
       )}
 
-      <div className="hm-qp-section__head">
-        <span className="hm-qp-kicker">CONTROL MODULES</span>
-        <span className="hm-qp-meta-badge">{rows.length} SURFACES</span>
-      </div>
+      <div className="hm-group-label">Control center</div>
       <div className="hm-more-list hm-qp-grid-2">
         {rows.map((row) => (
           <button

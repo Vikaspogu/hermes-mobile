@@ -128,7 +128,7 @@ describe('AppShell', () => {
     render(<AppShell connectionState="connected" rpc={rpcMock} rest={restMock} />);
     fireEvent.click(screen.getByRole('button', { name: 'New chat' }));
     expect(startNewSession).toHaveBeenCalledWith(undefined);
-    await screen.findByRole('button', { name: 'Back to Chats' });
+    expect(screen.getByTestId('app-header')).toHaveTextContent('Chat');
     expect(screen.queryByRole('button', { name: 'New chat' })).not.toBeInTheDocument();
     startNewSession.mockRestore();
   });
@@ -179,6 +179,22 @@ describe('AppShell', () => {
     expect(main).not.toHaveClass('hm-screen-enter-back');
   });
 
+
+  it('uses the destination depth when Back jumps across two screens', async () => {
+    render(<AppShell connectionState="connected" rpc={rpcMock} rest={restMock} />);
+    fireEvent.click(await screen.findByRole('button', { name: 'More' }));
+    fireEvent.click(await screen.findByRole('button', { name: /Schedules/i }));
+    fireEvent.click(await screen.findByRole('button', { name: 'More' }));
+    fireEvent.click(await screen.findByRole('button', { name: /Settings/i }));
+    expect(window.history.state.hmNav).toBe(2);
+    await waitFor(() => expect(screen.queryByRole('dialog', { name: 'More' })).not.toBeInTheDocument());
+    (await import('../lib/backLayers')).clearBackLayers();
+    const event = new Event('popstate') as PopStateEvent;
+    Object.defineProperty(event, 'state', { value: { hmNav: 0 } });
+    fireEvent(window, event);
+    await waitFor(() => expect(screen.getByTestId('home-header')).toBeInTheDocument());
+    expect(screen.queryByText('Schedules')).not.toBeInTheDocument();
+  });
   it('header back button works after a cold-start restore into a thread', async () => {
     // Cold start straight into a restored chat: the fresh document has one
     // history entry, so without the mount-time history rebuild the back
@@ -474,7 +490,7 @@ describe('AppShell', () => {
     render(<AppShell connectionState="connected" rpc={rpcMock} rest={restMock} />);
     fireEvent.click(screen.getByRole('button', { name: 'More' }));
     const sheet = await screen.findByRole('dialog', { name: 'More' });
-    await waitFor(() => expect(within(sheet).getByText(/Gateway ready/i)).toBeInTheDocument());
+    await waitFor(() => expect(within(sheet).getByRole('button', { name: /System/ })).toBeInTheDocument());
 
     fireEvent.click(within(sheet).getByRole('button', { name: /System/ }));
     await waitFor(() => expect(screen.getByRole('heading', { name: 'System' })).toBeInTheDocument());
@@ -493,8 +509,10 @@ describe('AppShell', () => {
     fireEvent.click(screen.getByRole('button', { name: 'More' }));
     const sheet = await screen.findByRole('dialog', { name: 'More' });
     await waitFor(() => expect(within(sheet).getByTestId('more-health')).toBeInTheDocument());
-    expect(within(sheet).getByText(/Gateway running · up 6h 12m/)).toBeInTheDocument();
-    expect(within(sheet).getByText(/CPU 18\.0% · RAM 2\.1 GB \/ 8\.0 GB/)).toBeInTheDocument();
+    expect(within(sheet).getByText('Gateway running')).toBeInTheDocument();
+    expect(within(sheet).getByText('up 6h 12m')).toBeInTheDocument();
+    expect(within(sheet).getByText('CPU 18.0%')).toBeInTheDocument();
+    expect(within(sheet).getByText('RAM 2.1 GB / 8.0 GB')).toBeInTheDocument();
   });
 
   it('hides the status chip when connected and the gateway is healthy', async () => {

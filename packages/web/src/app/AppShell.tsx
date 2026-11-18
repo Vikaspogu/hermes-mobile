@@ -1,17 +1,17 @@
 import { startTransition, Suspense, lazy, useEffect, useRef, useState } from 'react';
-import type { Approval, Clarify, ConnectionState, RpcClient, RestClient, RpcEvent, SystemStats, UpdateCheck } from '@hermes-pwa/core';
+import type { Approval, Clarify, ConnectionState, RpcClient, RestClient, RpcEvent, UpdateCheck } from '@hermes-pwa/core';
 import { connectionStateLabel, useActivityStore, useProfilesStore, useSessionsStore, useChatStore, useConnectionStore, useProjectsStore } from '@hermes-pwa/core';
 import { Chats } from '../screens/Chats';
+import { More } from '../screens/More';
 import { ConnectionBanner } from '../components/ConnectionBanner';
 import { Icon, type IconName } from '../components/Icon';
 import { BrandMark } from '../components/BrandMark';
 import { UpdateNotification } from '../components/UpdateNotification';
 import { LazyScreenErrorBoundary } from './LazyScreenErrorBoundary';
+import { HERMES_PWA_VERSION_LABEL } from './version';
 import { usePresence } from '../hooks/usePresence';
 import { getInitialScreen, persistScreen, screenFromLocationHash, sessionFromLocationHash } from '../lib/screenStorage';
 import { dismissTopBackLayer, registerBackLayer } from '../lib/backLayers';
-import { fmtGb, fmtPercent, fmtUptime } from '../lib/formatStats';
-import { HERMES_PWA_VERSION_LABEL } from './version';
 import { syncPushSubscription } from '../pwa/push';
 import '../styles/screens/more.css';
 import '../styles/screens/offline.css';
@@ -207,12 +207,6 @@ function StatusChip({ state, gatewayHealth }: { state: ConnectionState; gatewayH
   );
 }
 
-function gatewayStatusLabel(state: ConnectionState, gatewayHealth: GatewayHealth): string {
-  if (state !== 'connected') return connectionStateLabel(state);
-  if (gatewayHealth === 'running') return 'Gateway ready';
-  if (gatewayHealth === 'checking') return 'Checking gateway';
-  return 'Gateway ?';
-}
 
 
 
@@ -225,7 +219,6 @@ export function AppShell({ connectionState, rpc, rest, onRetry, connectionError 
   const [screenEntry, setScreenEntry] = useState<{ id: number; direction: 'forward' | 'back' | undefined }>({ id: 0, direction: undefined });
   const screen: Screen = navStack[navStack.length - 1] ?? 'home';
   const [moreOpen, setMoreOpen] = useState(false);
-  const [moreStats, setMoreStats] = useState<SystemStats | null>(null);
   const [voiceOpen, setVoiceOpen] = useState(() => screenFromLocationHash() === 'voice');
   const [gatewayHealth, setGatewayHealth] = useState<GatewayHealth>('checking');
   const [updateCheck, setUpdateCheck] = useState<UpdateCheck | undefined>();
@@ -236,7 +229,7 @@ export function AppShell({ connectionState, rpc, rest, onRetry, connectionError 
   const moreSheet = usePresence(moreOpen, 220);
   const activeName = useProfilesStore((s) => s.activeName);
   const currentName = useProfilesStore((s) => s.currentName);
-  const { profiles, load: loadProfiles } = useProfilesStore();
+  const { load: loadProfiles } = useProfilesStore();
   const { sessions, load } = useSessionsStore();
   const { sessionId, storedSessionId } = useChatStore();
   const addActivityItem = useActivityStore((s) => s.addItem);
@@ -255,6 +248,7 @@ export function AppShell({ connectionState, rpc, rest, onRetry, connectionError 
   });
   const screenTitle = screen === 'chat' && currentSession?.title ? currentSession.title : SCREEN_TITLES[screen];
   const moreSheetRef = useRef<HTMLDivElement>(null);
+  const voiceRef = useRef<HTMLDivElement>(null);
   const pendingRefreshInFlightRef = useRef(false);
   const chatRecoveryInFlightRef = useRef(false);
   const pushSyncInFlightRef = useRef(false);
@@ -265,20 +259,6 @@ export function AppShell({ connectionState, rpc, rest, onRetry, connectionError 
     persistScreen(screen);
   }, [screen]);
 
-  // Lazy-load gateway stats for the More sheet health summary (M7 mockup).
-  useEffect(() => {
-    if (!moreOpen) return undefined;
-    let cancelled = false;
-    rest
-      .systemStats()
-      .then((s) => {
-        if (!cancelled) setMoreStats(s);
-      })
-      .catch(() => {});
-    return () => {
-      cancelled = true;
-    };
-  }, [moreOpen, rest]);
 
   useEffect(() => {
     function persistCurrentScreen() {
@@ -306,7 +286,7 @@ export function AppShell({ connectionState, rpc, rest, onRetry, connectionError 
     const depth = navStackRef.current.length;
     window.history.replaceState({ hmNav: 0 }, '');
     for (let i = 1; i < depth; i += 1) window.history.pushState({ hmNav: i }, '');
-    const onPopState = () => {
+    const onPopState = (event: PopStateEvent) => {
       if (dismissTopBackLayer()) {
         // An open layer (menu, sheet, keyboard) consumed the back press;
         // restore the history entry it cost us so depth stays aligned.
@@ -317,7 +297,8 @@ export function AppShell({ connectionState, rpc, rest, onRetry, connectionError 
       // ponytail: at root we cannot cancel the pop — the OS/browser leaves the app, as expected.
       // A forward press is treated as back; gesture-first PWAs rarely see it.
       if (stack.length <= 1) return;
-      const next = stack.slice(0, -1);
+      const depth = typeof event.state?.hmNav === 'number' ? event.state.hmNav : stack.length - 2;
+      const next = stack.slice(0, Math.max(1, depth + 1));
       navStackRef.current = next;
       setNavStack(next);
       setScreenEntry((entry) => ({ id: entry.id + 1, direction: 'back' }));
@@ -349,6 +330,40 @@ export function AppShell({ connectionState, rpc, rest, onRetry, connectionError 
     document.addEventListener('keydown', onKey);
     return () => document.removeEventListener('keydown', onKey);
   }, [moreOpen]);
+
+  useEffect(() => {
+    if (!voiceOpen) return;
+    const previous = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    const dialog = voiceRef.current;
+    if (!dialog) return;
+    const background = Array.from(dialog.parentElement?.children ?? []).filter((element) => element !== dialog) as HTMLElement[];
+    background.forEach((element) => { element.inert = true; });
+    const closeButton = () => dialog.querySelector<HTMLElement>('button[aria-label="Close voice"]');
+    const frame = window.requestAnimationFrame(() => closeButton()?.focus());
+    const observer = new MutationObserver(() => {
+      if (document.activeElement === document.body || !document.contains(document.activeElement)) closeButton()?.focus();
+    });
+    observer.observe(dialog, { childList: true, subtree: true });
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') { event.preventDefault(); setVoiceOpen(false); return; }
+      if (event.key !== 'Tab') return;
+      const items = Array.from(dialog.querySelectorAll<HTMLElement>('button:not([disabled]), a[href], input:not([disabled]), [tabindex]:not([tabindex="-1"])'));
+      const first = items[0];
+      const last = items[items.length - 1];
+      if (!first || !last) { event.preventDefault(); dialog.focus(); return; }
+      if (!dialog.contains(document.activeElement)) { event.preventDefault(); first.focus(); return; }
+      if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
+      else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
+    };
+    document.addEventListener('keydown', onKey);
+    return () => {
+      window.cancelAnimationFrame(frame);
+      observer.disconnect();
+      document.removeEventListener('keydown', onKey);
+      background.forEach((element) => { element.inert = false; });
+      if (previous && document.contains(previous)) previous.focus();
+    };
+  }, [voiceOpen]);
 
   useEffect(() => {
     void loadProfiles(rest);
@@ -610,7 +625,7 @@ export function AppShell({ connectionState, rpc, rest, onRetry, connectionError 
 
 
 
-  function navigate(s: Screen) {
+  function navigate(s: Screen, replace = false) {
     if (HIDDEN_ADMIN_SCREENS.has(s)) {
       s = 'home';
     }
@@ -620,17 +635,14 @@ export function AppShell({ connectionState, rpc, rest, onRetry, connectionError 
       navStackRef.current = next;
       setNavStack(next);
       setScreenEntry((entry) => ({ id: entry.id + 1, direction: 'forward' }));
-      window.history.pushState({ hmNav: next.length - 1 }, '');
+      if (replace) window.history.replaceState({ hmNav: next.length - 1 }, '');
+      else window.history.pushState({ hmNav: next.length - 1 }, '');
     }
     persistScreen(s);
     setMoreOpen(false);
   }
 
 
-  const activeProfile = profiles.find((p) => p.name === activeName);
-  const activeModel = activeProfile?.model?.trim() || 'Model not set';
-  const activeProfileLabel = activeProfile?.displayName ?? activeName ?? 'default';
-  const gatewayLabel = gatewayStatusLabel(connectionState, gatewayHealth);
   const showHomeFab = screen === 'home' && connectionState !== 'offline';
   const showUpdateNotification = updateCheck?.updateAvailable === true && updateCheck.latest !== updateDismissedVersion;
 
@@ -642,14 +654,6 @@ export function AppShell({ connectionState, rpc, rest, onRetry, connectionError 
   }
 
 
-  const MORE_ITEMS: { key: Screen; label: string; icon: IconName; sub?: string; tone?: 'emerald' | 'amber' | 'sky' }[] = [
-    { key: 'profiles', label: 'Profiles', icon: 'profiles', sub: activeProfile ? `${activeProfileLabel} · ${activeModel}` : activeModel, tone: 'emerald' },
-    { key: 'agents', label: 'Agents', icon: 'agents', sub: 'Subagent tree' },
-    { key: 'cron', label: 'Schedules', icon: 'cron', sub: 'Recurring jobs', tone: 'sky' },
-    { key: 'artifacts', label: 'Artifacts', icon: 'file', sub: 'Session files' },
-    { key: 'command', label: 'System', icon: 'system', sub: gatewayLabel, tone: gatewayHealth === 'running' ? 'emerald' : 'amber' },
-    { key: 'settings', label: 'Settings', icon: 'settings', sub: 'Connection & theme' },
-  ];
 
   const TABS: { key: Screen | 'more'; label: string; icon: IconName; badge?: number | undefined }[] = [
     { key: 'home', label: 'Chats', icon: 'chat' },
@@ -662,7 +666,7 @@ export function AppShell({ connectionState, rpc, rest, onRetry, connectionError 
     <div className="hm-app-shell">
       {/* ── Header ───────────────────────────────────────────────── */}
       <header className={`hm-header${navStack.length > 1 ? ' hm-header--sub' : ''}`} data-testid="app-header">
-        {navStack.length > 1 && (
+        {navStack.length > 1 && screen !== 'chat' && (
           <button
             type="button"
             className="hm-header__back"
@@ -724,9 +728,9 @@ export function AppShell({ connectionState, rpc, rest, onRetry, connectionError 
             {screen === 'chat'      && (
               <div className="hm-desktop-split">
                 <div className="hm-desktop-split__side" aria-hidden="false">
-                  <Chats key={`side-${activeName ?? 'default'}`} rpc={rpc} rest={rest} onNavigate={() => {}} sidebar />
+                  <Chats key={`side-${activeName ?? 'default'}`} rpc={rpc} rest={rest} onNavigate={() => {}} onOpenVoice={() => startTransition(() => setVoiceOpen(true))} onRetry={onRetry} sidebar />
                 </div>
-                <Chat key={activeName ?? 'default'} rpc={rpc} rest={rest} onOpenVoice={() => startTransition(() => setVoiceOpen(true))} onRetry={onRetry} />
+                <Chat key={activeName ?? 'default'} rpc={rpc} rest={rest} onOpenVoice={() => startTransition(() => setVoiceOpen(true))} onRetry={onRetry} onBack={() => (navStack[0] === 'home' && navStack.length > 1 ? window.history.go(1 - navStack.length) : navigate('home', true))} />
               </div>
             )}
             {screen === 'sessions'  && <Sessions key={activeName ?? 'default'} rpc={rpc} rest={rest} onSessionOpen={() => navigate('chat')} />}
@@ -799,6 +803,7 @@ export function AppShell({ connectionState, rpc, rest, onRetry, connectionError 
           type="button"
           className="hm-home-fab"
           aria-label="New chat"
+          data-testid="chats-qa-new"
           onClick={() => {
             useChatStore.getState().startNewSession(activeName);
             navigate('chat');
@@ -821,44 +826,13 @@ export function AppShell({ connectionState, rpc, rest, onRetry, connectionError 
           <button className="hm-more-sheet__overlay" onClick={() => setMoreOpen(false)} aria-hidden="true" tabIndex={-1} />
           <div className="hm-more-sheet__panel" ref={moreSheetRef}>
             <div className="hm-more-sheet__grabber" aria-hidden="true" />
-            {gatewayHealth === 'running' && moreStats && (
-              <div className="hm-more-health" data-testid="more-health">
-                <span className="hm-more-health__line">
-                  <span className="hm-more-health__dot" aria-hidden="true" />
-                  Gateway running · up {fmtUptime(moreStats.uptimeSeconds)}
-                </span>
-                <span className="hm-more-health__line hm-more-health__line--muted">
-                  CPU {fmtPercent(moreStats.cpuPercent)} · RAM {fmtGb(moreStats.memoryUsedMb)} / {fmtGb(moreStats.memoryTotalMb)} · Disk{' '}
-                  {fmtGb(moreStats.diskUsedMb)} / {fmtGb(moreStats.diskTotalMb)}
-                </span>
-              </div>
-            )}
-            <div className="hm-qp-sec__head">
-              <span className="hm-qp-sec__kicker">Control Deck</span>
-              <span className="hm-qp-sec__meta">{MORE_ITEMS.length} TILES</span>
-            </div>
-            <div className="hm-more-sheet__list">
-              {MORE_ITEMS.map((item) => (
-                <button
-                  key={item.key}
-                  type="button"
-                  className={`hm-more-row${item.tone ? ` hm-more-row--${item.tone}` : ''}`}
-                  onClick={() => navigate(item.key)}
-                >
-                  <span className="hm-more-row__icon" aria-hidden="true"><Icon name={item.icon} size={18} /></span>
-                  <span className="hm-more-row__text">
-                    <span className="hm-more-row__label">{item.label}</span>
-                    {item.sub && <span className="hm-more-row__sub">{item.sub}</span>}
-                  </span>
-                </button>
-              ))}
-            </div>
-            <div className="hm-more-sheet__version">Hermes PWA v{HERMES_PWA_VERSION_LABEL}</div>
+            <More rest={rest} onNavigate={(s) => navigate(s as Screen)} />
+            <div className="hm-more-version">{HERMES_PWA_VERSION_LABEL}</div>
           </div>
         </div>
       )}
       {voiceOpen && (
-        <div className="hm-voice-overlay">
+        <div className="hm-voice-overlay" ref={voiceRef} role="dialog" aria-modal="true" aria-label="Voice call" tabIndex={-1}>
           <Voice key={activeName ?? 'default'} onClose={() => setVoiceOpen(false)} />
         </div>
       )}
