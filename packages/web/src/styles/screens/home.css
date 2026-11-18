@@ -311,7 +311,7 @@
 @media (min-width: 1024px) {
   .hm-screen .hm-home:not(.hm-home--sidebar) .hm-chats__list {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+    grid-template-columns: minmax(0, 1fr);
     gap: 12px;
   }
   .hm-screen .hm-home:not(.hm-home--sidebar) .hm-chats__list > .hm-group-label {

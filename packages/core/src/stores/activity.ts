@@ -70,12 +70,9 @@ function mergeIncomingItems(existing: ActionItem[], incoming: ActionItem[]): Act
     if (match) matchedExistingIds.add(match.id);
     const rpcRequestId = item.rpcRequestId ?? match?.rpcRequestId;
     if (match) {
-      const identityMatch =
-        item.id === match.id || approvalIds(item).some((id) => approvalIds(match).includes(id));
-      const sourceSessionId =
-        item.sourceSessionId ?? (identityMatch ? match.sourceSessionId : undefined);
+      const sourceSessionId = item.sourceSessionId ?? match.sourceSessionId;
       // Legacy REST responses use the gateway queue key as sessionId. Keep that
-      // response identifier; copy live navigation only for an identity match.
+      // response identifier; copy live navigation only for a matched identity.
       if (rpcRequestId === undefined)
         return { ...item, ...(sourceSessionId ? { sourceSessionId } : {}) };
       return {

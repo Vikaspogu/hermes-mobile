@@ -70,6 +70,7 @@ describe('SlideToApprove', () => {
     fireEvent.pointerDown(knob, { pointerId: 1, clientX: 24 });
     fireEvent.pointerMove(knob, { pointerId: 1, clientX: 276 });
     fireEvent.pointerCancel(knob, { pointerId: 1, clientX: 276 });
+    fireEvent.pointerUp(knob, { pointerId: 1, clientX: 276 });
 
     expect(onConfirm).not.toHaveBeenCalled();
     expect(knob).toHaveAttribute('aria-valuenow', '0');

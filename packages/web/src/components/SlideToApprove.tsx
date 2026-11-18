@@ -18,6 +18,7 @@ export function SlideToApprove({ onConfirm, disabled = false, label = 'Slide to 
   const [position, setPosition] = useState(0);
   const [dragging, setDragging] = useState(false);
   const confirmedRef = useRef(false);
+  const draggingRef = useRef(false);
 
   const maxPosition = useCallback(() => {
     const width = trackRef.current?.clientWidth ?? 0;
@@ -42,6 +43,7 @@ export function SlideToApprove({ onConfirm, disabled = false, label = 'Slide to 
   function onPointerDown(event: React.PointerEvent<HTMLDivElement>) {
     if (disabled) return;
     confirmedRef.current = false;
+    draggingRef.current = true;
     setPosition(0);
     // jsdom has no pointer capture and synthetic pointers have no active id;
     // both throw, so guard. Real browsers need it so the drag keeps tracking
@@ -56,7 +58,7 @@ export function SlideToApprove({ onConfirm, disabled = false, label = 'Slide to 
   }
 
   function onPointerMove(event: React.PointerEvent<HTMLDivElement>) {
-    if (!dragging || disabled) return;
+    if (!draggingRef.current || disabled) return;
     const track = trackRef.current;
     if (!track) return;
     const trackLeft = track.getBoundingClientRect().left;
@@ -65,7 +67,8 @@ export function SlideToApprove({ onConfirm, disabled = false, label = 'Slide to 
   }
 
   function onPointerEnd() {
-    if (!dragging) return;
+    if (!draggingRef.current) return;
+    draggingRef.current = false;
     setDragging(false);
     const max = maxPosition();
     if (max > 0 && position >= max * CONFIRM_RATIO) {
@@ -76,6 +79,7 @@ export function SlideToApprove({ onConfirm, disabled = false, label = 'Slide to 
   }
 
   function onPointerCancel() {
+    draggingRef.current = false;
     setDragging(false);
     setPosition(0);
   }

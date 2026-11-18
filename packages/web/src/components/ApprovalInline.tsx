@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { haptic } from '../pwa/haptics';
 import type { RpcClient, Approval, ToolCall } from '@hermes-pwa/core';
 import { useActivityStore, useChatStore } from '@hermes-pwa/core';
@@ -48,7 +48,7 @@ export function ApprovalInline({ rpc, toolName, tool }: ApprovalInlineProps) {
   const { items, respondApproval } = useActivityStore();
   const activeSessionId = useChatStore((s) => s.sessionId);
   const storedSessionId = useChatStore((s) => s.storedSessionId);
-  const [submitting, setSubmitting] = useState<ApprovalChoice | null>(null);
+  const [submissions, setSubmissions] = useState<Record<string, ApprovalChoice>>({});
   const effectiveToolName = tool?.name ?? toolName;
   const toolScoped = typeof effectiveToolName === 'string';
 
@@ -79,9 +79,6 @@ export function ApprovalInline({ rpc, toolName, tool }: ApprovalInlineProps) {
     pending = candidates[0];
   }
 
-  useEffect(() => {
-    setSubmitting(null);
-  }, [pending?.id]);
 
   if (toolScoped && !APPROVAL_TOOLS.has(effectiveToolName)) return null;
   if (!pending) return null;
@@ -90,6 +87,7 @@ export function ApprovalInline({ rpc, toolName, tool }: ApprovalInlineProps) {
   const approval = pending;
   const risk = approval.highImpact ? 'high' : 'low';
   const style = riskStyle(risk);
+  const submitting = submissions[approval.id] ?? null;
   const busy = submitting !== null;
 
   async function respond(choice: ApprovalChoice) {
@@ -101,7 +99,7 @@ export function ApprovalInline({ rpc, toolName, tool }: ApprovalInlineProps) {
       if (!ok) return;
     }
     haptic('confirm');
-    setSubmitting(choice);
+    setSubmissions((current) => ({ ...current, [approval.id]: choice }));
     try {
       await respondApproval(
         rpc,
@@ -111,7 +109,13 @@ export function ApprovalInline({ rpc, toolName, tool }: ApprovalInlineProps) {
         choice,
       );
     } catch {
-      setSubmitting(null);
+      // The activity store surfaces the failure.
+    } finally {
+      setSubmissions((current) => {
+        const next = { ...current };
+        delete next[approval.id];
+        return next;
+      });
     }
   }
 

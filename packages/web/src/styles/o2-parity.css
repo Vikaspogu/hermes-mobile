@@ -181,12 +181,12 @@
 }
 
 /* Council parity: M3 connected groups, cookie avatars and persimmon accents. */
-.hm-thread-group { display: grid; gap: 7px; }
+.hm-thread-group { display: grid; grid-template-columns: minmax(0, 1fr); gap: 7px; }
 .hm-screen .hm-thread-row { color: var(--hm-color-text); background: var(--hm-color-surface-container); }
 .hm-screen .hm-thread-row__title { color: var(--hm-color-text); }
 .hm-screen .hm-thread-row__preview,
 .hm-screen .hm-thread-row__meta { color: var(--hm-color-text-2); }
-.hm-thread-group__cards { display: grid; gap: 3px; }
+.hm-thread-group__cards { display: grid; grid-template-columns: minmax(0, 1fr); gap: 3px; }
 .hm-thread-group__cards .hm-thread-row { border-radius: 8px; }
 .hm-thread-group__cards .hm-thread-row:first-child { border-radius: 28px 28px 8px 8px; }
 .hm-thread-group__cards .hm-thread-row:last-child { border-radius: 8px 8px 28px 28px; }
