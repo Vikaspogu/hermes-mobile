@@ -1,12 +1,14 @@
 This directory bundles the SIL Open Font License 1.1 fonts:
 
-- Figtree — Copyright 2022 The Figtree Project Authors (https://github.com/erikdkennedy/figtree)
+- Plus Jakarta Sans — Copyright 2020 The Plus Jakarta Sans Project Authors (https://github.com/tokotype/PlusJakartaSans)
+- Bricolage Grotesque — Copyright 2022 The Bricolage Grotesque Project Authors (https://github.com/ateliertriay/bricolage)
 - JetBrains Mono — Copyright 2020 The JetBrains Mono Project Authors (https://github.com/JetBrains/JetBrainsMono)
 
-Both variable fonts are redistributed under the SIL Open Font License, Version 1.1:
+All variable fonts are redistributed under the SIL Open Font License, Version 1.1:
 https://openfontlicense.org/open-font-license-official-text/
 
 The license permits bundling, redistribution and use in the PWA as long as the
-fonts are not sold by themselves. Reserved font names ("Figtree", "JetBrains
-Mono") apply to modified versions only; the files here are unmodified upstream
-binaries from the Google Fonts repository (ofl/figtree, ofl/jetbrainsmono).
+fonts are not sold by themselves. Reserved font names apply to modified versions
+only; the files here are unmodified upstream binaries from the Google Fonts
+repository (ofl/plusjakartasans, ofl/bricolagegrotesque, ofl/jetbrainsmono),
+Latin subset woff2/ttf as served by the Google Fonts CSS API.

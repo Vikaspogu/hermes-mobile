@@ -196,8 +196,51 @@ textarea {
   -webkit-backdrop-filter: blur(16px) saturate(140%);
   backdrop-filter: blur(16px) saturate(140%);
   border: 1px solid var(--hm-glass-border);
-  border-radius: 24px;
+  border-radius: var(--hm-radius-full);
   box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45);
+}
+
+/* Home: capsule shifts left to make room for the tertiary new-chat FAB. */
+.hm-tabbar--with-fab {
+  width: auto;
+  grid-auto-columns: minmax(0, 1fr);
+  margin: 0 112px 0 12px;
+}
+.hm-tabbar--with-fab .hm-tab {
+  padding-inline: 0;
+}
+
+/* M3 companion FAB (extended, tertiary container). */
+.hm-home-fab {
+  position: fixed;
+  right: 12px;
+  bottom: calc(15px + env(safe-area-inset-bottom, 0px));
+  z-index: 40;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  height: 56px;
+  padding: 0 18px;
+  border: 1px solid var(--hm-glass-border);
+  border-radius: 20px;
+  background: var(--hm-color-tertiary-container);
+  color: var(--hm-color-on-tertiary-container);
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: var(--hm-fw-bold);
+  cursor: pointer;
+  box-shadow: var(--hm-elev-2);
+  transition: transform var(--hm-duration-fast) var(--hm-ease-out);
+}
+.hm-home-fab:active { transform: scale(0.94); }
+@media (min-width: 600px) {
+  /* Keep the 274px capsule + 112px FAB group centered on wide screens. */
+  .hm-tabbar--with-fab {
+    width: fit-content;
+    grid-auto-columns: 84px;
+    margin: 0 0 0 calc(50% - 193px);
+  }
+  .hm-home-fab { right: calc(50% - 193px); }
 }
 /* Thread view: the composer owns the bottom edge; back arrow returns to Chats. */
 .hm-tabbar--chat { display: none; }
@@ -215,28 +258,39 @@ textarea {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 3px;
-  padding: 10px 4px 8px;
-  border-radius: 16px;
+  gap: 4px;
+  padding: 8px 4px 7px;
+  border-radius: var(--hm-radius-md);
   color: var(--hm-color-text-faint);
   cursor: pointer;
-  transition: background var(--hm-duration-fast), color var(--hm-duration-fast);
+  transition: color var(--hm-duration-fast);
 }
 
 .hm-tab--active {
-  background: var(--hm-tint-sky);
   color: var(--hm-color-primary);
 }
 
+/* M3 navigation-bar active indicator: pill behind the icon only. */
 .hm-tab__icon {
   position: relative;
   display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 56px;
+  padding: 4px 14px;
+  border-radius: var(--hm-radius-full);
+  transition: background var(--hm-duration-fast), border-radius var(--hm-duration-normal);
+}
+.hm-tab--active .hm-tab__icon {
+  background: var(--hm-color-secondary-container);
+  color: var(--hm-color-on-secondary-container);
+  border-radius: var(--hm-radius-md);
 }
 
 .hm-tab__badge {
   position: absolute;
-  top: -5px;
-  right: -11px;
+  top: -2px;
+  right: 0;
   min-width: 16px;
   height: 16px;
   padding: 0 4px;
@@ -1169,8 +1223,9 @@ textarea {
 
 .hm-approval-inline__actions button {
   flex: 1;
+  min-height: var(--hm-tap-min);
   padding: 10px;
-  border-radius: 11px;
+  border-radius: var(--hm-radius-full);
   font-size: 13px;
   font-weight: var(--hm-fw-bold);
   cursor: pointer;
@@ -2135,6 +2190,13 @@ select:focus-visible,
     box-shadow: none;
     z-index: 50;
   }
+  .hm-tabbar--with-fab {
+    width: 64px;
+    grid-auto-columns: auto;
+    margin: 0;
+  }
+  .hm-tabbar--with-fab .hm-tab { padding-inline: 4px; }
+  .hm-home-fab { display: none; }
   .hm-tabbar--chat { display: grid; }
 
   .hm-tab {
@@ -2471,7 +2533,7 @@ select:focus-visible,
   font-weight: 700;
   letter-spacing: 0.05em;
   padding: 3px 8px;
-  border-radius: 6px;
+  border-radius: var(--hm-radius-full);
 }
 .hm-risk-tag--low {
   background: var(--hm-color-success-bg);

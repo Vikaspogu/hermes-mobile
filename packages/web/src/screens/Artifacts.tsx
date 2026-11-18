@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 // ponytail: prototype.css's trailing @import of screens/*.css is dropped by Vite
 import '../styles/screens/artifacts.css';
 import { HermesHttpError, useChatStore, type RestClient, type Artifact } from '@hermes-pwa/core';
+import { Icon, type IconName } from '../components/Icon';
 
 interface ArtifactsProps {
   rest: RestClient;
@@ -9,12 +10,12 @@ interface ArtifactsProps {
 
 type ArtifactKind = 'image' | 'text' | 'chart' | 'link' | 'file';
 
-const KIND_ICON: Record<ArtifactKind, string> = {
-  image: '🖼',
-  text: '📄',
-  chart: '📊',
-  link: '🔗',
-  file: '📄',
+const KIND_ICON: Record<ArtifactKind, IconName> = {
+  image: 'image',
+  text: 'file',
+  chart: 'chart',
+  link: 'globe',
+  file: 'file',
 };
 
 const KIND_LABEL: Record<ArtifactKind, string> = {
@@ -50,7 +51,7 @@ function ArtifactRow({ artifact }: { artifact: Artifact }) {
   const body = (
     <>
       <span className={iconClass} aria-hidden="true">
-        {KIND_ICON[kind]}
+        <Icon name={KIND_ICON[kind]} size={18} />
       </span>
       <span className="hm-artifact-row__body">
         <span className={`hm-artifact-row__name${kind === 'link' ? ' hm-artifact-row__name--mono' : ''}`}>{artifact.name}</span>

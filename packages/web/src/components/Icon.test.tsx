@@ -20,6 +20,8 @@ const NAMES: IconName[] = [
   'search',
   'globe',
   'file',
+  'image',
+  'chart',
   'plus',
   'mic',
   'wave',
@@ -47,7 +49,7 @@ describe('Icon', () => {
     render(<Icon name={name} data-testid={`icon-${name}`} />);
     const svg = screen.getByTestId(`icon-${name}`);
     expect(svg.tagName).toBe('svg');
-    expect(svg).toHaveAttribute('viewBox', '0 0 24 24');
+    expect(svg).toHaveAttribute('viewBox', '0 -960 960 960');
     expect(svg.querySelector('path, circle, rect')).toBeInTheDocument();
   });
 
@@ -56,5 +58,14 @@ describe('Icon', () => {
     const svg = screen.getByTestId('icon-sized');
     expect(svg).toHaveAttribute('width', '32');
     expect(svg).toHaveAttribute('height', '32');
+  });
+
+  it('uses the filled path for active navigation icons', () => {
+    const { rerender } = render(<Icon name="home" data-testid="icon-fill" />);
+    const outlined = screen.getByTestId('icon-fill').querySelector('path')?.getAttribute('d');
+    rerender(<Icon name="home" filled data-testid="icon-fill" />);
+    const filled = screen.getByTestId('icon-fill').querySelector('path')?.getAttribute('d');
+    expect(filled).toBeTruthy();
+    expect(filled).not.toBe(outlined);
   });
 });

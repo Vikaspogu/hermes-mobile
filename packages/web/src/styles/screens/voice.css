@@ -1,13 +1,12 @@
-/* M8 Voice — Quiet Precision / Dark Obsidian immersive call overlay.
-   Uses #0B0E14 carbon obsidian (never pure #000000 per §2) and JetBrains Mono tabular-nums. */
+/* M3 voice overlay: shares the app theme and viridian accent. */
 :root {
-  --hm-voice-bg: #0B0E14;
-  --hm-voice-text: #F8FAFC;
-  --hm-voice-muted: #94A3B8;
-  --hm-voice-faint: #64748B;
-  --hm-voice-btn: rgba(24, 29, 40, 0.88);
-  --hm-voice-btn-border: rgba(255, 255, 255, 0.08);
-  --hm-voice-blue: #38BDF8;
+  --hm-voice-bg: var(--hm-color-bg);
+  --hm-voice-text: var(--hm-color-text);
+  --hm-voice-muted: var(--hm-color-text-2);
+  --hm-voice-faint: var(--hm-color-text-faint);
+  --hm-voice-btn: var(--hm-color-surface-2);
+  --hm-voice-btn-border: var(--hm-color-border);
+  --hm-voice-accent: var(--hm-color-accent);
 }
 
 .hm-voice {
@@ -65,10 +64,12 @@
   width: 128px;
   height: 128px;
   border-radius: 50%;
-  background:
-    radial-gradient(circle at 32% 30%, rgba(96, 165, 250, 0.95), rgba(29, 78, 216, 0.9) 60%),
-    #1d4ed8;
-  box-shadow: 0 0 60px rgba(59, 130, 246, 0.35);
+  background: radial-gradient(
+    circle at 35% 30%,
+    color-mix(in srgb, var(--hm-color-accent) 55%, var(--hm-tint-emerald-solid)),
+    var(--hm-tint-emerald-solid) 82%
+  );
+  box-shadow: 0 0 60px color-mix(in srgb, var(--hm-color-accent) 35%, transparent);
   position: relative;
 }
 .hm-voice__orb::before {
@@ -76,7 +77,7 @@
   position: absolute;
   inset: 26px;
   border-radius: 50%;
-  background: radial-gradient(circle at 35% 30%, rgba(191, 219, 254, 0.9), transparent 55%);
+  background: radial-gradient(circle at 35% 30%, rgba(255, 255, 255, 0.4), transparent 55%);
 }
 .hm-voice__orb--speaking {
   animation: hm-voice-pulse 1.2s ease-in-out infinite;
@@ -168,7 +169,7 @@
   font-size: 13px;
   color: var(--hm-voice-muted);
 }
-.hm-voice__login a { color: var(--hm-voice-blue); word-break: break-all; }
+.hm-voice__login a { color: var(--hm-voice-accent); word-break: break-all; }
 .hm-voice__login-title {
   margin: 0 0 6px;
   font-weight: 600;
@@ -202,7 +203,7 @@
 .hm-roundbtn--end {
   background: var(--hm-color-danger-strong);
   border-color: transparent;
-  color: #fff;
+  color: var(--hm-color-surface);
 }
 .hm-roundbtn:disabled { opacity: 0.5; cursor: default; }
 
@@ -222,9 +223,9 @@
   gap: 8px;
   padding: 12px 18px;
   border-radius: 999px;
-  background: var(--hm-voice-blue);
+  background: var(--hm-voice-accent);
   border: 0;
-  color: #fff;
+  color: var(--hm-color-primary-text);
   font-size: 14px;
   font-weight: 600;
   cursor: pointer;

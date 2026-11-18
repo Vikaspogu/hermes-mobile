@@ -12,6 +12,7 @@ import type { CronJob, CronJobRun, RestClient, ScheduleBuilderState } from '@her
 import { ScheduleBuilder } from '../components/ScheduleBuilder';
 import { BottomSheet } from '../components/BottomSheet';
 import { SegmentedControl } from '../components/SegmentedControl';
+import { Icon, type IconName } from '../components/Icon';
 import '../styles/screens/work.css';
 
 /** Mockup M6 shows 12-hour times ("Daily at 3:00 AM"); core describeSchedule returns 24h. */
@@ -36,14 +37,14 @@ export function relFuture(ts: number | undefined): string | null {
   return `in ${Math.round(hours / 24)}d`;
 }
 
-/** ponytail: keyword heuristic for the mockup's emoji icons; unknown jobs get ⏰. */
-export function jobEmoji(job: CronJob): string {
+/** ponytail: keyword heuristic for job icons; unknown jobs get a clock. */
+export function jobIcon(job: CronJob): IconName {
   const text = `${job.name ?? ''} ${job.prompt ?? ''}`.toLowerCase();
-  if (/backup|night/.test(text)) return '🌙';
-  if (/secur|audit/.test(text)) return '🛡';
-  if (/health|doctor/.test(text)) return '🩺';
-  if (/prune|clean/.test(text)) return '🧹';
-  return '⏰';
+  if (/backup|night/.test(text)) return 'archive';
+  if (/secur|audit/.test(text)) return 'shield';
+  if (/health|doctor/.test(text)) return 'system';
+  if (/prune|clean/.test(text)) return 'refresh';
+  return 'cron';
 }
 interface CronProps {
   rest: RestClient;
@@ -360,7 +361,7 @@ export function Cron({ rest, onNavigate }: CronProps) {
                   aria-label={`Open ${title}`}
                 >
                   <span className="work-listrow__icon" aria-hidden="true">
-                    {jobEmoji(job)}
+                    <Icon name={jobIcon(job)} size={18} />
                   </span>
                   <span className="work-listrow__body">
                     <span className="work-listrow__name">{title}</span>

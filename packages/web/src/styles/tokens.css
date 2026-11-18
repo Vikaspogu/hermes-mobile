@@ -1,52 +1,61 @@
 /* Hermes Mobile Design Tokens — CSS Variables */
-/* "Quiet Precision / Dark Obsidian" — dark, tactile, high-contrast system.
-   Obsidian is the DEFAULT (:root). Light is opt-in via [data-theme='light'].
-   Legacy token names (--hm-color-primary/success/warning/danger/running) are
-   kept as aliases so every existing .hm-* class keeps working. */
-
+/* "Material 3 Expressive" — Botanical Viridian seed + Kinetic Persimmon tertiary.
+   Dark jade-toned surfaces are the DEFAULT (:root). Light is opt-in via
+   [data-theme='light']. Legacy token names (--hm-color-primary/success/warning/
+   danger/running, emerald/sky tints) are kept as aliases so every existing
+   .hm-* class keeps working. emerald/sky both resolve to viridian tones. */
 :root {
   /* ── Fonts ──────────────────────────────────────────────────────── */
-  --hm-font-display: 'Figtree', system-ui, -apple-system, sans-serif;
-  --hm-font-sans: 'Figtree', system-ui, -apple-system, sans-serif;
+  --hm-font-display: 'Bricolage Grotesque', 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  --hm-font-sans: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
   --hm-font-mono: 'JetBrains Mono', 'SF Mono', 'Cascadia Code', Consolas, monospace;
 
-  /* ── Surface (deep carbon obsidian, never pure black) ───────────── */
-  --hm-color-bg:        #0B0E14;
-  --hm-color-surface:   #121620;
-  --hm-color-surface-2: #181D28;
-  --hm-color-border:    rgba(255, 255, 255, 0.06);
+  /* ── Surface (M3 dark: surface / container-low / container) ────────── */
+  --hm-color-bg:        #0D1513;
+  --hm-color-surface:   #151D1B;
+  --hm-color-surface-2: #19211F;
+  --hm-color-surface-high: #232C29;
+  --hm-color-border:    rgba(189, 201, 196, 0.12);
 
-  /* Card composite: tinted gradient + hairline + top specular highlight */
-  --hm-card-bg: linear-gradient(180deg, rgba(24, 29, 40, 0.88) 0%, rgba(16, 20, 28, 0.92) 100%);
-  --hm-card-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  /* Card composite: tonal container gradient + hairline + top highlight */
+  --hm-card-bg: linear-gradient(180deg, #19211F 0%, #151D1B 100%);
+  --hm-card-highlight: inset 0 1px 0 rgba(222, 228, 225, 0.05);
 
-  --hm-home-summary-bg: #103a35;
-  --hm-home-summary-text: #b5d9d0;
-  --hm-tint-emerald-solid: #123c32;
+  --hm-home-summary-bg: #005144;
+  --hm-home-summary-text: #9AF4E0;
+  --hm-tint-emerald-solid: #005144;
   --hm-tint-amber-solid: #382b17;
-  --hm-tint-sky-solid: #19394e;
+  --hm-tint-sky-solid: #2E4C45;
   --hm-tint-coral-solid: #40232e;
   --hm-tint-violet-solid: #302247;
   --hm-tint-violet-border: #675183;
   --hm-tint-violet-accent: #c4b5fd;
-  --hm-message-user-bg: #19486b;
-  --hm-message-user-border: #377ca4;
-  --hm-message-user-text: #eff9ff;
-  --hm-composer-bg: #12232e;
-  --hm-composer-text: #a8c3d4;
-
+  --hm-message-user-bg: #005144;
+  --hm-message-user-border: #2E4C45;
+  --hm-message-user-text: #E3F4EC;
+  --hm-composer-bg: #19211F;
+  --hm-composer-text: #BDC9C4;
   /* ── Text ───────────────────────────────────────────────────────── */
-  --hm-color-text:       #F8FAFC;
-  --hm-color-text-2:     #E2E8F0;
-  --hm-color-text-muted: #94A3B8;
-  --hm-color-text-faint: #64748B;
-  --hm-color-text-secondary: #94A3B8;
-  --hm-color-text-subtle: #475569;
+  --hm-color-text:       #DEE4E1;
+  --hm-color-text-2:     #C7D1CC;
+  --hm-color-text-muted: #9AA8A2;
+  --hm-color-text-faint: #6E7A75;
+  --hm-color-text-secondary: #BDC9C4;
+  --hm-color-text-subtle: #4E5B56;
 
-  /* ── Primary = Sky (climate / interactive accent) ───────────────── */
-  --hm-color-primary:      #38BDF8;
-  --hm-color-primary-tint: rgba(56, 189, 248, 0.14);
-  --hm-color-primary-text: #0B1220;
+  /* ── Primary = Botanical Viridian (interactive accent) ─────────────── */
+  --hm-color-primary:      #7ED7C4;
+  --hm-color-primary-tint: rgba(126, 215, 196, 0.14);
+  --hm-color-primary-text: #00382E;
+
+  /* ── Tertiary = Kinetic Persimmon (voice, new chat, risk accents) ──── */
+  --hm-color-tertiary:      #FFB59C;
+  --hm-color-tertiary-tint: rgba(255, 181, 156, 0.14);
+  --hm-color-tertiary-text: #5C1900;
+  --hm-color-tertiary-container: #822600;
+  --hm-color-on-tertiary-container: #FFDBD0;
+  --hm-color-secondary-container: #2E4C45;
+  --hm-color-on-secondary-container: #C9E9E0;
 
   /* Backward-compat aliases used by existing .hm-* classes */
   --hm-color-accent:      var(--hm-color-primary);
@@ -54,40 +63,40 @@
   --hm-color-on-accent:   var(--hm-color-primary-text);
 
   /* ── Semantic states ────────────────────────────────────────────── */
-  /* Emerald: secure / passed / docked · Amber: active / in-use / running
-     Sky: climate / telemetry · Coral: alert / waiting / failed          */
-  --hm-color-success:    #34D399;
+  /* ── Semantic states ────────────────────────────────────────────── */
+  /* Viridian: secure / passed / running · Amber: warning · Error: failed  */
+  --hm-color-success:    #7ED7C4;
   --hm-color-warning:    #FBBF24;
-  --hm-color-danger:     #FB7185;
-  --hm-color-running:    #FBBF24;
-  --hm-color-info:       #38BDF8;
-  --hm-color-success-strong: #6EE7B7;
+  --hm-color-danger:     #FFB4AB;
+  --hm-color-running:    #7ED7C4;
+  --hm-color-info:       #7ED7C4;
+  --hm-color-success-strong: #9AF4E0;
   --hm-color-warning-strong: #FCD34D;
-  --hm-color-danger-strong:  #FDA4AF;
-
-  /* Quiet dark backgrounds per state (for badges, chips, banners) */
-  --hm-color-success-bg: rgba(16, 185, 129, 0.16);
-  --hm-color-warning-bg: rgba(245, 158, 11, 0.18);
-  --hm-color-danger-bg:  rgba(244, 63, 94, 0.18);
-  --hm-color-info-bg:    rgba(56, 189, 248, 0.14);
-
+  --hm-color-danger-strong:  #FFB4AB;
+  /* Quiet tonal backgrounds per state (badges, chips, banners) */
+  --hm-color-success-bg: rgba(126, 215, 196, 0.12);
+  --hm-color-warning-bg: rgba(251, 191, 36, 0.16);
+  --hm-color-danger-bg:  rgba(255, 180, 171, 0.14);
+  --hm-color-info-bg:    rgba(126, 215, 196, 0.12);
   /* Semantic tint sets: active surface tint / border / icon badge / accent */
-  --hm-tint-emerald: rgba(16, 185, 129, 0.14);
-  --hm-tint-emerald-border: rgba(52, 211, 153, 0.30);
-  --hm-tint-emerald-badge: rgba(16, 185, 129, 0.18);
-  --hm-tint-amber: rgba(245, 158, 11, 0.16);
+  /* Semantic tint sets: active surface tint / border / icon badge / accent.
+     emerald + sky intentionally share the viridian family (calm single accent). */
+  --hm-tint-emerald: rgba(126, 215, 196, 0.12);
+  --hm-tint-emerald-border: rgba(126, 215, 196, 0.30);
+  --hm-tint-emerald-badge: rgba(126, 215, 196, 0.16);
+  --hm-tint-amber: rgba(251, 191, 36, 0.14);
   --hm-tint-amber-border: rgba(251, 191, 36, 0.34);
-  --hm-tint-amber-badge: rgba(245, 158, 11, 0.20);
-  --hm-tint-sky: rgba(56, 189, 248, 0.14);
-  --hm-tint-sky-border: rgba(56, 189, 248, 0.30);
-  --hm-tint-sky-badge: rgba(56, 189, 248, 0.18);
-  --hm-tint-coral: rgba(244, 63, 94, 0.16);
-  --hm-tint-coral-border: rgba(251, 113, 133, 0.36);
-  --hm-tint-coral-badge: rgba(244, 63, 94, 0.20);
-  --hm-grad-emerald: linear-gradient(135deg, rgba(16, 185, 129, 0.14) 0%, rgba(16, 20, 28, 0.92) 100%);
-  --hm-grad-amber:   linear-gradient(135deg, rgba(245, 158, 11, 0.16) 0%, rgba(16, 20, 28, 0.92) 100%);
-  --hm-grad-sky:     linear-gradient(135deg, rgba(56, 189, 248, 0.14) 0%, rgba(16, 20, 28, 0.92) 100%);
-  --hm-grad-coral:   linear-gradient(135deg, rgba(244, 63, 94, 0.16) 0%, rgba(16, 20, 28, 0.92) 100%);
+  --hm-tint-amber-badge: rgba(251, 191, 36, 0.18);
+  --hm-tint-sky: rgba(126, 215, 196, 0.12);
+  --hm-tint-sky-border: rgba(126, 215, 196, 0.30);
+  --hm-tint-sky-badge: rgba(126, 215, 196, 0.16);
+  --hm-tint-coral: rgba(255, 180, 171, 0.12);
+  --hm-tint-coral-border: rgba(255, 180, 171, 0.34);
+  --hm-tint-coral-badge: rgba(255, 180, 171, 0.16);
+  --hm-grad-emerald: linear-gradient(135deg, rgba(126, 215, 196, 0.12) 0%, #151D1B 100%);
+  --hm-grad-amber:   linear-gradient(135deg, rgba(251, 191, 36, 0.14) 0%, #151D1B 100%);
+  --hm-grad-sky:     linear-gradient(135deg, rgba(126, 215, 196, 0.12) 0%, #151D1B 100%);
+  --hm-grad-coral:   linear-gradient(135deg, rgba(255, 180, 171, 0.12) 0%, #151D1B 100%);
   --hm-grad-rose:    var(--hm-grad-coral);
   --hm-tint-emerald-surface: var(--hm-grad-emerald);
   --hm-tint-emerald-accent:  var(--hm-color-success);
@@ -103,7 +112,7 @@
   --hm-tint-rose-badge:      var(--hm-tint-coral-badge);
   --hm-tint-rose-accent:     var(--hm-color-danger);
   --hm-color-border-soft:    var(--hm-color-border);
-  --hm-color-border-strong:  rgba(255, 255, 255, 0.14);
+  --hm-color-border-strong:  rgba(189, 201, 196, 0.24);
   --hm-color-card:           var(--hm-color-surface);
   --hm-color-muted:          var(--hm-color-text-muted);
   --hm-color-primary-soft:   var(--hm-color-primary-tint);
@@ -119,8 +128,8 @@
   --hm-weight-semibold:      var(--hm-fw-semibold);
 
   /* ── Glass (floating dock, sheets) ──────────────────────────────── */
-  --hm-glass-bg: rgba(15, 19, 28, 0.88);
-  --hm-glass-border: rgba(255, 255, 255, 0.08);
+  --hm-glass-bg: rgba(25, 33, 31, 0.92);
+  --hm-glass-border: rgba(126, 215, 196, 0.12);
 
   /* ── Spacing (4 px base) ────────────────────────────────────────── */
   --hm-space-1: 4px;
@@ -131,15 +140,14 @@
   --hm-space-6: 32px;
   --hm-space-8: 48px;
 
-  /* ── Radius ─────────────────────────────────────────────────────── */
-  --hm-radius-xs:   6px;
-  --hm-radius-sm:   8px;
-  --hm-radius-md:   12px;
-  --hm-radius-card: 18px;
-  --hm-radius-lg:   16px;
-  --hm-radius-xl:   22px;
+  /* ── Radius (M3 Expressive shape scale) ─────────────────────────────── */
+  --hm-radius-xs:   8px;
+  --hm-radius-sm:   12px;
+  --hm-radius-md:   18px;
+  --hm-radius-card: 24px;
+  --hm-radius-lg:   24px;
+  --hm-radius-xl:   28px;
   --hm-radius-full: 999px;
-
   /* ── Elevation ──────────────────────────────────────────────────── */
   --hm-elev-1:     0 1px 2px rgba(0, 0, 0, 0.28), 0 1px 1px rgba(0, 0, 0, 0.20);
   --hm-elev-2:     0 4px 12px rgba(0, 0, 0, 0.34);
@@ -148,9 +156,9 @@
   --hm-elev-drawer: 14px 0 40px rgba(0, 0, 0, 0.50);
 
   /* ── Touch ──────────────────────────────────────────────────────── */
-  --hm-tap-min: 44px;
+  --hm-tap-min: 48px;
 
-  /* ── Typography (Figtree UI, JetBrains Mono telemetry) ───────────── */
+  /* ── Typography (Plus Jakarta Sans UI, Bricolage Grotesque display) ── */
   --hm-fs-display: 24px;
   --hm-fs-title:   20px;
   --hm-fs-heading: 16px;
@@ -164,7 +172,6 @@
   --hm-fw-semibold: 600;
   --hm-fw-bold:     700;
 
-  --hm-feature-figtree: "cv02", "cv03", "cv04", "cv11";
 
   /* ── Motion ─────────────────────────────────────────────────────── */
   --hm-duration-fast:   150ms;
@@ -215,71 +222,79 @@
 
 /* ── Light theme (opt-in; kept for users who prefer it) ──────────────── */
 :root[data-theme='light'] {
-  --hm-color-bg:        #f4f6fc;
-  --hm-color-surface:   #ffffff;
-  --hm-color-surface-2: #f5f7fd;
-  --hm-color-border:    #e7eaf3;
+  --hm-color-bg:        #F4FBF7;
+  --hm-color-surface:   #FFFFFF;
+  --hm-color-surface-2: #EEF5F1;
+  --hm-color-surface-high: #E2EAE6;
+  --hm-color-border:    #E2EAE6;
 
-  --hm-card-bg: linear-gradient(180deg, #ffffff 0%, #fbfcff 100%);
+  --hm-card-bg: linear-gradient(180deg, #ffffff 0%, #F4FBF7 100%);
   --hm-card-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.9);
 
-  --hm-home-summary-bg: #dff5ec;
-  --hm-home-summary-text: #285b50;
-  --hm-tint-emerald-solid: #e3fbef;
+  --hm-home-summary-bg: #D8F2E8;
+  --hm-home-summary-text: #005144;
+  --hm-tint-emerald-solid: #D8F2E8;
   --hm-tint-amber-solid: #fff3dc;
-  --hm-tint-sky-solid: #e7f4fd;
-  --hm-tint-coral-solid: #fdeaea;
+  --hm-tint-sky-solid: #E1ECE7;
+  --hm-tint-coral-solid: #FFDAD6;
   --hm-tint-violet-solid: #eee7fa;
   --hm-tint-violet-border: #c4b0df;
   --hm-tint-violet-accent: #60408c;
-  --hm-message-user-bg: #dceffc;
-  --hm-message-user-border: #8ab6d5;
-  --hm-message-user-text: #173b55;
-  --hm-composer-bg: #eaf4fa;
-  --hm-composer-text: #456277;
+  --hm-message-user-bg: #9AF4E0;
+  --hm-message-user-border: #7FDCC6;
+  --hm-message-user-text: #00201A;
+  --hm-composer-bg: #E8F0EC;
+  --hm-composer-text: #46645D;
+  --hm-color-text:       #151D1B;
+  --hm-color-text-2:     #2A3833;
+  --hm-color-text-muted: #55635E;
+  --hm-color-text-faint: #6E7A75;
+  --hm-color-text-secondary: #3E4945;
+  --hm-color-text-subtle: #BDC9C4;
 
-  --hm-color-text:       #161a27;
-  --hm-color-text-2:     #2b3346;
-  --hm-color-text-muted: #6b7384;
-  --hm-color-text-faint: #9aa2b4;
-  --hm-color-text-secondary: #868fa1;
-  --hm-color-text-subtle: #c4cad8;
+  --hm-color-primary:      #006B5B;
+  --hm-color-primary-tint: rgba(0, 107, 91, 0.10);
+  --hm-color-primary-text: #FFFFFF;
 
-  --hm-color-primary:      #2540ff;
-  --hm-color-primary-tint: #eef1ff;
-  --hm-color-primary-text: #ffffff;
+  --hm-color-tertiary:      #A73912;
+  --hm-color-tertiary-tint: rgba(167, 57, 18, 0.10);
+  --hm-color-tertiary-text: #FFFFFF;
+  --hm-color-tertiary-container: #FFDBD0;
+  --hm-color-on-tertiary-container: #390C00;
+  --hm-color-secondary-container: #C9E9E0;
+  --hm-color-on-secondary-container: #02201B;
 
-  --hm-color-success:    #15a06a;
+  --hm-color-success:    #006B5B;
   --hm-color-warning:    #d98a16;
-  --hm-color-danger:     #dc4b46;
-  --hm-color-running:    #2540ff;
-  --hm-color-success-strong: #065f46;
-  --hm-color-warning-strong: #92400e;
-  --hm-color-danger-strong:  #991b1b;
-  --hm-color-success-bg: #e3fbef;
+  --hm-color-danger:     #BA1A1A;
+  --hm-color-running:    #006B5B;
+  --hm-color-success-strong: #005144;
+  --hm-color-warning-strong: #7A4A00;
+  --hm-color-danger-strong:  #93000A;
+  --hm-color-success-bg: #D8F2E8;
   --hm-color-warning-bg: #fff7ed;
-  --hm-color-danger-bg:  #fdeaea;
-  --hm-color-info-bg:    #e7f4fd;
+  --hm-color-danger-bg:  #FFDAD6;
+  --hm-color-info-bg:    #D8F2E8;
 
-  --hm-tint-emerald: #e3fbef;
-  --hm-tint-emerald-border: #b6ecd4;
-  --hm-tint-emerald-badge: #d5f6e7;
+  --hm-tint-emerald: #D8F2E8;
+  --hm-tint-emerald-border: #A9DCCB;
+  --hm-tint-emerald-badge: #C6EBDD;
   --hm-tint-amber: #fff7ed;
   --hm-tint-amber-border: #fcd9a8;
   --hm-tint-amber-badge: #fdeed3;
-  --hm-tint-sky: #e7f4fd;
-  --hm-tint-sky-border: #b3ddf5;
-  --hm-tint-sky-badge: #d6eefb;
-  --hm-tint-coral: #fdeaea;
-  --hm-tint-coral-border: #f7c2c5;
-  --hm-tint-coral-badge: #fbd9da;
-  --hm-grad-emerald: linear-gradient(135deg, #e3fbef 0%, #ffffff 100%);
+  --hm-tint-sky: #D8F2E8;
+  --hm-tint-sky-border: #A9DCCB;
+  --hm-tint-sky-badge: #C6EBDD;
+  --hm-tint-coral: #FFDAD6;
+  --hm-tint-coral-border: #F2B8B0;
+  --hm-tint-coral-badge: #FFDAD6;
+  --hm-grad-emerald: linear-gradient(135deg, #D8F2E8 0%, #ffffff 100%);
   --hm-grad-amber:   linear-gradient(135deg, #fff7ed 0%, #ffffff 100%);
-  --hm-grad-sky:     linear-gradient(135deg, #e7f4fd 0%, #ffffff 100%);
-  --hm-grad-coral:   linear-gradient(135deg, #fdeaea 0%, #ffffff 100%);
+  --hm-grad-sky:     linear-gradient(135deg, #D8F2E8 0%, #ffffff 100%);
+  --hm-grad-coral:   linear-gradient(135deg, #FFDAD6 0%, #ffffff 100%);
 
-  --hm-glass-bg: rgba(255, 255, 255, 0.88);
-  --hm-glass-border: rgba(20, 30, 60, 0.10);
+  --hm-glass-bg: rgba(255, 255, 255, 0.90);
+  --hm-glass-border: rgba(0, 107, 91, 0.12);
 
   --hm-elev-1:     0 1px 2px rgba(20, 30, 60, 0.04), 0 1px 1px rgba(20, 30, 60, 0.03);
   --hm-elev-2:     0 4px 12px rgba(20, 30, 60, 0.08);
@@ -288,7 +303,7 @@
   --hm-elev-drawer: 14px 0 40px rgba(15, 20, 40, 0.18);
 }
 
-/* ── Dark (explicit) = Obsidian: no override needed, :root default is Obsidian. ── */
+/* ── Dark (explicit) = Android jade: no override needed, :root is the default. ── */
 
 /* ── Reduced motion ─────────────────────────────────────────────────── */
 @media (prefers-reduced-motion: reduce) {
@@ -331,7 +346,7 @@
   --hm-color-warning-bg: #2a2110;
   --hm-color-danger-bg:  #2a1418;
   --hm-color-info-bg:    #16203a;
-  /* Uses Dark Obsidian card gradient + semantic surface tints from :root */
+  /* Semantic status colors stay shared; M3 containers are reset below. */
 }
 
 /* ── Dark · Mocha (Catppuccin Mocha, pastel mauve accent) ─────────────── */
@@ -363,7 +378,7 @@
   --hm-color-warning-bg: #383322;
   --hm-color-danger-bg:  #3d2832;
   --hm-color-info-bg:    #28304a;
-  /* Uses Dark Obsidian card gradient + semantic surface tints from :root */
+  /* Semantic status colors stay shared; M3 containers are reset below. */
 }
 
 /* ── Dark · Graphite (iOS-neutral graphite, system cyan accent) ───────── */
@@ -399,14 +414,50 @@
   --hm-color-info-bg:    rgba(56, 189, 248, 0.14);
 }
 
-/* ── Quiet Precision / Dark Obsidian Shared Primitives ─────────────────── */
+/* Keep saved alternate themes internally consistent with the new M3 aliases. */
+:root[data-theme='dark-indigo'],
+:root[data-theme='dark-mocha'],
+:root[data-theme='dark-graphite'] {
+  --hm-card-bg: var(--hm-color-surface);
+  --hm-glass-bg: color-mix(in srgb, var(--hm-color-surface) 92%, transparent);
+  --hm-color-on-primary: var(--hm-color-primary-text);
+  --hm-color-primary-container: var(--hm-color-primary-tint);
+  --hm-color-on-primary-container: var(--hm-color-text);
+  --hm-color-secondary: var(--hm-color-text-2);
+  --hm-color-secondary-container: var(--hm-color-surface-2);
+  --hm-color-on-secondary-container: var(--hm-color-text);
+  --hm-color-tertiary: var(--hm-color-text-2);
+  --hm-color-tertiary-container: var(--hm-color-surface-2);
+  --hm-color-on-tertiary-container: var(--hm-color-text);
+  --hm-color-error: var(--hm-color-danger);
+  --hm-color-on-error: var(--hm-color-bg);
+  --hm-color-error-container: var(--hm-color-danger-bg);
+  --hm-color-on-error-container: var(--hm-color-danger);
+  --hm-color-surface-dim: var(--hm-color-bg);
+  --hm-color-surface-bright: var(--hm-color-surface-2);
+  --hm-color-surface-container-lowest: var(--hm-color-bg);
+  --hm-color-surface-container-low: var(--hm-color-surface);
+  --hm-color-surface-container: var(--hm-color-surface);
+  --hm-color-surface-container-high: var(--hm-color-surface-2);
+  --hm-color-surface-container-highest: var(--hm-color-surface-2);
+  --hm-color-on-surface: var(--hm-color-text);
+  --hm-color-on-surface-variant: var(--hm-color-text-2);
+  --hm-color-outline: var(--hm-color-border);
+  --hm-color-outline-variant: var(--hm-color-border);
+  --hm-color-surface-high: var(--hm-color-surface-2);
+  --hm-home-summary-bg: var(--hm-color-primary-tint);
+  --hm-home-summary-text: var(--hm-color-text);
+  --hm-home-greeting: var(--hm-color-primary);
+}
+
+/* ── Material 3 Expressive Shared Primitives ────────────────────────── */
 .hm-mono-num {
   font-family: var(--hm-font-mono);
   font-variant-numeric: tabular-nums;
 }
 
 .hm-qp-hero {
-  border-radius: 22px;
+  border-radius: var(--hm-radius-xl);
   padding: 18px 20px;
   background: var(--hm-card-bg);
   border: 1px solid var(--hm-color-border);

@@ -521,7 +521,7 @@ export function Composer({
           {onOpenVoice && (
             <button
               type="button"
-              className="hm-composer__action"
+              className="hm-composer__action hm-composer__action--voice"
               onClick={onOpenVoice}
               aria-label="Open voice call"
               title="Voice call"

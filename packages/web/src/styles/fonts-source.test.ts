@@ -12,10 +12,14 @@ describe('font loading', () => {
     const link = html.match(/<link\b[^>]*rel="preload"[^>]*>/u)?.[0] ?? '';
     expect(link).toContain('as="font"');
     expect(link).toContain('crossorigin');
-    expect(link).toContain('type="font/ttf"');
+    expect(link).toContain('type="font/woff2"');
     const href = link.match(/href="([^"]+)"/u)?.[1] ?? '';
-    expect(href).toBe('./src/assets/fonts/figtree-var.ttf');
+    expect(href).toBe('./src/assets/fonts/plus-jakarta-sans-var.woff2');
     expect(existsSync(join(webRoot, href))).toBe(true);
+  });
+
+  it('preloads the bundled display face to avoid heading FOUT', () => {
+    expect(html).toContain('href="./src/assets/fonts/bricolage-grotesque-var.woff2" as="font" type="font/woff2" crossorigin');
   });
 
   it('keeps every font face visible during download', () => {

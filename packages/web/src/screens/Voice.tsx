@@ -143,8 +143,8 @@ function hexToRgb(hex: string, fallback: Rgb): Rgb {
 const orbBase = { flowSpeed: 1, noiseAmp: 0.05, audioGain: 0.2, scatter: 0, breathSpeed: 1, rotSpeed: 0.5, satellites: 0 };
 
 function orbParams(accent: Rgb, warn: Rgb, dim: Rgb): Record<CallState, OrbParams> {
-  const teal: Rgb = [45, 212, 191];
-  const violet: Rgb = [167, 139, 250];
+  const teal: Rgb = [126, 215, 196];
+  const violet: Rgb = [196, 181, 253];
   return {
     idle: { ...orbBase, rgb: dim, flowSpeed: 0.15, noiseAmp: 0.02, audioGain: 0, breathSpeed: 0.35, rotSpeed: 0.1 },
     connecting: { ...orbBase, rgb: accent, flowSpeed: 0.8, noiseAmp: 0.07, scatter: 0.85, breathSpeed: 2.4, rotSpeed: 1.7 },
@@ -182,7 +182,7 @@ function VoiceOrb({
     const styles = getComputedStyle(canvas);
     const accent = hexToRgb(styles.getPropertyValue('--hm-color-accent'), [99, 102, 241]);
     const warn = hexToRgb(styles.getPropertyValue('--hm-color-warning'), [245, 158, 11]);
-    const dim = hexToRgb(styles.getPropertyValue('--hm-color-text-muted'), [107, 114, 128]);
+    const dim = hexToRgb(styles.getPropertyValue('--hm-color-primary'), [126, 215, 196]);
     const params = orbParams(accent, warn, dim);
 
     const dpr = Math.min(2, window.devicePixelRatio || 1);

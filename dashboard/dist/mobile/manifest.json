@@ -6,8 +6,8 @@
   "scope": "./",
   "display": "standalone",
   "orientation": "portrait",
-  "background_color": "#0e1116",
-  "theme_color": "#0e1116",
+  "background_color": "#0D1513",
+  "theme_color": "#0D1513",
   "description": "I.V.A.N — personal agent control plane for Hermes Agent.",
   "icons": [
     {

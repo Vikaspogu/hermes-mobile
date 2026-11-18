@@ -20,7 +20,7 @@
 .hm-inbox-card {
   background: var(--hm-tint-amber-surface);
   border: 1px solid var(--hm-tint-amber-border);
-  border-radius: 18px;
+  border-radius: var(--hm-radius-card);
   box-shadow: var(--hm-card-highlight);
 }
 .hm-inbox-card--high {
@@ -79,13 +79,19 @@
   align-items: center;
 }
 .hm-inbox-card__review {
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   font-size: 12.5px;
-  color: var(--hm-tint-rose-accent);
+  color: var(--hm-color-danger);
+  background: var(--hm-color-danger-bg);
+  border: 1px solid var(--hm-tint-coral-border);
+  border-radius: var(--hm-radius-full);
+  padding: 10px 16px;
   font-weight: 700;
-  margin-top: 4px;
+  margin-top: 8px;
   text-decoration: none;
-  min-height: 24px;
+  min-height: var(--hm-tap-min);
 }
 
 /* ── Notice rows (Quiet Precision control tiles) ─────────────────── */
@@ -97,7 +103,7 @@
   background: var(--hm-card-bg);
   box-shadow: var(--hm-card-highlight);
   border: 1px solid var(--hm-color-border);
-  border-radius: 18px;
+  border-radius: var(--hm-radius-card);
 }
 .hm-notice__icon {
   width: 38px;

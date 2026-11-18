@@ -16,7 +16,6 @@ body {
   color: var(--hm-color-text);
   font-family: var(--hm-font-sans);
   -webkit-font-smoothing: antialiased;
-  font-feature-settings: var(--hm-feature-figtree);
   font-variant-numeric: tabular-nums;
 }
 
@@ -1687,6 +1686,12 @@ a {
   border-color: var(--hm-color-accent);
 }
 
+/* M3 tertiary voice action (persimmon container). */
+.hm-composer__action--voice {
+  background: var(--hm-color-tertiary-container);
+  color: var(--hm-color-on-tertiary-container);
+}
+
 .hm-composer__action--labeled {
   width: auto;
   gap: 5px;
@@ -1994,7 +1999,7 @@ a {
   font-family: var(--hm-font-mono, ui-monospace, monospace);
   font-size: var(--hm-fs-small);
   color: var(--hm-color-text);
-  background: #f5f7fd;
+  background: var(--hm-color-surface-2);
   border: 1px solid var(--hm-color-border);
   border-radius: var(--hm-radius-md);
   padding: var(--hm-space-3);
@@ -2011,7 +2016,8 @@ a {
 .hm-approval-card__deny {
   flex: 1;
   padding: 10px;
-  border-radius: var(--hm-radius-md);
+  border-radius: var(--hm-radius-full);
+  min-height: var(--hm-tap-min);
   font-size: var(--hm-fs-body);
   font-weight: var(--hm-fw-bold);
   cursor: pointer;
@@ -2020,13 +2026,13 @@ a {
 
 .hm-approval-card__approve {
   background: var(--hm-color-accent);
-  color: #fff;
+  color: var(--hm-color-primary-text);
 }
 
 .hm-approval-card__deny {
-  background: #fff;
-  border: 1px solid #e0bcbc;
-  color: #c4413c;
+  background: var(--hm-color-surface);
+  border: 1px solid var(--hm-tint-coral-border);
+  color: var(--hm-color-danger);
 }
 
 .hm-empty-state__icon {
